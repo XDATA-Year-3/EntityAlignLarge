@@ -1,0 +1,230 @@
+<!doctype html>
+<meta charset=utf-8>
+
+
+<!-- <script src=https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false></script> -->
+<!-- <script src=cache/jquery-1.9.1.min.js></script> -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src=cache/jquery-ui.min.js></script>
+<script src=cache/d3.v3.min.js charset=utf-8></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js></script>
+<script src=/plugin/ui/controlPanel.js></script>
+
+<!-- Driver script for this app -->
+
+<script src=draper.activity_logger-2.0.js></script>
+
+<script src=entity-align.js></script>
+
+<link href=cache/jquery-ui.css rel=stylesheet>
+
+<link rel="shortcut icon" href=/img/tangelo.ico>
+
+<link href=http://bootswatch.com/cosmo/bootstrap.min.css rel=stylesheet>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+
+<link href=//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css rel=stylesheet>
+
+<!--
+<script src="http://trifacta.github.io/vega/lib/d3.v3.min.js"></script>
+<script src="http://trifacta.github.io/vega/lib/d3.geo.projection.min.js"></script>
+<script src="http://trifacta.github.io/vega/lib/topojson.js"></script>
+<script src="http://trifacta.github.io/vega/vega.js"></script>
+-->
+
+<script src=cache/vega-1.3.3.min.js></script>
+
+<style>
+    html, body {
+        height: 100%;
+        background-color: lightgray;
+    }
+
+    body {
+        padding-top: 50px;
+    }
+
+    #control-panel {
+        background-color: lightgray;
+        padding-bottom: 20px;
+    }
+
+    #controls {
+        background-color: darkgray;
+        padding-bottom: 100%;
+        height: 100%;
+    }    
+
+    p {
+        color: gray;
+    }
+
+    h3 {
+        color: gray;
+    }
+    #map img {
+        max-width: none;
+    }
+</style>
+
+<!-- definition for scrollable list of active entities -->
+<style>
+  nav ol{height:300px; width:200px;}
+  nav ol{overflow:hidden; overflow-y:scroll;}
+</style>
+
+<title>Entity Alignment</title>
+
+<body class=fuelux>
+<div id=info-panel class="modal fade draper" data-wf="1"  data-description="info panel">
+    <div class=modal-dialog>
+        <div class=modal-content>
+            <div class=modal-header>
+                <h3>Information</h3>
+            </div>
+
+            <div class=modal-body>
+                <p>Examine and Align Entities Across two networks</p>
+
+               <p>put app description here </p>
+            </div>
+
+            <div class=modal-footer>
+                <a class="btn btn-default" data-dismiss=modal>OK</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<div id=show-active-panel class="modal fade draper" data-wf="1"  data-description="show active ">
+    <div class=modal-dialog>
+        <div class=modal-content>
+            <div class=modal-header>
+                <h3>Most active entities</h3>
+            </div>
+
+            <div class=modal-body>
+                <p>Display and select from most active entities.  Select a user name to center on this entity.</p>
+                <nav>
+                    <ol id='activeentitylist'>
+                  </ol>
+                </nav>
+            </div>
+
+            <div class=modal-footer>
+                <a class="btn btn-default" data-dismiss=modal>OK</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div id=show-search-path-panel class="modal fade draper" data-wf="1"  data-description="show search path ">
+    <div class=modal-dialog>
+        <div class=modal-content>
+            <div class=modal-header>
+                <h3>Previously Visited Entities </h3>
+            </div>
+
+            <div class=modal-body>
+                <p>Ordered list of previous centered entities.  Select a user name to re-center on this entity.  </p>
+                <nav>
+                    <ol id='previousentitylist'>
+                  </ol>
+                </nav>
+            </div>
+
+            <div class=modal-footer>
+                <a class="btn btn-default" data-dismiss=modal>OK</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="navbar navbar-default navbar-fixed-top" >
+    <div class=navbar-header>
+        <a class=navbar-brand href=/examples>Tangelo</a>
+    </div>
+
+    <ul class="nav navbar-nav">
+        <li class=active> <a>Entity Alignment</a>
+        <li><a style=cursor:pointer data-toggle=modal data-target=#info-panel><span class="glyphicon glyphicon-info-sign"></span> Info</a>
+        <li><a style=cursor:pointer data-toggle=modal data-target=#show-active-panel><span class="caret"></span>Drop Panel 1</a>
+        <li><a style=cursor:pointer data-toggle=modal data-target=#show-search-path-panel><span class="caret"></span>Drop Panel 2</a>
+    </ul>
+</div>
+
+
+<!-- Create two side-by-side SVG elements -->
+
+<div class=row>
+
+   <!-- left panel for graph 1 -->
+    <div class=col-md-5>
+        <select id='graph1-selector'></select>
+        <ul id="tabs" class="nav nav-tabs" data-tabs="tabs">
+          <li class="active"><a href="#graph-tab1" data-toggle="tab">Graph View A</a></li>
+          <li><a href="#adjacency-tab1" data-toggle="tab">Adjacency View A</a></li>
+        </ul>
+      <div id="graph1-content" class="tab-content">
+        <div class="tab-pane active" id="graph-tab1">
+            <h3>Graph View A</h3>
+            <svg id=graph1 width=100%>
+                <g id="transform-group1">
+                    <rect id="overlay1"></rect>
+                    <g id="links1"></g>
+                    <g id="nodes1"></g>
+                </g>
+            </svg>
+        </div>
+
+        <div class="tab-pane" id="adjacency-tab1">
+            <h3>Adjacency View A</h3>
+        </div>
+      </div>
+    </div>
+
+  <!-- right panel for graph 2 -->
+
+ <div class=col-md-5>
+    <select id='graph2-selector'></select>
+    <ul id="tabs2" class="nav nav-tabs" data-tabs="tabs">
+        <li class="active"><a href="#graph-tab2" data-toggle="tab">Graph View B</a></li>
+        <li><a href="#adjacency-tab2" data-toggle="tab">Adjacency View B</a></li>
+    </ul>
+    <div id="graph2-content" class="tab-content">
+        <div class="tab-pane active" id="graph-tab2">
+            <h3> Graph View B</h3>
+            <svg id=graph2 width=100%>
+                <g id="transform-group2">
+                    <rect id="overlay2"></rect>
+                    <g id="links2"></g>
+                    <g id="nodes2"></g>
+                </g>
+            </svg>
+        </div>
+        <div class="tab-pane" id="adjacency-tab2">
+            <h3>Adjacency View B</h3> 
+          </div>
+        </div>
+      </div>
+
+  <!-- place for controls -->
+  <div class=col-md-2 id='controls'>
+  </div>
+
+
+  </div>
+
+</div>
+
+
+<!-- Create an SVG element to represent the legend -->
+<svg id=legend height=100% style="position:fixed; top:100px; right:0px; pointer-events:none;"></svg>
+
+
+</body>
