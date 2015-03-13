@@ -36,7 +36,7 @@ def run(host,database,graphname):
 
     fixedEdges = []
     for edge in graph.edges():
-        fixedEdges.append({'source':edge[0],'target':edge[1],'weight':1})
+        fixedEdges.append({'source':int(edge[0]),'target': int(edge[1]),'weight':1})
 
 
     # Pack the results into the response object, and return it.
