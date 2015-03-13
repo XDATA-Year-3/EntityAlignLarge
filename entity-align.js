@@ -459,7 +459,12 @@ function updateGraph1_d3() {
 
             transition_time = 600;
 
+
+            // remove any previous graph
+            $('#graph1-drawing-canvas').remove();
+
             svg = d3.select("#graph1").append('svg')
+                .attr("id","graph1-drawing-canvas")
                 .attr("width",800)
                 .attr("height",800)
 
@@ -648,7 +653,11 @@ function updateGraph2_d3() {
 
             transition_time = 600;
 
+            // remove any previous graph
+            $('#graph2-drawing-canvas').remove();
+
             svg = d3.select("#graph2").append('svg')
+                .attr("id","graph2-drawing-canvas")
                 .attr("width",800)
                 .attr("height",800)
 
@@ -687,7 +696,7 @@ function updateGraph2_d3() {
                         .attr("r", 12)
                         .style("opacity", 1.0)
                         .style("fill", function (d) {
-                            return color(3);
+                            return color(2);
                         });
 
 

@@ -11,7 +11,7 @@ import tangelo
 def run(host,database):
     # Create an empty response object.
     response = {}
-    collectionNames = []
+    collectionNames = ['select a dataset']
 
    # look through the collections in the ivaan database and return the name of all collections
    # that match the naming profile for tables.  This is matching to see if the collection name
