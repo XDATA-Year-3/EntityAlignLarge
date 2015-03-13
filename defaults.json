@@ -1,10 +1,6 @@
 {
 	"mongoHost" 			: "localhost",
-	"mentionsDatabase"	  	: "qcr_mentions",
-	"mentionsCollection" 	: "twitter_mentions_isil_36",
-	"entityCountCollection" : "tweet_mentions_cleaned_isil_36_count",
-	"centralEntity" 		: "samaka_7",
-	"startDate"				: "January 1, 2015",
-	"endDate"				: "January 5, 2015"
+	"graphsDatabase"	  	: "year3_graphs",
+	"entityCountCollection" : "tweet_mentions_cleaned_isil_36_count"
 }
 

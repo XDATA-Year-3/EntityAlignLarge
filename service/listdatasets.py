@@ -22,10 +22,8 @@ def run(host,database):
     # get a list of all collections (excluding system collections)
     collection_list = db.collection_names(False)
     for coll in collection_list:
-        # if it is a table, then add it to the response
-        if (str(coll[:6]) =='table_'):
-            print "found table:", coll
-            collectionNames.append(coll)
+        print "found graph:", coll
+        collectionNames.append(coll)
 
     connection.close()
 

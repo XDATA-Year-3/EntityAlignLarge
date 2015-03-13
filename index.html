@@ -25,6 +25,9 @@
 
 <link href=//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css rel=stylesheet>
 
+<script src="http://trifacta.github.io/vega/lib/topojson.js"></script>
+<script src="http://trifacta.github.io/vega/vega.js"></script>
+
 <!--
 <script src="http://trifacta.github.io/vega/lib/d3.v3.min.js"></script>
 <script src="http://trifacta.github.io/vega/lib/d3.geo.projection.min.js"></script>
@@ -32,7 +35,10 @@
 <script src="http://trifacta.github.io/vega/vega.js"></script>
 -->
 
+<!--
 <script src=cache/vega-1.3.3.min.js></script>
+<script src=cache/vega.js></script>
+-->
 
 <style>
     html, body {
@@ -199,13 +205,8 @@
     <div id="graph2-content" class="tab-content">
         <div class="tab-pane active" id="graph-tab2">
             <h3> Graph View B</h3>
-            <svg id=graph2 width=100%>
-                <g id="transform-group2">
-                    <rect id="overlay2"></rect>
-                    <g id="links2"></g>
-                    <g id="nodes2"></g>
-                </g>
-            </svg>
+            <div id='graph2' style='width=1000px; height=1000px'>
+            </div>
         </div>
         <div class="tab-pane" id="adjacency-tab2">
             <h3>Adjacency View B</h3> 
