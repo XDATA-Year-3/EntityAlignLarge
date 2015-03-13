@@ -657,22 +657,23 @@ function updateGraph2_d3() {
             transition_time = 600;
 
             svg = d3.select("#graph2").append('svg')
+                .attr("width",800)
+                .attr("height",800)
 
 
             link = svg.selectAll(".link")
-                .data(graph.edges, function (d) {
-                    return d.id;
-                });
+                .data(graph.edges);
 
-            link.enter().append("line")
+                link.enter()
+                .append("line")
                 .classed("link", true)
                 .style("opacity", 0.0)
                 .style("stroke-width", 0.0)
                 .transition()
                 .duration(transition_time)
                 .style("opacity", 0.6)
-                .style("stroke","grey")
-                .style("stroke-width", 1.0);
+                .style("stroke","red")
+                .style("stroke-width", 2.0);
 
             link.exit()
                 .transition()
@@ -681,9 +682,7 @@ function updateGraph2_d3() {
                 .style("stroke-width", 0.0)
                 .remove();
 
-            svg2 = d3.select("#graph2").append('svg')
-
-            node = svg2.selectAll(".node")
+            node = svg.selectAll(".node")
                 .data(graph.nodes, function (d) { return d.name; })
                 .on("mouseover", function(d) {
                         loggedVisitToEntry(d);
@@ -855,7 +854,7 @@ function firstTimeInitialize() {
             .linkDistance(75)
             .gravity(0.2)
             .friction(0.6)
-            .size([width/4, height/2]);
+            .size([width/2, height/2]);
 
         color = d3.scale.category20();
         //color = entityAlignDistanceFunction;
