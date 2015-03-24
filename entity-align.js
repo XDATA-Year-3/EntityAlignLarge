@@ -38,6 +38,7 @@ entityAlign.dateformat = d3.time.format("%a %b %e, %Y (%H:%M:%S)");
 // startup time from a defaults.json file. 
 
 entityAlign.graphsDatabase= null
+entityAlign.showMatchesEnabled = false
 
 
 entityAlign.monthNames = [
@@ -93,13 +94,13 @@ function displayDate(d) {
 
 function loggedVisitToEntry(d) {
         //console.log("mouseover of entry for ",d.user)
-        entityAlign.ac.logUserActivity("hover over entity: "+d.tweet, "hover", entityAlign.ac.WF_EXPLORE);
+        //entityAlign.ac.logUserActivity("hover over entity: "+d.tweet, "hover", entityAlign.ac.WF_EXPLORE);
      
 }
 
 function loggedDragVisitToEntry(d) {
         //console.log("mouseover of entry for ",d.user)
-        entityAlign.ac.logUserActivity("drag entity: "+d.tweet, "hover", entityAlign.ac.WF_EXPLORE);
+        //entityAlign.ac.logUserActivity("drag entity: "+d.tweet, "hover", entityAlign.ac.WF_EXPLORE);
 }
 
 
@@ -109,204 +110,12 @@ function updateGraph1() {
 }
 
 
-function updateGraph1_old() {
-    "use strict";
-     //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     entityAlign.ac.logSystemActivity('entityAlign - updateGraph 1 display executed');
-    var center,
-        data,
-        end_date,
-        hops,
-        change_button,
-        start_date,
-        update;
-
-
-    d3.select("#nodes1").selectAll("*").remove();
-    d3.select("#links1").selectAll("*").remove();
-
-    // Get the name of the graph dataset to render
-    var graphPathname = d3.select("#graph1-selector").node();
-    var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
-
-     var logText = "dataset select: start="+graphPathname;
-     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
-
-    $.ajax({
-        // generalized collection definition
-        url: "service/path2graph/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + entityAlign.graphsCollection,
-        data: data,
-        dataType: "json",
-        success: function (response) {
-            var angle,
-                enter,
-                link,
-                map,
-                newidx,
-                node,
-                tau;
-
-
-            if (response.error || response.result.length === 0) {
-                console.log("error: " + response.error);
-                return;
-            }
-            console.log('data returned:',response.result)
-
-            transition_time = 600;
-
-            link = svg.select("g#links1")
-                .selectAll(".link")
-                .data(graph.edges, function (d) {
-                    return d.id;
-                });
-
-            link.enter().append("line")
-                .classed("link", true)
-                .style("opacity", 0.0)
-                .style("stroke-width", 0.0)
-                .transition()
-                .duration(transition_time)
-                .style("opacity", 0.6)
-                .style("stroke","grey")
-                .style("stroke-width", 1.0);
-
-            link.exit()
-                .transition()
-                .duration(transition_time)
-                .style("opacity", 0.0)
-                .style("stroke-width", 0.0)
-                .remove();
-
-            node = svg.select("g#nodes1")
-                .selectAll(".node")
-                .data(graph.nodes, function (d) { return d.name; })
-                .on("mouseover", function(d) {
-                        loggedVisitToEntry(d);
-                });
-
-            // support two different modes, where circular nodes are drawn for each entity or for where the
-            // sender name is used inside a textbox. if entityAlign.textmode = true, then render text
-
-            if (!entityAlign.textmode) {
-                    enter = node.enter().append("circle")
-                        .classed("node", true)
-                        .attr("r", 5)
-                        .style("opacity", 0.0)
-                        .style("fill", "red")
-                        .on("click", function(d) {
-                            loggedVisitToEntry(d);
-                            centerOnClickedGraphNode(d.tweet);
-                        });
-
-                    enter.transition()
-                        .duration(transition_time)
-                        .attr("r", 12)
-                        .style("opacity", 1.0)
-                        .style("fill", function (d) {
-                            return color(d.distance);
-                        });
-
-
-                    enter.call(force1.drag)
-                        .append("title")
-                        .text(function (d) {
-                            return d.tweet || "(no username)";
-                        })
-                        .on("mouseover", function(d) {
-                        loggedDragVisitToEntry(d);
-                        });
-
-                    node.exit()
-                        .transition()
-                        .duration(transition_time)
-                        .style("opacity", 0.0)
-                        .attr("r", 0.0)
-                        .style("fill", "black")
-                        .remove();
-
-                    force1.nodes(graph.nodes)
-                        .links(graph.edges)
-                        .start();
-
-                    force1.on("tick", function () {
-                        link.attr("x1", function (d) { return d.source.x; })
-                            .attr("y1", function (d) { return d.source.y; })
-                            .attr("x2", function (d) { return d.target.x; })
-                            .attr("y2", function (d) { return d.target.y; });
-
-                        node.attr("cx", function (d) { return d.x; })
-                            .attr("cy", function (d) { return d.y; });
-                    });
-            } else {
-
-                enter = node.enter()
-                    .append("g")
-                    .classed("node", true);
-
-                enter.append("text")
-                    .text(function (d) {
-                        return d.tweet;
-                    })
-
-                    // use the default cursor so the text doesn't look editable
-                    .style('cursor', 'default')
-
-                    // enable click to recenter
-                    .on("click", function(d) {
-                        loggedVisitToEntry(d);
-                        centerOnClickedGraphNode(d.tweet);
-                    })
-
-                    .datum(function (d) {
-                        // Adjoin the bounding box to the element's bound data.
-                        d.bbox = this.getBBox();
-                        return d;
-                    });
-
-                enter.insert("rect", ":first-child")
-                    .attr("width", function (d) { return d.bbox.width + 4; })
-                    .attr("height", function (d) { return d.bbox.height + 4; })
-                    .attr("y", function (d) { return d.bbox.y - 2; })
-                    .attr("x", function (d) { return d.bbox.x - 2; })
-                    .attr('rx', 4)
-                    .attr('ry', 4)
-                    .style("stroke", function (d) {
-                        return color(d.distance);
-                    })
-                    .style("stroke-width", "2px")
-                    .style("fill", "#e5e5e5")
-                    .style("fill-opacity", 0.8);
-
-                force1.on("tick", function () {
-                    link.attr("x1", function (d) { return d.source.x; })
-                        .attr("y1", function (d) { return d.source.y; })
-                        .attr("x2", function (d) { return d.target.x; })
-                        .attr("y2", function (d) { return d.target.y; });
-
-                    node.attr("transform", function (d) {
-                        return "translate(" + d.x + ", " + d.y + ")";
-                    });
-                });
-               force1.linkDistance(100);
-            }
-            force1.nodes(graph.nodes)
-                .links(graph.edges)
-                .start();
-
-        
-            enter.call(force1.drag);
-
-            node.exit()
-                .transition()
-                .duration(transition_time)
-                .style("opacity", 0.0)
-                .attr("r", 0.0)
-                .style("fill", "black")
-                .remove();
-        }
-    });
+function updateGraph2() {
+    updateGraph2_d3()
+    //updateGraph2_vega()
 }
+
+
 
 
 function updateGraph2_vega() {
@@ -367,11 +176,10 @@ function updateGraph2_vega() {
     });
 }
 
+ // bind data  with the vega spec and render in the element passed as a parameter.  This routine reads the
+ // vega spec and connects to dynamic data. It can be repeatedly called during execution to change the rendering
+ // driven by vega
 
-
-
-
- // bind data  with the vega spec
     function parseVegaSpec(element, spec, dynamicData) {
             console.log("parsing vega spec"); 
        vg.parse.spec(spec, function(chart) { 
@@ -399,12 +207,6 @@ function updateGraph2_vega() {
                  })
                  });
    }
-
-
-function updateGraph2() {
-    updateGraph2_d3()
-    //updateGraph2_vega()
-}
 
 
 
@@ -602,6 +404,13 @@ function updateGraph1_d3() {
 
 
 
+var drag = d3.behavior.drag()
+    .origin(function(d) { return d; })
+    .on("dragstart", dragstarted)
+    .on("drag", dragged)
+    .on("dragend", dragended);
+
+
 function updateGraph2_d3() {
     "use strict";
      //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
@@ -624,6 +433,9 @@ function updateGraph2_d3() {
 
      var logText = "dataset2 select: start="+graphPathname;
      entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+
+
+     
 
     $.ajax({
         // generalized collection definition
@@ -656,13 +468,46 @@ function updateGraph2_d3() {
             // remove any previous graph
             $('#graph2-drawing-canvas').remove();
 
-            svg = d3.select("#graph2").append('svg')
-                .attr("id","graph2-drawing-canvas")
-                .attr("width",800)
-                .attr("height",800)
+            var margin = {top: -5, right: -5, bottom: -5, left: -5},
+            width = 820 - margin.left - margin.right,
+            height = 820 - margin.top - margin.bottom;
+
+        // adding logic for dragging & zooming
+
+        var zoom = d3.behavior.zoom()
+            .scaleExtent([1, 10])
+            .on("zoom", zoomed);
 
 
-            link = svg.selectAll(".link")
+        
+        // added for drag & scale
+        svg = d3.select("#graph2").append('svg')
+            .attr("id","graph2-drawing-canvas")
+            .attr("width",width + margin.left + margin.right)
+            .attr("height",height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.right + ")")
+            .call(zoom);
+
+        var rect = svg.append("rect")
+            .attr("width", width)
+            .attr("height", height)
+            .style("fill", "none")
+            .style("pointer-events", "all");
+
+        var container = svg.append("g");
+
+   //For zooming the graph #2
+        function zoomed() {
+          container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        }
+
+       
+
+        // end of added for drag & scale
+
+
+            link = container.selectAll(".link")
                 .data(graph.edges)
                 .enter()
                 .append("line")
@@ -672,7 +517,8 @@ function updateGraph2_d3() {
                 .style("stroke-width", 2.0);
 
 
-            node = svg.selectAll(".node")
+
+            node = container.selectAll(".node")
                 .data(graph.nodes, function (d) { return d.name; })
                 .on("mouseover", function(d) {
                         loggedVisitToEntry(d);
@@ -686,10 +532,12 @@ function updateGraph2_d3() {
                         .attr("r", 5)
                         .style("opacity", 0.0)
                         .style("fill", "orange")
+                        .call(drag)
                         .on("click", function(d) {
                             loggedVisitToEntry(d);
                             //centerOnClickedGraphNode(d.tweet);
-                        });
+                        })
+
 
                     enter.transition()
                         .duration(transition_time)
@@ -700,8 +548,8 @@ function updateGraph2_d3() {
                         });
 
 
-                    enter.call(entityAlign.force2.drag)
-                        .append("title")
+                    enter.append("title")
+                        //.call(entityAlign.force2.drag)
                         .text(function (d) {
                             return d.name || "(no username)";
                         })
@@ -734,7 +582,8 @@ function updateGraph2_d3() {
 
                 enter = node.enter()
                     .append("g")
-                    .classed("node", true);
+                    .classed("node", true)
+                    .call(drag);
 
                 enter.append("text")
                     .text(function (d) {
@@ -792,6 +641,22 @@ function updateGraph2_d3() {
                 .remove();
         }
     });
+}
+
+// These three routines below handle dragging events so dragging can take place of zooming
+
+function dragstarted(d) {
+  d3.event.sourceEvent.stopPropagation();
+  console.log("drag start")
+  d3.select(this).classed("dragging", true);
+}
+
+function dragged(d) {
+  d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
+}
+
+function dragended(d) {
+  d3.select(this).classed("dragging", false);
 }
 
 
@@ -855,6 +720,15 @@ function firstTimeInitialize() {
         d3.select("#graph2-selector")
             .on("change", updateGraph2); 
 
+        d3.select("#align-button")
+            .on("click", runGraphMatching);
+        d3.select("#show-matches-toggle")
+            .attr("disabled", true)
+            .on("click",  function () { entityAlign.showMatchesEnabled = !entityAlign.showMatchesEnabled; 
+                                        conole.log(entityAlign.showMatchesEnabled);
+                                       });
+
+
         // block the contextmenu from coming up (often attached to right clicks). Since many 
         // of the right clicks will be on the graph, this has to be at the document level so newly
         // added graph nodes are all covered by this handler.
@@ -887,3 +761,14 @@ function fillDatassetList(element) {
             .text(function (d) { return d; });
         });
 }
+
+// change the stagus of the global show matches 
+function toggleShowMatches() {
+
+}
+
+
+function runGraphMatching() {
+    console.log("do graph matching")
+}
+
