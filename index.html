@@ -21,7 +21,8 @@
 <link rel="shortcut icon" href=/img/tangelo.ico>
 
 <link href=http://bootswatch.com/cosmo/bootstrap.min.css rel=stylesheet>
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+<!-- modals didn't workwhen I used 3.3.2, so backing down to 3.0.2 -->
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
 
 <link href=//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css rel=stylesheet>
 
@@ -111,30 +112,30 @@
 
 
 
-
-<div id=show-active-panel class="modal fade draper" data-wf="1"  data-description="show active ">
+<div id=seed-panel class="modal fade draper" data-wf="1"  data-description="list seeds">
     <div class=modal-dialog>
         <div class=modal-content>
             <div class=modal-header>
-                <h3>Most active entities</h3>
+                <h3>Load Matching Seeds</h3>
             </div>
 
             <div class=modal-body>
-                <p>Display and select from most active entities.  Select a user name to center on this entity.</p>
+                <p>Initialize from a currently loaded set of matching seeds.</p>
                 <nav>
-                    <ol id='activeentitylist'>
-                  </ol>
+                   <select id='seed-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" ></select>
                 </nav>
             </div>
 
             <div class=modal-footer>
-                <a class="btn btn-default" data-dismiss=modal>OK</a>
+                <a class="btn btn-default" data-dismiss=modal>Cancel</a>
+                <a id='change-seeds' class="btn btn-success" data-dismiss=modal>OK</a>
             </div>
         </div>
     </div>
 </div>
 
 
+<!--
 <div id=show-search-path-panel class="modal fade draper" data-wf="1"  data-description="show search path ">
     <div class=modal-dialog>
         <div class=modal-content>
@@ -156,18 +157,19 @@
         </div>
     </div>
 </div>
+-->
+
 
 
 <div class="navbar navbar-default navbar-fixed-top" >
     <div class=navbar-header>
-        <a class=navbar-brand href=/examples>Tangelo</a>
+        <a class=navbar-brand href=/examples>Tangelo Analysis Suite</a>
     </div>
 
     <ul class="nav navbar-nav">
         <li class=active> <a>Entity Alignment</a>
         <li><a style=cursor:pointer data-toggle=modal data-target=#info-panel><span class="glyphicon glyphicon-info-sign"></span> Info</a>
-        <li><a style=cursor:pointer data-toggle=modal data-target=#show-active-panel><span class="caret"></span>Drop Panel 1</a>
-        <li><a style=cursor:pointer data-toggle=modal data-target=#show-search-path-panel><span class="caret"></span>Drop Panel 2</a>
+        <li><a style=cursor:pointer data-toggle=modal data-target=#seed-panel><span class="caret"></span>Load Seeds</a>
     </ul>
 </div>
 
@@ -178,14 +180,14 @@
 
    <!-- left panel for graph 1 -->
     <div class=col-md-5>
-        <select id='graph1-selector'></select>
+        <select id='graph1-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" ></select>
         <ul id="tabs" class="nav nav-tabs" data-tabs="tabs">
-          <li class="active"><a href="#graph-tab1" data-toggle="tab">Graph View A</a></li>
+          <li class="active" style="margin-left: 20px;"><a href="#graph-tab1" data-toggle="tab">Graph View A</a></li>
           <li><a href="#adjacency-tab1" data-toggle="tab">Adjacency View A</a></li>
         </ul>
       <div id="graph1-content" class="tab-content">
         <div class="tab-pane active" id="graph-tab1">
-            <h3>Graph View A</h3>
+            <h3 style="margin-left: 20px;">Graph View A</h3>
             <div id=graph1 style='width=1000px; height=1000px'>
             </div>
         </div>
@@ -199,14 +201,14 @@
   <!-- right panel for graph 2 -->
 
  <div class=col-md-5>
-    <select id='graph2-selector'></select>
+    <select id='graph2-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px"></select>
     <ul id="tabs2" class="nav nav-tabs" data-tabs="tabs">
-        <li class="active"><a href="#graph-tab2" data-toggle="tab">Graph View B</a></li>
+        <li class="active" style="margin-left: 20px;"><a href="#graph-tab2" data-toggle="tab">Graph View B</a></li>
         <li><a href="#adjacency-tab2" data-toggle="tab">Adjacency View B</a></li>
     </ul>
     <div id="graph2-content" class="tab-content">
         <div class="tab-pane active" id="graph-tab2">
-            <h3> Graph View B</h3>
+            <h3 style="margin-left: 20px;"> Graph View B</h3>
             <div id='graph2' style='width=1000px; height=1000px'>
             </div>
         </div>
@@ -227,10 +229,6 @@
   </div>
 
 </div>
-
-
-<!-- Create an SVG element to represent the legend -->
-<svg id=legend height=100% style="position:fixed; top:100px; right:0px; pointer-events:none;"></svg>
 
 
 </body>

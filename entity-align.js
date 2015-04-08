@@ -40,6 +40,10 @@ entityAlign.dateformat = d3.time.format("%a %b %e, %Y (%H:%M:%S)");
 entityAlign.graphsDatabase= null
 entityAlign.showMatchesEnabled = false
 
+// there is a global array corresponding to the current matches known between the two loaded graphs.  The matches are an array of JSON objects, each with a 
+// "ga" and "gb" attribute, whose corresponding values are integers that match the node IDs. 
+entityAlign.currentMatches = []
+
 
 entityAlign.monthNames = [
     "Jan",
@@ -307,11 +311,17 @@ function updateGraph1_d3() {
                             return color(1);
                         });
 
-
                     enter.call(entityAlign.force2.drag)
                         .append("title")
+                        //.call(entityAlign.force2.drag)
                         .text(function (d) {
-                            return d.name || "(no username)";
+                            var returntext = ""
+                            for (var attrib in d) {
+                                if (attrib != 'data') {
+                                    returntext = returntext + attrib+":"+d[attrib]+"\n" 
+                                }
+                            }
+                            return returntext;
                         })
                         .on("mouseover", function(d) {
                         loggedDragVisitToEntry(d);
@@ -475,7 +485,7 @@ function updateGraph2_d3() {
         // adding logic for dragging & zooming
 
         var zoom = d3.behavior.zoom()
-            .scaleExtent([1, 10])
+            .scaleExtent([0.1, 10])
             .on("zoom", zoomed);
 
 
@@ -503,9 +513,7 @@ function updateGraph2_d3() {
         }
 
        
-
         // end of added for drag & scale
-
 
             link = container.selectAll(".link")
                 .data(graph.edges)
@@ -547,11 +555,20 @@ function updateGraph2_d3() {
                             return color(2);
                         });
 
-
+                    // add hover titles to the nodes.  the text is derived from the node attributes
                     enter.append("title")
                         //.call(entityAlign.force2.drag)
                         .text(function (d) {
-                            return d.name || "(no username)";
+                            var returntext = ""
+                            // look through all the attributes in the node record and list them 
+                            // in the textover field, except for the 'data' attribute, which is 
+                            // currently a complex JSON object
+                            for (var attrib in d) {
+                                if (attrib != 'data') {
+                                    returntext = returntext + attrib+":"+d[attrib]+"\n" 
+                                }
+                            }
+                            return returntext;
                         })
                         .on("mouseover", function(d) {
                         loggedDragVisitToEntry(d);
@@ -689,6 +706,7 @@ function firstTimeInitialize() {
 
         fillDatassetList('#graph1-selector')
         fillDatassetList('#graph2-selector')
+        fillSeedList('#seed-selector')
 
         width = $(window).width();
         height = $(window).height();
@@ -713,13 +731,15 @@ function firstTimeInitialize() {
         color = d3.scale.category20();
         //color = entityAlignDistanceFunction;
 
-   // set a watcher on the dataset selector so the query options are filled in
-        // automatically when a dataset is selected.
+        // set a watcher on the dataset selector so datasets are filled in
+        // automatically when the user selects it via UI selector elements. 
+        
         d3.select("#graph1-selector")
             .on("change", updateGraph1);
         d3.select("#graph2-selector")
-            .on("change", updateGraph2); 
-
+            .on("change", updateGraph2);
+        d3.select('#change-seeds')
+            .on("click", loadNewSeeds);
         d3.select("#align-button")
             .on("click", runGraphMatching);
         d3.select("#show-matches-toggle")
@@ -727,7 +747,6 @@ function firstTimeInitialize() {
             .on("click",  function () { entityAlign.showMatchesEnabled = !entityAlign.showMatchesEnabled; 
                                         conole.log(entityAlign.showMatchesEnabled);
                                        });
-
 
         // block the contextmenu from coming up (often attached to right clicks). Since many 
         // of the right clicks will be on the graph, this has to be at the document level so newly
@@ -742,6 +761,7 @@ function firstTimeInitialize() {
 }
 
 
+// *** initialization.  What do we do the first time the app is opened and the document is ready?
 
 window.onload = function ()  {
     firstTimeInitialize();
@@ -749,6 +769,9 @@ window.onload = function ()  {
 
 };
 
+
+// use a python service to search the datastore and return a list of available networks to pick from.  This fills a GUI selector, so the user
+// can see what datasets are available.
 
 function fillDatassetList(element) {
   d3.select(element).selectAll("a").remove();
@@ -762,11 +785,62 @@ function fillDatassetList(element) {
         });
 }
 
+// use a python service to search the datastore and return a list of available seed arrays to pick from.  This fills a GUI selector, so the user
+// can see what datasets are available.
+
+function fillSeedList(element) {
+  d3.select(element).selectAll("a").remove();
+        d3.json("service/listseeds/"+ entityAlign.host + "/" + entityAlign.graphsDatabase, function (error, entities) {
+            console.log(entities,"\n");
+            // save in a temporary list so we can refer back during a click event
+            d3.select(element).selectAll("option")
+            .data(entities.result)
+            .enter().append("option")
+            .text(function (d) { return d; });
+        });
+
+}
+
+
 // change the stagus of the global show matches 
 function toggleShowMatches() {
 
 }
 
+// this routine reads the dataset pointed to by the seed selector and reads the seeds out of the dataset using the "loadseeds" python service.  The seeds
+// come across as an array of JSON objects.   It is assumed the seed objects have a "ga" and "gb" component. Once the data is read, it is loaded into a 
+// currentMatches array, which may be augmented by the graph matching algorithm later.  The seeds function as the initial values in the matching array. 
+
+function loadNewSeeds() {
+    console.log("loading seeds");
+    // re-initialize the matches to an empty set
+    entityAlign.currentMatches = []
+    var pathname = d3.select("#seed-selector").node();
+    var selectedDataset = pathname.options[pathname.selectedIndex].text;
+
+     var logText = "seed select: "+pathname;
+     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+
+    $.ajax({
+        // generalized collection definition
+        url: "service/loadseeds/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset,
+        dataType: "json",
+        success: function (response) {
+
+            if (response.error ) {
+                console.log("error: " + response.error);
+                return;
+            }
+            console.log('data returned: from seeds',response.result)
+            for (seed in response.result.seeds) {
+                //console.log( response.result.seeds[seed])
+                entityAlign.currentMatches.push(response.result.seeds[seed])
+            }
+        }
+    })
+
+
+}
 
 function runGraphMatching() {
     console.log("do graph matching")

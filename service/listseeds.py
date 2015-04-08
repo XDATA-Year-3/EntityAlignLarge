@@ -15,17 +15,16 @@ def run(host,database):
 
    # look through the collections in the ivaan database and return the name of all collections
    # that match the naming profile for tables.  This is matching to see if the collection name
-   # begins with "seeds_" or not, since this routine can return the matching graphs (that don't start
-    # with 'seeds_') or the matching seeds.
+   # begins with "table_"
 
     connection = Connection(host, 27017)
     db = connection[database]
     # get a list of all collections (excluding system collections)
     collection_list = db.collection_names(False)
     for coll in collection_list:
-         # exclude the seeds collections
-        if coll[:6] != 'seeds_':
-            print "found graph:", coll
+        # exclude the seeds collections
+        if coll[:6] == 'seeds_':
+            #print "found seeds:", coll
             collectionNames.append(coll)
 
     connection.close()
