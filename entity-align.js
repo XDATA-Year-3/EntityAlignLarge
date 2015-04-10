@@ -35,10 +35,12 @@ entityAlign.monthName = d3.time.format("%b");
 entityAlign.dateformat = d3.time.format("%a %b %e, %Y (%H:%M:%S)");
 
 // add globals for current collections to use.  Allows collection to be initialized at
-// startup time from a defaults.json file. 
+// startup time from a defaults.json file.   A pointer to the global datastructures for each graph, are initialized empty as well.
 
 entityAlign.graphsDatabase= null
 entityAlign.showMatchesEnabled = false
+entityAlign.graphA = null
+entityAlign.graphB = null
 
 // there is a global array corresponding to the current matches known between the two loaded graphs.  The matches are an array of JSON objects, each with a 
 // "ga" and "gb" attribute, whose corresponding values are integers that match the node IDs. 
@@ -110,7 +112,9 @@ function loggedDragVisitToEntry(d) {
 
 
 function updateGraph1() {
-    updateGraph1_d3()
+    //updateGraph1_d3()
+    initGraph1FromDatastore()
+
 }
 
 
@@ -211,6 +215,7 @@ function updateGraph2_vega() {
                  })
                  });
    }
+
 
 
 
@@ -414,6 +419,223 @@ function updateGraph1_d3() {
 
 
 
+
+
+
+function   initGraph1FromDatastore()
+{
+ 
+  "use strict";
+     //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
+     entityAlign.ac.logSystemActivity('entityAlign - initialize graph A executed');
+    var center,
+        data,
+        end_date,
+        hops,
+        change_button,
+        start_date,
+        update;
+
+
+    d3.select("#nodes1").selectAll("*").remove();
+    d3.select("#links1").selectAll("*").remove();
+
+    // Get the name of the graph dataset to render
+    var graphPathname = d3.select("#graph1-selector").node();
+    var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+
+     var logText = "dataset1 select: start="+graphPathname;
+     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+
+    $.ajax({
+        // generalized collection definition
+        url: "service/loadgraph/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset,
+        data: data,
+        dataType: "json",
+        success: function (response) {
+            var angle,
+                enter,
+                svg,
+                svg2,
+                link,
+                map,
+                newidx,
+                node,
+                tau;
+
+
+            if (response.error ) {
+                console.log("error: " + response.error);
+                return;
+            }
+            console.log('data returned:',response.result)
+            entityAlign.graphA = {}
+            entityAlign.graphA.edges = response.result.links
+            entityAlign.graphA.nodes = response.result.nodes 
+
+            updateGraph1_d3_afterLoad();
+        }
+
+    });
+}
+
+
+
+function  updateGraph1_d3_afterLoad() {
+
+    var enter;
+
+            // remove any previous graph
+            $('#graph1-drawing-canvas').remove();
+
+            svg = d3.select("#graph1").append('svg')
+                .attr("id","graph1-drawing-canvas")
+                .attr("width",800)
+                .attr("height",800)
+
+
+            link = svg.selectAll(".link")
+                .data(entityAlign.graphA.edges)
+                .enter()
+                .append("line")
+                .classed("link", true)
+                .style("stroke-width", 2.0);
+
+
+            node = svg.selectAll(".node")
+                .data(entityAlign.graphA.nodes, function (d) { return d.name; })
+                .on("mouseover", function(d) {
+                        loggedVisitToEntry(d);
+                });
+
+            // support two different modes, where circular nodes are drawn for each entity or for where the
+            // sender name is used inside a textbox. if entityAlign.textmode = true, then render text
+
+            if (!entityAlign.textmode) {
+                    enter = node.enter().append("circle")
+                        .classed("node", true)
+                        .attr("r", 5)
+                        .style("opacity", 0.0)
+                        .style("fill", "red")
+                        .on("click", function(d) {
+                            loggedVisitToEntry(d);
+                            //centerOnClickedGraphNode(d.tweet);
+                        });
+
+
+                    enter.transition()
+                        .duration(transition_time)
+                        .attr("r", 12)
+                        .style("opacity", 1.0)
+                        .style("fill", 
+                            function (d) {if (d.matched) {return "DarkRed"} else {return color(1)};}
+                        );
+
+                    enter.call(entityAlign.force1.drag)
+                        .append("title")
+                        //.call(entityAlign.force2.drag)
+                        .text(function (d) {
+                            var returntext = ""
+                            for (var attrib in d) {
+                                if (attrib != 'data') {
+                                    returntext = returntext + attrib+":"+d[attrib]+"\n" 
+                                }
+                            }
+                            return returntext;
+                        })
+                        .on("mouseover", function(d) {
+                        loggedDragVisitToEntry(d);
+                        });
+
+                    // adjust the color according to the matched state. Make matched be dark red, otherwise pass the default color.
+                    // should amend this to use the entity distance color, but the datasets don't currently 
+
+                    node.style("fill", function (d) {if (d.matched) {return "DarkRed"} else {return color(1)}});
+
+                    node.exit()
+                        .transition()
+                        .duration(transition_time)
+                        .style("opacity", 0.0)
+                        .attr("r", 0.0)
+                        .style("fill", "black")
+                        .remove();
+
+                    entityAlign.force1.nodes(entityAlign.graphA.nodes)
+                        .links(entityAlign.graphA.edges)
+                        .start();
+
+                    entityAlign.force1.on("tick", function () {
+                        link.attr("x1", function (d) { return d.source.x; })
+                            .attr("y1", function (d) { return d.source.y; })
+                            .attr("x2", function (d) { return d.target.x; })
+                            .attr("y2", function (d) { return d.target.y; });
+
+                        node.attr("cx", function (d) { return d.x; })
+                            .attr("cy", function (d) { return d.y; });
+                    });
+            } else {
+
+                enter = node.enter()
+                    .append("g")
+                    .classed("node", true);
+
+                enter.append("text")
+                    .text(function (d) {
+                        return d.tweet;
+                    })
+
+                    // use the default cursor so the text doesn't look editable
+                    .style('cursor', 'default')
+
+                    // enable click to recenter
+                    .on("click", function(d) {
+                        loggedVisitToEntry(d);
+                    });
+
+
+                enter.insert("rect", ":first-child")
+                    .attr("width", function (d) { return d.bbox.width + 4; })
+                    .attr("height", function (d) { return d.bbox.height + 4; })
+                    .attr("y", function (d) { return d.bbox.y - 2; })
+                    .attr("x", function (d) { return d.bbox.x - 2; })
+                    .attr('rx', 4)
+                    .attr('ry', 4)
+                    .style("stroke", function (d) {
+                        return color(d.distance);
+                    })
+                    .style("stroke-width", "2px")
+                    .style("fill", "#e5e5e5")
+                    .style("fill-opacity", 0.8);
+
+                entityAlign.force1.on("tick", function () {
+                    link.attr("x1", function (d) { return d.source.x; })
+                        .attr("y1", function (d) { return d.source.y; })
+                        .attr("x2", function (d) { return d.target.x; })
+                        .attr("y2", function (d) { return d.target.y; });
+
+                    node.attr("transform", function (d) {
+                        return "translate(" + d.x + ", " + d.y + ")";
+                    });
+                });
+               entityAlign.force1.linkDistance(100);
+            }
+            entityAlign.force1.nodes(entityAlign.graphA.nodes)
+                .links(entityAlign.graphA.edges)
+                .start();
+
+        
+            enter.call(entityAlign.force1.drag);
+
+            node.exit()
+                .transition()
+                .duration(transition_time)
+                .style("opacity", 0.0)
+                .attr("r", 0.0)
+                .style("fill", "black")
+                .remove();
+}
+
+
 var drag = d3.behavior.drag()
     .origin(function(d) { return d; })
     .on("dragstart", dragstarted)
@@ -443,8 +665,6 @@ function updateGraph2_d3() {
 
      var logText = "dataset2 select: start="+graphPathname;
      entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
-
-
      
 
     $.ajax({
@@ -733,7 +953,7 @@ function firstTimeInitialize() {
 
         // set a watcher on the dataset selector so datasets are filled in
         // automatically when the user selects it via UI selector elements. 
-        
+
         d3.select("#graph1-selector")
             .on("change", updateGraph1);
         d3.select("#graph2-selector")
@@ -764,9 +984,8 @@ function firstTimeInitialize() {
 // *** initialization.  What do we do the first time the app is opened and the document is ready?
 
 window.onload = function ()  {
-    firstTimeInitialize();
-    // Fill out the dataset selectors with graph datasets that we can choose from  
 
+        firstTimeInitialize();    // Fill out the dataset selectors with graph datasets that we can choose from  
 };
 
 
@@ -807,6 +1026,11 @@ function toggleShowMatches() {
 
 }
 
+function updateMatchingStatusInGraphs() {
+
+}
+
+
 // this routine reads the dataset pointed to by the seed selector and reads the seeds out of the dataset using the "loadseeds" python service.  The seeds
 // come across as an array of JSON objects.   It is assumed the seed objects have a "ga" and "gb" component. Once the data is read, it is loaded into a 
 // currentMatches array, which may be augmented by the graph matching algorithm later.  The seeds function as the initial values in the matching array. 
@@ -836,11 +1060,14 @@ function loadNewSeeds() {
                 //console.log( response.result.seeds[seed])
                 entityAlign.currentMatches.push(response.result.seeds[seed])
             }
+            // set the attributes in the graph nodes so color can show existing matches
+            updateMatchingStatusInGraphs()
         }
+
     })
-
-
 }
+
+
 
 function runGraphMatching() {
     console.log("do graph matching")

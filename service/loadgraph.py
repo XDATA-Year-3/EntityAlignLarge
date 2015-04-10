@@ -68,6 +68,8 @@ def run(host,database,graphname):
     for edge in graph.edges():
         fixedEdges.append({'source':int(edge[0]),'target': int(edge[1]),'weight':1})
 
+    # add a "matched" node to test rendering colors artificially
+    fixedNodes[24]['matched'] = 12
 
     # Pack the results into the response object, and return it.
     response['result'] = {}
