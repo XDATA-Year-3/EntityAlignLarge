@@ -65,7 +65,7 @@ def rearrangeGraphWithSeeds(ingraph,seedList):
                 # if the node pointed to by seednode has already been moved by a previous seed, then 
                 # make this substitution against the node in its new location. 
                 if seednode in substitutions.keys():
-                    destination = substitution[seednode]
+                    destination = substitutions[seednode]
                 else:
                     destination = seednode
                 # there is already a node where we want to put this seed. Swap the nodes
@@ -96,7 +96,7 @@ def findCorrespondingNodeInMatrix(mat,size, seedcount,node):
         
 
 
-def run(graphAnodes,graphAedges,graphBnodes,graphBedges):
+def run(graphAnodes,graphAedges,graphBnodes,graphBedges,seeds):
 
     # building graphA, graphB networkX structures from the separate node & link structures 
     # passed from javascript.  For the moment, we don't allow multiple links between edges or directed edges
@@ -106,8 +106,10 @@ def run(graphAnodes,graphAedges,graphBnodes,graphBedges):
     graphAedges_obj =  bson.json_util.loads(graphAedges)
     graphBnodes_obj =  bson.json_util.loads(graphBnodes)
     graphBedges_obj =  bson.json_util.loads(graphBedges)
+    seed_obj = bson.json_util.loads(seeds)
 
     # for some reason, edges are coming across pre-linked with nodes, lets just extract out
+
 
     print "reassembling graph A and B"
 
@@ -117,13 +119,17 @@ def run(graphAnodes,graphAedges,graphBnodes,graphBedges):
     for value in graphAnodes_obj.itervalues():
         print value
         ga.add_node(value['id'])
+        #  add node attributes, like name, etc. to new node
+        for attrib in value['data'][1]:
+            print 'found attrib:', attrib
+            ga.node[value['id']][attrib] = value['data'][1][attrib]
     # traverse through the edges
     for link in graphAedges_obj.itervalues():
         print link
         ga.add_edge(link['source'],link['target'])
     print "received graph A:"
-    print ga.nodes()
-    print ga.edges()
+    #print ga.nodes()
+    #print ga.edges()
 
     # start with an empty graph instance
     gb = nx.Graph()
@@ -131,13 +137,17 @@ def run(graphAnodes,graphAedges,graphBnodes,graphBedges):
     for value in graphBnodes_obj.itervalues():
         print value
         gb.add_node(value['id'])
+        #  add node attributes, like name, etc. to new node
+        for attrib in value['data'][1]:
+            print 'found attrib:', attrib
+            gb.node[value['id']][attrib] = value['data'][1][attrib]        
     # traverse through the edges
     for link in graphBedges_obj.itervalues():
         print link
         gb.add_edge(link['source'],link['target'])
     print "received graph B:"
-    print gb.nodes()
-    print gb.edges()
+    #print gb.nodes()
+    #print gb.edges()
 
 
     # initialize igraph to get JHU SGM algorithm
@@ -149,8 +159,8 @@ def run(graphAnodes,graphAedges,graphBnodes,graphBedges):
 
     ga_num_nodes = len(ga.nodes())
     gb_num_nodes = len(gb.nodes())
-    ga_larger_count = ga_num_nodes - gb_num_nodes
-    print ga_larger_count
+    ga_larger_count = ga_num_nodes - gb_num_nodes 
+    print "graph a is larger by: ", ga_larger_count, ' nodes'
     if ga_larger_count > 0:
         addNodesToGraph(gb,abs(ga_larger_count))
     else:
@@ -161,41 +171,64 @@ def run(graphAnodes,graphAedges,graphBnodes,graphBedges):
     print nx.info(gb)
 
     num_nodes = len(ga.nodes())
+    num_seeds = len(seed_obj)
 
     # get integer node labels
     gan = nx.convert_node_labels_to_integers(ga)
     gbn = nx.convert_node_labels_to_integers(gb)
-    match2 = returnCommonMatches(gan,gbn)
 
-    print len(match2.keys()), " nodes match:"
-    print match2
+    # now make separate lists of seeds for each graph
+    ga_seeds = []
+    gb_seeds = []
+    for seed in seed_obj:
+        ga_seeds.append(seed['ga'])
+        gb_seeds.append(seed['gb'])
+
+    gan_seeds = rearrangeGraphWithSeeds(gan,ga_seeds)
+    gbn_seeds = rearrangeGraphWithSeeds(gbn,gb_seeds)
 
     # temporarily write out as a GraphML format (which preserved node order, then read back in on the igraph
     # side.  This is probably unnecessary, but it was done in the initial prototypes, so preserved here. )
-    #nx.write_graphml(gan_seeds,"/tmp/gan_seeds.gml")
-    #nx.write_graphml(gbn_seeds,"/tmp/gbn_seeds.gml")
-    #robjects.r("gA <- read.graph('/tmp/gan_seeds.gml',format='graphML')")
-    #robjects.r("gB <- read.graph('/tmp/gbn_seeds.gml',format='graphML')")
+    nx.write_graphml(gan_seeds,"/tmp/gan_seeds.gml")
+    nx.write_graphml(gbn_seeds,"/tmp/gbn_seeds.gml")
+    robjects.r("gA <- read.graph('/tmp/gan_seeds.gml',format='graphML')")
+    robjects.r("gB <- read.graph('/tmp/gbn_seeds.gml',format='graphML')")
 
     # convert to an adjacency matrix for the SGM algorithm
-    #robjects.r("matA <- as.matrix(get.adjacency(gA))")
-    #robjects.r("matB <- as.matrix(get.adjacency(gB))")
+    robjects.r("matA <- as.matrix(get.adjacency(gA))")
+    robjects.r("matB <- as.matrix(get.adjacency(gB))")
+
+    print robjects.r("gA")
+    print robjects.r("gB")
 
     # initialize the start matrix.  This is set to uniform values initially, but I think this is 
     # somewhat sensitive to data values
-    #number_of_nonseed_nodes = num_nodes - len(seeds)
+    number_of_nonseed_nodes = num_nodes - num_seeds
 
     #print robjects.r('startMatrix = matrix( 1/(44-6), (44-6),(44-6) )')
-    #print robjects.r('startMatrix = matrix( 1/'+number_of_nonseed_nodes+', ('+number_of_nonseed_nodes+')),('+number_of_nonseed_nodes+')')
+    commandstring = 'startMatrix = matrix( 1/'+str(number_of_nonseed_nodes)+', '+str(number_of_nonseed_nodes)+','+str(number_of_nonseed_nodes)+')'
+    print 'executing: ',commandstring
+    print robjects.r(commandstring)
+
+
+    commandstring = 'P <- match_vertices(matA,matB,m='+str(num_seeds)+',start=startMatrix,100)'
+    print 'executing: ',commandstring
+
+    print robjects.r(commandstring)
+
+    # pull graph match results back from igraph
+    result =  robjects.r('P$P')
+    sizeP = robjects.r('nrow(P$P)')
+
+    # copy results into a new 'matching list'
+
 
     # Create an empty response object.
     response = {}
 
     # Pack the results into the response object, and return it.
     response['result'] = {}
-    #response['result']['status'] = fixedNodes
-    #response['result']['bijection'] = fixedEdges
-    connection.close()
+  
 
     # Return the response object.
     #tangelo.log(str(response))

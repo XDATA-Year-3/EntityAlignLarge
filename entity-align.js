@@ -1351,7 +1351,8 @@ function runSeededGraphMatching() {
             graphAnodes: JSON.stringify(entityAlign.SavedGraphA.nodes),
             graphAedges: JSON.stringify(entityAlign.SavedGraphA.edges),    
             graphBnodes: JSON.stringify(entityAlign.SavedGraphB.nodes),         
-            graphBedges: JSON.stringify(entityAlign.SavedGraphB.edges)
+            graphBedges: JSON.stringify(entityAlign.SavedGraphB.edges),
+            seeds: JSON.stringify(entityAlign.currentMatches)
         },
         dataType: "json",
         success: function (response) {
