@@ -1,4 +1,5 @@
 import bson
+import bson.json_util
 import pymongo
 import json
 from bson import ObjectId
@@ -7,6 +8,7 @@ import string
 import tangelo
 
 import networkx as nx
+from networkx.readwrite import json_graph
 import rpy2.robjects as robjects
 
 
@@ -94,10 +96,51 @@ def findCorrespondingNodeInMatrix(mat,size, seedcount,node):
         
 
 
-def run(host,database,graphA, graphB, seeds):
+def run(graphAnodes,graphAedges,graphBnodes,graphBedges):
 
- 
-     # initialize igraph to get JHU SGM algorithm
+    # building graphA, graphB networkX structures from the separate node & link structures 
+    # passed from javascript.  For the moment, we don't allow multiple links between edges or directed edges
+
+  # first decode the argument from being passed through a URL
+    graphAnodes_obj =  bson.json_util.loads(graphAnodes)
+    graphAedges_obj =  bson.json_util.loads(graphAedges)
+    graphBnodes_obj =  bson.json_util.loads(graphBnodes)
+    graphBedges_obj =  bson.json_util.loads(graphBedges)
+
+    # for some reason, edges are coming across pre-linked with nodes, lets just extract out
+
+    print "reassembling graph A and B"
+
+    # start with an empty graph instance
+    ga = nx.Graph()
+    # traverse through the nodes from the app and add them to the new graph instance
+    for value in graphAnodes_obj.itervalues():
+        print value
+        ga.add_node(value['id'])
+    # traverse through the edges
+    for link in graphAedges_obj.itervalues():
+        print link
+        ga.add_edge(link['source'],link['target'])
+    print "received graph A:"
+    print ga.nodes()
+    print ga.edges()
+
+    # start with an empty graph instance
+    gb = nx.Graph()
+    # traverse through the nodes from the app and add them to the new graph instance
+    for value in graphBnodes_obj.itervalues():
+        print value
+        gb.add_node(value['id'])
+    # traverse through the edges
+    for link in graphBedges_obj.itervalues():
+        print link
+        gb.add_edge(link['source'],link['target'])
+    print "received graph B:"
+    print gb.nodes()
+    print gb.edges()
+
+
+    # initialize igraph to get JHU SGM algorithm
     print robjects.r('library(igraph)')
 
     # check the nunber of nodes between the two graphs and add nodes to the smaller graph, so the have
@@ -129,29 +172,29 @@ def run(host,database,graphA, graphB, seeds):
 
     # temporarily write out as a GraphML format (which preserved node order, then read back in on the igraph
     # side.  This is probably unnecessary, but it was done in the initial prototypes, so preserved here. )
-    nx.write_graphml(gan_seeds,"/tmp/gan_seeds.gml")
-    nx.write_graphml(gbn_seeds,"/tmp/gbn_seeds.gml")
-    robjects.r("gA <- read.graph('/tmp/gan_seeds.gml',format='graphML')")
-    robjects.r("gB <- read.graph('/tmp/gbn_seeds.gml',format='graphML')")
+    #nx.write_graphml(gan_seeds,"/tmp/gan_seeds.gml")
+    #nx.write_graphml(gbn_seeds,"/tmp/gbn_seeds.gml")
+    #robjects.r("gA <- read.graph('/tmp/gan_seeds.gml',format='graphML')")
+    #robjects.r("gB <- read.graph('/tmp/gbn_seeds.gml',format='graphML')")
 
     # convert to an adjacency matrix for the SGM algorithm
-    robjects.r("matA <- as.matrix(get.adjacency(gA))")
-    robjects.r("matB <- as.matrix(get.adjacency(gB))")
+    #robjects.r("matA <- as.matrix(get.adjacency(gA))")
+    #robjects.r("matB <- as.matrix(get.adjacency(gB))")
 
     # initialize the start matrix.  This is set to uniform values initially, but I think this is 
     # somewhat sensitive to data values
-    number_of_nonseed_nodes = num_nodes - len(seeds)
+    #number_of_nonseed_nodes = num_nodes - len(seeds)
 
     #print robjects.r('startMatrix = matrix( 1/(44-6), (44-6),(44-6) )')
-    print robjects.r('startMatrix = matrix( 1/'+number_of_nonseed_nodes+', ('+number_of_nonseed_nodes+')),('+number_of_nonseed_nodes+')')
+    #print robjects.r('startMatrix = matrix( 1/'+number_of_nonseed_nodes+', ('+number_of_nonseed_nodes+')),('+number_of_nonseed_nodes+')')
 
     # Create an empty response object.
     response = {}
 
     # Pack the results into the response object, and return it.
     response['result'] = {}
-    response['result']['status'] = fixedNodes
-    response['result']['bijection'] = fixedEdges
+    #response['result']['status'] = fixedNodes
+    #response['result']['bijection'] = fixedEdges
     connection.close()
 
     # Return the response object.

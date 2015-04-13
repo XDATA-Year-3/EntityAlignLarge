@@ -42,6 +42,13 @@ entityAlign.showMatchesEnabled = false
 entityAlign.graphA = null
 entityAlign.graphB = null
 
+// a backup copy of the files as read from the datastore is kept to send to the SGM algortihm.  The regular .graphA and .graphB entries 
+// are operated-on by D3, so the datastructures don't work passed back to networkX directly anymore.  So a backup is kepts and this pristine
+// copy is used to initialize the SGM algorithm executed as a tangelo service.
+
+entityAlign.SavedGraphA = null
+entityAlign.SavedGraphB = null
+
 // there is a global array corresponding to the current matches known between the two loaded graphs.  The matches are an array of JSON objects, each with a 
 // "ga" and "gb" attribute, whose corresponding values are integers that match the node IDs. 
 entityAlign.currentMatches = []
@@ -119,11 +126,15 @@ function updateGraph1() {
 
 
 function updateGraph2() {
+    initGraph2FromDatastore()
     updateGraph2_d3()
-    //updateGraph2_vega()
 }
 
-
+// define a key return function that makes sre nodes are matched up using their ID values.  Otherwise D3 might
+// color the wrong nodes if the access order changes
+function nodeKeyFunction(d) {
+    return d.id
+}
 
 
 function updateGraph2_vega() {
@@ -473,12 +484,84 @@ function   initGraph1FromDatastore()
             entityAlign.graphA.edges = response.result.links
             entityAlign.graphA.nodes = response.result.nodes 
 
+            // save a copy to send to the tangelo service. D3 will change the original around, so lets 
+            // clone the object before it is changed
+            entityAlign.SavedGraphA = {}
+            entityAlign.SavedGraphA.edges   = jQuery.extend(true, {}, response.result.links);
+            entityAlign.SavedGraphA.nodes = jQuery.extend(true, {}, response.result.nodes);
+
             updateGraph1_d3_afterLoad();
         }
 
     });
 }
 
+
+
+function   initGraph2FromDatastore()
+{
+ 
+  "use strict";
+     //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
+     entityAlign.ac.logSystemActivity('entityAlign - initialize graph A executed');
+    var center,
+        data,
+        end_date,
+        hops,
+        change_button,
+        start_date,
+        update;
+
+
+    d3.select("#nodes2").selectAll("*").remove();
+    d3.select("#links2").selectAll("*").remove();
+
+    // Get the name of the graph dataset to render
+    var graphPathname = d3.select("#graph2-selector").node();
+    var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+
+     var logText = "dataset2 select: start="+graphPathname;
+     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+
+    $.ajax({
+        // generalized collection definition
+        url: "service/loadgraph/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset,
+        data: data,
+        dataType: "json",
+        success: function (response) {
+            var angle,
+                enter,
+                svg,
+                svg2,
+                link,
+                map,
+                newidx,
+                node,
+                tau;
+
+
+            if (response.error ) {
+                console.log("error: " + response.error);
+                return;
+            }
+            console.log('data returned:',response.result)
+
+            // make a copy that will support the D3-based visualization
+            entityAlign.graphB = {}
+            entityAlign.graphB.edges = response.result.links
+            entityAlign.graphB.nodes = response.result.nodes 
+
+            // save a copy to send to the tangelo service. D3 will change the original around, so lets 
+            // clone the object before it is changed
+            entityAlign.SavedGraphB = {}
+            entityAlign.SavedGraphB.edges   = jQuery.extend(true, {}, response.result.links);
+            entityAlign.SavedGraphB.nodes = jQuery.extend(true, {}, response.result.nodes);
+            // temporarily disabled until we fix node rendering problem
+            //updateGraph2_d3_afterLoad();
+        }
+
+    });
+}
 
 
 function  updateGraph1_d3_afterLoad() {
@@ -503,7 +586,7 @@ function  updateGraph1_d3_afterLoad() {
 
 
             node = svg.selectAll(".node")
-                .data(entityAlign.graphA.nodes, function (d) { return d.name; })
+                .data(entityAlign.graphA.nodes, nodeKeyFunction)
                 .on("mouseover", function(d) {
                         loggedVisitToEntry(d);
                 });
@@ -537,7 +620,9 @@ function  updateGraph1_d3_afterLoad() {
                         .text(function (d) {
                             var returntext = ""
                             for (var attrib in d) {
-                                if (attrib != 'data') {
+                                // mask away the display of attributes not associated with the network.  Hide the D3 specific
+                                // position and velocity stuff
+                                if (!_.contains(['data','x','y','px','py'],attrib)) {
                                     returntext = returntext + attrib+":"+d[attrib]+"\n" 
                                 }
                             }
@@ -550,7 +635,13 @@ function  updateGraph1_d3_afterLoad() {
                     // adjust the color according to the matched state. Make matched be dark red, otherwise pass the default color.
                     // should amend this to use the entity distance color, but the datasets don't currently 
 
-                    node.style("fill", function (d) {if (d.matched) {return "DarkRed"} else {return color(1)}});
+                    node
+                        .filter(function(d,i) { return d.id != 0})
+                        .style("fill", function (d) {if (d.matched) {return "DarkRed"} else {return color(1)}});
+
+                    node
+                        .filter(function(d,i) { return d.id == 0})
+                        .style("fill", "orange");
 
                     node.exit()
                         .transition()
@@ -625,6 +716,165 @@ function  updateGraph1_d3_afterLoad() {
 
         
             enter.call(entityAlign.force1.drag);
+
+            node.exit()
+                .transition()
+                .duration(transition_time)
+                .style("opacity", 0.0)
+                .attr("r", 0.0)
+                .style("fill", "black")
+                .remove();
+}
+
+
+// this is still not being called yet, because of the zoom/translate differences and missing nodes.  
+
+function  updateGraph2_d3_afterLoad() {
+
+    var enter;
+
+            // remove any previous graph
+            $('#graph2-drawing-canvas').remove();
+
+            svg = d3.select("#graph2").append('svg')
+                .attr("id","graph2-drawing-canvas")
+                .attr("width",800)
+                .attr("height",800)
+
+
+            link = svg.selectAll(".link")
+                .data(entityAlign.graphB.edges)
+                .enter()
+                .append("line")
+                .classed("link", true)
+                .style("stroke-width", 2.0);
+
+
+            node = svg.selectAll(".node")
+                .data(entityAlign.graphB.nodes, nodeKeyFunction)
+                .on("mouseover", function(d) {
+                        loggedVisitToEntry(d);
+                });
+
+            // support two different modes, where circular nodes are drawn for each entity or for where the
+            // sender name is used inside a textbox. if entityAlign.textmode = true, then render text
+
+            if (!entityAlign.textmode) {
+                    enter = node.enter().append("circle")
+                        .classed("node", true)
+                        .attr("r", 5)
+                        .style("opacity", 0.0)
+                        .style("fill", "red")
+                        .on("click", function(d) {
+                            loggedVisitToEntry(d);
+                            //centerOnClickedGraphNode(d.tweet);
+                        });
+
+
+                    enter.transition()
+                        .duration(transition_time)
+                        .attr("r", 12)
+                        .style("opacity", 1.0)
+                        .style("fill", 
+                            function (d) {if (d.matched) {return "DarkRed"} else {return color(1)};}
+                        );
+
+                    enter.call(entityAlign.force2.drag)
+                        .append("title")
+                        //.call(entityAlign.force2.drag)
+                        .text(function (d) {
+                            var returntext = ""
+                            for (var attrib in d) {
+                                // mask away the display of attributes not associated with the network.  Hide the D3 specific
+                                // position and velocity stuff
+                                if (!_.contains(['data','x','y','px','py'],attrib)) {
+                                    returntext = returntext + attrib+":"+d[attrib]+"\n" 
+                                }
+                            }
+                            return returntext;
+                        })
+                        .on("mouseover", function(d) {
+                        loggedDragVisitToEntry(d);
+                        });
+
+                    // adjust the color according to the matched state. Make matched be dark red, otherwise pass the default color.
+                    // should amend this to use the entity distance color, but the datasets don't currently 
+
+                    node.style("fill", function (d) {if (d.matched) {return "DarkRed"} else {return color(1)}});
+
+                    node.exit()
+                        .transition()
+                        .duration(transition_time)
+                        .style("opacity", 0.0)
+                        .attr("r", 0.0)
+                        .style("fill", "black")
+                        .remove();
+
+                    entityAlign.force1.nodes(entityAlign.graphB.nodes)
+                        .links(entityAlign.graphB.edges)
+                        .start();
+
+                    entityAlign.force1.on("tick", function () {
+                        link.attr("x1", function (d) { return d.source.x; })
+                            .attr("y1", function (d) { return d.source.y; })
+                            .attr("x2", function (d) { return d.target.x; })
+                            .attr("y2", function (d) { return d.target.y; });
+
+                        node.attr("cx", function (d) { return d.x; })
+                            .attr("cy", function (d) { return d.y; });
+                    });
+            } else {
+
+                enter = node.enter()
+                    .append("g")
+                    .classed("node", true);
+
+                enter.append("text")
+                    .text(function (d) {
+                        return d.tweet;
+                    })
+
+                    // use the default cursor so the text doesn't look editable
+                    .style('cursor', 'default')
+
+                    // enable click to recenter
+                    .on("click", function(d) {
+                        loggedVisitToEntry(d);
+                    });
+
+
+                enter.insert("rect", ":first-child")
+                    .attr("width", function (d) { return d.bbox.width + 4; })
+                    .attr("height", function (d) { return d.bbox.height + 4; })
+                    .attr("y", function (d) { return d.bbox.y - 2; })
+                    .attr("x", function (d) { return d.bbox.x - 2; })
+                    .attr('rx', 4)
+                    .attr('ry', 4)
+                    .style("stroke", function (d) {
+                        return color(d.distance);
+                    })
+                    .style("stroke-width", "2px")
+                    .style("fill", "#e5e5e5")
+                    .style("fill-opacity", 0.8);
+
+                entityAlign.force1.on("tick", function () {
+                    link.attr("x1", function (d) { return d.source.x; })
+                        .attr("y1", function (d) { return d.source.y; })
+                        .attr("x2", function (d) { return d.target.x; })
+                        .attr("y2", function (d) { return d.target.y; });
+
+                    node.attr("transform", function (d) {
+                        return "translate(" + d.x + ", " + d.y + ")";
+                    });
+                });
+               entityAlign.force2.linkDistance(100);
+            }
+            entityAlign.force2.nodes(entityAlign.graphB.nodes)
+                .links(entityAlign.graphB.edges)
+                .start();
+
+        
+            enter.call(entityAlign.force2.drag);
 
             node.exit()
                 .transition()
@@ -961,7 +1211,7 @@ function firstTimeInitialize() {
         d3.select('#change-seeds')
             .on("click", loadNewSeeds);
         d3.select("#align-button")
-            .on("click", runGraphMatching);
+            .on("click", runSeededGraphMatching);
         d3.select("#show-matches-toggle")
             .attr("disabled", true)
             .on("click",  function () { entityAlign.showMatchesEnabled = !entityAlign.showMatchesEnabled; 
@@ -1026,9 +1276,6 @@ function toggleShowMatches() {
 
 }
 
-function updateMatchingStatusInGraphs() {
-
-}
 
 
 // this routine reads the dataset pointed to by the seed selector and reads the seeds out of the dataset using the "loadseeds" python service.  The seeds
@@ -1062,14 +1309,67 @@ function loadNewSeeds() {
             }
             // set the attributes in the graph nodes so color can show existing matches
             updateMatchingStatusInGraphs()
+            updateGraph1_d3_afterLoad()
         }
 
     })
 }
 
+// this function is called after a new set of seeds are loaded.  Assuming there are graphs present, we traverse through the graphs and set
+// the "matched" attribute to have the ID of the node in the opposing graph, which matches it. 
+
+function updateMatchingStatusInGraphs() {
+    clearMatchedStatusForGraph(entityAlign.graphA)
+    clearMatchedStatusForGraph(entityAlign.graphB)
+    for (match in  entityAlign.currentMatches) {
+        // set matched attributes
+        var match_record = entityAlign.currentMatches[match]
+        //console.log('match',match,'match_record',match_record)
+        var ga_index = match_record.ga
+        //console.log('match',match,'ga',ga_index)
+        var ga_node = entityAlign.graphA.nodes[ga_index]
+        //console.log(ga_node)
+        ga_node.matched = match_record.gb
+    }
+}
 
 
-function runGraphMatching() {
+function clearMatchedStatusForGraph(graph) {
+
+}
+
+
+function runSeededGraphMatching() {
     console.log("do graph matching")
+    console.log(entityAlign.graphB,entityAlign.graphA)
+    $.ajax({
+        type: 'PUT',
+        // generalized collection definition
+        url: "service/jhu_seeded_graph_matching" ,
+        // + "/" + entityAlign.currentMatches
+        data: {
+            graphAnodes: JSON.stringify(entityAlign.SavedGraphA.nodes),
+            graphAedges: JSON.stringify(entityAlign.SavedGraphA.edges),    
+            graphBnodes: JSON.stringify(entityAlign.SavedGraphB.nodes),         
+            graphBedges: JSON.stringify(entityAlign.SavedGraphB.edges)
+        },
+        dataType: "json",
+        success: function (response) {
+
+            if (response.error ) {
+                console.log("error: " + response.error);
+                return;
+            }
+            console.log('data returned: from SGM',response.result)
+            for (seed in response.result.seeds) {
+                //console.log( response.result.seeds[seed])
+                entityAlign.currentMatches.push(response.result.seeds[seed])
+            }
+            // set the attributes in the graph nodes so color can show existing matches
+            updateMatchingStatusInGraphs()
+            updateGraph1_d3_afterLoad()
+        }
+
+    })
 }
 
