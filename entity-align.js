@@ -127,6 +127,8 @@ function updateGraph1() {
 
 function updateGraph2() {
     initGraph2FromDatastore()
+    // this rendering call below is the old style rendering, which doesn't update.  comment this out in favor of using
+    // updateGraph2_d3_afterLoad() when the new method works correctly
     updateGraph2_d3()
 }
 
@@ -233,7 +235,7 @@ function updateGraph2_vega() {
 function updateGraph1_d3() {
     "use strict";
      //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     entityAlign.ac.logSystemActivity('entityAlign - updateGraph 2 display executed');
+     entityAlign.ac.logSystemActivity('entityAlign - updateGraph 1 display executed');
     var center,
         data,
         end_date,
@@ -428,10 +430,9 @@ function updateGraph1_d3() {
     });
 }
 
-
-
-
-
+// The InitGraph functions are called the first time a graph is loaded from the graph datastore.  The ajax call to load from the store
+// is included here.  Globals variables are filled with the graph nodes and links.  No rendering is done in this method.  A method is 
+// written for graph1 and graph2.  The only difference between the graph1 and graph2 methods is that they fill different global variables.
 
 function   initGraph1FromDatastore()
 {
@@ -497,7 +498,6 @@ function   initGraph1FromDatastore()
 }
 
 
-
 function   initGraph2FromDatastore()
 {
  
@@ -556,17 +556,19 @@ function   initGraph2FromDatastore()
             entityAlign.SavedGraphB = {}
             entityAlign.SavedGraphB.edges   = jQuery.extend(true, {}, response.result.links);
             entityAlign.SavedGraphB.nodes = jQuery.extend(true, {}, response.result.nodes);
-            // temporarily disabled until we fix node rendering problem
-            //updateGraph2_d3_afterLoad();
+            updateGraph2_d3_afterLoad();
         }
 
     });
 }
 
+// The update_afterLoad routines are called whenever the graph should be visually refreshed from new state in the global variables:
+// entityAlign.graphA and .graphB.   
 
 function  updateGraph1_d3_afterLoad() {
 
     var enter;
+    transition_time = 600;
 
             // remove any previous graph
             $('#graph1-drawing-canvas').remove();
@@ -616,7 +618,6 @@ function  updateGraph1_d3_afterLoad() {
 
                     enter.call(entityAlign.force1.drag)
                         .append("title")
-                        //.call(entityAlign.force2.drag)
                         .text(function (d) {
                             var returntext = ""
                             for (var attrib in d) {
@@ -732,6 +733,7 @@ function  updateGraph1_d3_afterLoad() {
 function  updateGraph2_d3_afterLoad() {
 
     var enter;
+    transition_time = 600;
 
             // remove any previous graph
             $('#graph2-drawing-canvas').remove();
@@ -781,7 +783,6 @@ function  updateGraph2_d3_afterLoad() {
 
                     enter.call(entityAlign.force2.drag)
                         .append("title")
-                        //.call(entityAlign.force2.drag)
                         .text(function (d) {
                             var returntext = ""
                             for (var attrib in d) {
@@ -800,6 +801,8 @@ function  updateGraph2_d3_afterLoad() {
                     // adjust the color according to the matched state. Make matched be dark red, otherwise pass the default color.
                     // should amend this to use the entity distance color, but the datasets don't currently 
 
+                    //node.style("fill", function (d) {if (d.matched) {return "DarkRed"} else {return color(1)}});
+
                     node.style("fill", function (d) {if (d.matched) {return "DarkRed"} else {return color(1)}});
 
                     node.exit()
@@ -810,11 +813,11 @@ function  updateGraph2_d3_afterLoad() {
                         .style("fill", "black")
                         .remove();
 
-                    entityAlign.force1.nodes(entityAlign.graphB.nodes)
+                    entityAlign.force2.nodes(entityAlign.graphB.nodes)
                         .links(entityAlign.graphB.edges)
                         .start();
 
-                    entityAlign.force1.on("tick", function () {
+                    entityAlign.force2.on("tick", function () {
                         link.attr("x1", function (d) { return d.source.x; })
                             .attr("y1", function (d) { return d.source.y; })
                             .attr("x2", function (d) { return d.target.x; })
@@ -857,7 +860,7 @@ function  updateGraph2_d3_afterLoad() {
                     .style("fill", "#e5e5e5")
                     .style("fill-opacity", 0.8);
 
-                entityAlign.force1.on("tick", function () {
+                entityAlign.force2.on("tick", function () {
                     link.attr("x1", function (d) { return d.source.x; })
                         .attr("y1", function (d) { return d.source.y; })
                         .attr("x2", function (d) { return d.target.x; })
@@ -1276,7 +1279,22 @@ function toggleShowMatches() {
 
 }
 
+// restore the graph to a state where there are no matches recorded for any nodes by deleting the matched properties on all nodes in the graphs.
 
+function removeMatchingRecordsFromGraphs() {
+    console.log('graphA:',entityAlign.graphA)
+    for (node in entityAlign.graphA.nodes) {
+        if (node.matched != 'undefined') {
+            delete node.matched
+        }
+    }
+    console.log('graphA after:',entityAlign.graphA)
+    for (node in entityAlign.graphB.nodes) {
+        if (node.matched != 'undefined') {
+            delete node.matched
+        }
+    }
+}
 
 // this routine reads the dataset pointed to by the seed selector and reads the seeds out of the dataset using the "loadseeds" python service.  The seeds
 // come across as an array of JSON objects.   It is assumed the seed objects have a "ga" and "gb" component. Once the data is read, it is loaded into a 
@@ -1286,6 +1304,7 @@ function loadNewSeeds() {
     console.log("loading seeds");
     // re-initialize the matches to an empty set
     entityAlign.currentMatches = []
+    removeMatchingRecordsFromGraphs()
     var pathname = d3.select("#seed-selector").node();
     var selectedDataset = pathname.options[pathname.selectedIndex].text;
 
@@ -1310,6 +1329,9 @@ function loadNewSeeds() {
             // set the attributes in the graph nodes so color can show existing matches
             updateMatchingStatusInGraphs()
             updateGraph1_d3_afterLoad()
+            // this is turned off until we figure out why rendering graph2 confuses the layout of graph1
+            //updateGraph2_d3_afterLoad()
+ 
         }
 
     })
@@ -1326,10 +1348,12 @@ function updateMatchingStatusInGraphs() {
         var match_record = entityAlign.currentMatches[match]
         //console.log('match',match,'match_record',match_record)
         var ga_index = match_record.ga
+        var gb_index = match_record.gb
         //console.log('match',match,'ga',ga_index)
         var ga_node = entityAlign.graphA.nodes[ga_index]
-        //console.log(ga_node)
+        var gb_node = entityAlign.graphB.nodes[gb_index]
         ga_node.matched = match_record.gb
+        gb_node.matched = match_record.ga
     }
 }
 
@@ -1362,13 +1386,15 @@ function runSeededGraphMatching() {
                 return;
             }
             console.log('data returned: from SGM',response.result)
-            for (seed in response.result.seeds) {
+            entityAlign.currentMatches = []
+            for (match in response.result.matches) {
                 //console.log( response.result.seeds[seed])
-                entityAlign.currentMatches.push(response.result.seeds[seed])
+                entityAlign.currentMatches.push(response.result.matches[match])
             }
             // set the attributes in the graph nodes so color can show existing matches
             updateMatchingStatusInGraphs()
             updateGraph1_d3_afterLoad()
+            //updateGraph2_d3_afterLoad()
         }
 
     })
