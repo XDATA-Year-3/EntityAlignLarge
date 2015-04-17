@@ -128,8 +128,8 @@ function updateGraph1() {
 function updateGraph2() {
     initGraph2FromDatastore()
     // this rendering call below is the old style rendering, which doesn't update.  comment this out in favor of using
-    // updateGraph2_d3_afterLoad() when the new method works correctly
-    updateGraph2_d3()
+     updateGraph2_d3_afterLoad() 
+    //updateGraph2_d3()
 }
 
 // define a key return function that makes sre nodes are matched up using their ID values.  Otherwise D3 might
@@ -1284,11 +1284,12 @@ function toggleShowMatches() {
 function removeMatchingRecordsFromGraphs() {
     console.log('graphA:',entityAlign.graphA)
     for (node in entityAlign.graphA.nodes) {
-        if (node.matched != 'undefined') {
+        if (node.hasOwnProperty('matched')) {
             delete node.matched
         }
     }
     console.log('graphA after:',entityAlign.graphA)
+    // repeat for graphB
     for (node in entityAlign.graphB.nodes) {
         if (node.matched != 'undefined') {
             delete node.matched
@@ -1328,9 +1329,14 @@ function loadNewSeeds() {
             }
             // set the attributes in the graph nodes so color can show existing matches
             updateMatchingStatusInGraphs()
-            updateGraph1_d3_afterLoad()
+            updateGraph2_d3_afterLoad()
+            // allow time for the layout of the first graph before doing the layout on the second.  This won't scale for large graphs,
+            // but it works for our simple testcases.  
+            setTimeout(function(){
+                updateGraph1_d3_afterLoad()
+            },1250);
             // this is turned off until we figure out why rendering graph2 confuses the layout of graph1
-            //updateGraph2_d3_afterLoad()
+
  
         }
 
@@ -1393,8 +1399,12 @@ function runSeededGraphMatching() {
             }
             // set the attributes in the graph nodes so color can show existing matches
             updateMatchingStatusInGraphs()
-            updateGraph1_d3_afterLoad()
-            //updateGraph2_d3_afterLoad()
+            updateGraph2_d3_afterLoad()
+            // allow time for the layout of the first graph before doing the layout on the second.  This won't scale for large graphs,
+            // but it works for our simple testcases.       
+            setTimeout(function(){
+                updateGraph1_d3_afterLoad()
+            },1250);
         }
 
     })
