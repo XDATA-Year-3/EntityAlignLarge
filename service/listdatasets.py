@@ -2,7 +2,7 @@ import bson
 import pymongo
 import json
 from bson import ObjectId
-from pymongo import Connection
+from pymongo import MongoClient
 import string
 import tangelo
 
@@ -18,8 +18,9 @@ def run(host,database):
    # begins with "seeds_" or not, since this routine can return the matching graphs (that don't start
     # with 'seeds_') or the matching seeds.
 
-    connection = Connection(host, 27017)
-    db = connection[database]
+    
+    client = MongoClient(host, 27017)
+    db = client[database]
     # get a list of all collections (excluding system collections)
     collection_list = db.collection_names(False)
     for coll in collection_list:
@@ -28,7 +29,7 @@ def run(host,database):
             print "found graph:", coll
             collectionNames.append(coll)
 
-    connection.close()
+    client.close()
 
     # Pack the results into the response object, and return it.
     response['result'] = collectionNames

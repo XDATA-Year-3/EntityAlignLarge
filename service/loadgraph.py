@@ -2,7 +2,7 @@ import bson
 import pymongo
 import json
 from bson import ObjectId
-from pymongo import Connection
+from pymongo import MongoClient
 import string
 import tangelo
 
@@ -19,8 +19,8 @@ def run(host,database,graphname):
    # that represents the graph to the application.  It might be faster to adopt to using a standard 
    # networkX JSON description, but this is certainly simple and flexible for an initial prototype.
 
-    connection = Connection(host, 27017)
-    db = connection[database]
+    client = MongoClient(host, 27017)
+    db = client[database]
     # get a list of all collections (excluding system collections)
     collection = db[graphname]
     
@@ -76,7 +76,7 @@ def run(host,database,graphname):
     response['result'] = {}
     response['result']['nodes'] = fixedNodes
     response['result']['links'] = fixedEdges
-    connection.close()
+    client.close()
 
     # Return the response object.
     #tangelo.log(str(response))
