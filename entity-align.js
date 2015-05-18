@@ -293,12 +293,15 @@ function   initGraph1FromDatastore()
     var graphPathname = d3.select("#graph1-selector").node();
     var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
 
+    var centralHandle  = document.getElementById('ga-name').value;
+    console.log('doing one hop around',centralHandle)
+
      var logText = "dataset1 select: start="+graphPathname;
      entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
 
     $.ajax({
         // generalized collection definition
-        url: "service/loadgraph/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset,
+        url: "service/loadonehop/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle,
         data: data,
         dataType: "json",
         success: function (response) {
@@ -312,20 +315,19 @@ function   initGraph1FromDatastore()
                 node,
                 tau;
 
-
             if (response.error ) {
                 console.log("error: " + response.error);
                 return;
             }
             console.log('data returned:',response.result)
             entityAlign.graphA = {}
-            entityAlign.graphA.edges = response.result.links
+            entityAlign.graphA.edges = response.result.links.shift()
             entityAlign.graphA.nodes = response.result.nodes 
 
             // save a copy to send to the tangelo service. D3 will change the original around, so lets 
             // clone the object before it is changed
             entityAlign.SavedGraphA = {}
-            entityAlign.SavedGraphA.edges   = jQuery.extend(true, {}, response.result.links);
+            entityAlign.SavedGraphA.edges   = jQuery.extend(true, {}, response.result.links.shift());
             entityAlign.SavedGraphA.nodes = jQuery.extend(true, {}, response.result.nodes);
 
             updateGraph1_d3_afterLoad();
@@ -1052,6 +1054,9 @@ function firstTimeInitialize() {
             .on("click", loadNewSeeds);
         d3.select("#align-button")
             .on("click", runSeededGraphMatching);
+        d3.select("#onehop-button")
+            .on("click", initGraph1FromDatastore);
+
         d3.select("#show-matches-toggle")
             .attr("disabled", true)
             .on("click",  function () { entityAlign.showMatchesEnabled = !entityAlign.showMatchesEnabled; 

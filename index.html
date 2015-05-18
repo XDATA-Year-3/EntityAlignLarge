@@ -169,14 +169,18 @@
         <text  id="ga-matchCount" style="margin-left:20px">0 </text>
         <text  style="margin-left:20px">matched nodes</text>    
         <p></p>
-         <input id='ga-name' style='margin-left:20px' disabled="disabled"> Enter an entity name</input> 
+        <input id='ga-name' style='margin-left:20px' disabled="disabled"> Enter an entity name</input> 
+        <p></p>
+        <a id='onehop-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Render local network</a>
+        <p></p>
+        <div id='graph1'></div>
     </div>
 
    <!-- center panel for showing the ranking results -->
     <div id='controls' class=col-md-4>
-        <a id='align-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Align Entities using SGM</a>
-        <a id='show-matches-toggle' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Show Match</a>
-        <a id='position-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Position Nodes</a>
+        <a id='align-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Seeded Graph Matching</a>
+        <a id='show-matches-toggle' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Exact Name Substring</a>
+        <a id='position-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Fuzzy Name Matching</a>
 
         <ul id="tabs" class="nav nav-tabs" data-tabs="tabs" >
           <li class="active" style="margin-left: 20px;"><a href="#graph-tab1" data-toggle="tab">Draggable Entity View</a></li>
