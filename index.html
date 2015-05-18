@@ -59,7 +59,6 @@
     #controls {
         background-color: ghostwhite;
         padding-bottom: 100%;
-        height: 100%;
     }    
 
     p {
@@ -157,6 +156,7 @@
 
    <!-- left panel for graph 1 -->
     <div class=col-md-4>
+
         <select id='graph1-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" ></select>
         <p id='ga-summary'></p>
         
@@ -167,34 +167,34 @@
         <text  style="margin-left:20px">links loaded</text>
         <p></p>
         <text  id="ga-matchCount" style="margin-left:20px">0 </text>
-        <text  style="margin-left:20px">matched nodes</text>
-
-        <!--<input id='ga-name' style='margin-left:20px'></div> -->
-
+        <text  style="margin-left:20px">matched nodes</text>    
+        <p></p>
+         <input id='ga-name' style='margin-left:20px' disabled="disabled"> Enter an entity name</input> 
     </div>
 
    <!-- center panel for showing the ranking results -->
     <div id='controls' class=col-md-4>
-      <!--  <select id='controls' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" ></select> -->
-        <ul id="tabs" class="nav nav-tabs" data-tabs="tabs">
+        <a id='align-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Align Entities using SGM</a>
+        <a id='show-matches-toggle' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Show Match</a>
+        <a id='position-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Position Nodes</a>
+
+        <ul id="tabs" class="nav nav-tabs" data-tabs="tabs" >
           <li class="active" style="margin-left: 20px;"><a href="#graph-tab1" data-toggle="tab">Draggable Entity View</a></li>
           <li><a href="#adjacency-tab1" data-toggle="tab">LineUp Entity View A</a></li>
         </ul>
-      <div id="graph1-content" class="tab-content">
-        <div class="tab-pane active" id="graph-tab1">
-            <h3 style="margin-left: 20px;">Draggable View</h3>
-            <div id=graph1 style='width=1000px; height=1000px'>
+        <div id="graph1-content" class="tab-content" style='height=500px'>
+            <div class="tab-pane active" id="graph-tab1">
+                <h3 style="margin-left: 20px; height=500px">Draggable View</h3>
+            
+            </div>
+            <div class="tab-pane" id="adjacency-tab1">
+                <h3>LineUp View </h3>
             </div>
         </div>
 
-        <div class="tab-pane" id="adjacency-tab1">
-            <h3>LineUp View </h3>
-        </div>
-      </div>
-    <a id='align-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Align Entities using SGM</a>
-    <a id='show-matches-toggle' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Show Match</a>
-    <a id='position-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Position Nodes</a>
+
     </div>
+   
 
   <!-- right panel for graph 2 -->
 
@@ -211,6 +211,24 @@
         <text  style="margin-left:20px">matched nodes</text>
 
     </div>
+</div>
 
+<!-- second row of the UI content across all columns -->
+<div class=row>
+    <!-- left panel for graph 1 -->
+    <div class=col-md-4>
+
+        <!-- <div id=graph1 style='width=1000px; '> -->
+    </div>
+
+    <!-- center column -->
+    <div class=col-md-4>
+       
+    </div>
+
+      <div class=col-md-4>
+         <p>third column content </p>
+    </div>
+</div>
 
 </body>

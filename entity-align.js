@@ -44,6 +44,8 @@ entityAlign.graphB = null
 
 entityAlign.graphA_dataset = null
 entityAlign.graphB_dataset = null
+entityAlign.graphAnodeNames = null
+entityAlign.graphBnodeNames = null
 
 // a backup copy of the files as read from the datastore is kept to send to the SGM algortihm.  The regular .graphA and .graphB entries 
 // are operated-on by D3, so the datastructures don't work passed back to networkX directly anymore.  So a backup is kepts and this pristine
@@ -124,6 +126,7 @@ function loggedDragVisitToEntry(d) {
 function updateGraph1() {
     //updateGraph1_d3()
     //initGraph1FromDatastore()
+    loadNodeNames("A")
     initGraphStats("A")
 
 }
@@ -134,8 +137,10 @@ function updateGraph2() {
     // this rendering call below is the old style rendering, which doesn't update.  comment this out in favor of using
      //updateGraph2_d3_afterLoad() 
     //updateGraph2_d3()
+    loadNodeNames("B")
     initGraphStats("B")
 }
+
 
 // define a key return function that makes sre nodes are matched up using their ID values.  Otherwise D3 might
 // color the wrong nodes if the access order changes
@@ -155,14 +160,7 @@ function   initGraphStats(graphIndexString)
   "use strict";
      //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
      entityAlign.ac.logSystemActivity('entityAlign - initialize graph A executed');
-    var center,
-        data,
-        end_date,
-        hops,
-        change_button,
-        start_date,
-        update;
-
+    var data
 
     // Get the name of the graph dataset to render
     if (graphIndexString == "A") {
@@ -202,6 +200,71 @@ function   initGraphStats(graphIndexString)
     });
 }
 
+// ----- start of autocomplete for users 
+
+// do a non-blocking call to a python service that returns all the names in the graph.  Assign this to a global variable
+function loadNodeNames(graphIndexString)
+{
+
+  // Get the name of the graph dataset to render
+    if (graphIndexString == "A") {
+        var graphPathname = d3.select("#graph1-selector").node();
+        var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+    } else {
+        var graphPathname = d3.select("#graph2-selector").node();
+        var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;        
+    }
+
+    // non-blocking call to initialize this 
+    var data
+    $.ajax({
+        url: "service/loadnodenames/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset,
+        data: data,
+        dataType: "json",
+        success: function (response) {
+
+            if (response.error ) {
+                console.log("error: " + response.error);
+                return;
+            }
+            console.log('data returned:',response.result)
+            if (graphIndexString == 'A') {
+                // copy the result into the array and enable name selection from the input field
+                entityAlign.graphAnodeNames = response.result.nodes
+                var inputfield = d3.select('#ga-name')
+                inputfield.attr("disabled", null);
+                updateUserList(response.result.nodes)
+            } else {
+                 entityAlign.graphBnodeNames = response.result.nodes
+            }
+        }
+    });
+}
+
+$('#ga-name').autocomplete().keyup(function (evt) {
+    console.log(evt)
+    // respond to enter by starting a query
+    if (evt.which === 13) {
+        updateUserList(entityAlign.graphAnodeNames);
+    }
+});
+
+// reset the user list on a new time range query
+function resetUserList() {
+    $('#ga-name').autocomplete({ source: [] });
+}
+
+// update the user list from a mongo response
+function updateUserList(namelist) {
+
+    resetUserList();
+
+    // Update the user filter selection box
+    // .slice(0, 10)
+    $('#ga-name').autocomplete({ source: namelist});
+}
+
+// ------ end of autocomplete users 
 
 
 // The InitGraph functions are called the first time a graph is loaded from the graph datastore.  The ajax call to load from the store
