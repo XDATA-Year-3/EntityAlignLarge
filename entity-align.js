@@ -477,7 +477,7 @@ function  updateGraph1_d3_afterLoad() {
 
                     node
                         .filter(function(d,i) { return d.id != 0})
-                        .style("fill", function (d) {if (d.matched) {return "DarkRed"} else {return color(1)}});
+                        .style("fill", function (d) {if (d.matched>-1) {return "DarkRed"} else {return color(1)}});
 
                     node
                         .filter(function(d,i) { return d.id == 0})
