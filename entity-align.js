@@ -1080,7 +1080,8 @@ function firstTimeInitialize() {
 
 window.onload = function ()  {
 
-        firstTimeInitialize();    // Fill out the dataset selectors with graph datasets that we can choose from  
+        firstTimeInitialize();    // Fill out the dataset selectors with graph datasets that we can choose from 
+        InitializeLineUpJS(); 
 };
 
 

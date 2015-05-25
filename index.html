@@ -26,20 +26,30 @@
 
 <link href=//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css rel=stylesheet>
 
-<script src="http://trifacta.github.io/vega/lib/topojson.js"></script>
-<script src="http://trifacta.github.io/vega/vega.js"></script>
-
 <!--
-<script src="http://trifacta.github.io/vega/lib/d3.v3.min.js"></script>
-<script src="http://trifacta.github.io/vega/lib/d3.geo.projection.min.js"></script>
 <script src="http://trifacta.github.io/vega/lib/topojson.js"></script>
 <script src="http://trifacta.github.io/vega/vega.js"></script>
 -->
 
-<!--
-<script src=cache/vega-1.3.3.min.js></script>
-<script src=cache/vega.js></script>
--->
+<!--  lineup inclusions -->
+
+<script src="lineup.js/demo/libs/FileSaver.js"></script>
+<script src="lineup.js/src/lineup_datastructure.js"></script>
+<script src="lineup.js/src/lineup_storage.js"></script>
+
+<link href='//fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+<link href="lineup.js/css/font-awesome.min.css" rel="stylesheet">
+<link href="lineup.js/css/style.css" rel="stylesheet">
+<link href="lineup.js/demo/css/style-demo.css" rel="stylesheet">
+
+<script src="lineup.js/src/lineup.js"></script>
+<script src="lineup.js/src/lineup_tableheader.js"></script>
+<script src="lineup.js/src/lineup_tablebody.js"></script>
+<script src="lineup.js/src/lineup_gui_helper.js"></script>
+<script src="lineup.js/src/lineup_mappingeditor.js"></script>
+
+<script src="lineup.js/demo/lineup_demo.js"></script>
+
 
 <style>
     html, body {
@@ -155,7 +165,7 @@
 <div class=row>
 
    <!-- left panel for graph 1 -->
-    <div class=col-md-4>
+    <div class=col-md-3>
 
         <select id='graph1-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" ></select>
         <p id='ga-summary'></p>
@@ -177,22 +187,44 @@
     </div>
 
    <!-- center panel for showing the ranking results -->
-    <div id='controls' class=col-md-4>
+    <div id='controls' class=col-md-6>
         <a id='align-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Seeded Graph Matching</a>
         <a id='show-matches-toggle' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Exact Name Substring</a>
         <a id='position-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Fuzzy Name Matching</a>
 
         <ul id="tabs" class="nav nav-tabs" data-tabs="tabs" >
-          <li class="active" style="margin-left: 20px;"><a href="#graph-tab1" data-toggle="tab">Draggable Entity View</a></li>
+          <li class="active" style="margin-left: 20px;"><a href="#graph-tab1" data-toggle="tab">LineUp View</a></li>
           <li><a href="#adjacency-tab1" data-toggle="tab">LineUp Entity View A</a></li>
         </ul>
         <div id="graph1-content" class="tab-content" style='height=500px'>
             <div class="tab-pane active" id="graph-tab1">
-                <h3 style="margin-left: 20px; height=500px">Draggable View</h3>
-            
+                <h3 style="margin-left: 20px; height=500px">LineUp View</h3>
+                
+                <!-- included excerpt from lineup definition -->
+                <div id="lugui-wrapper"></div>
+                    <script src="lineup.js/dist/LineUpJS.js"></script>
+
+                    <script>
+                        var config = {
+                        };
+                        var $container = d3.select("#lugui-wrapper");
+                        function createLineUp(desc, data) {
+                            return LineUp.create(LineUp.createLocalStorage(data, desc.columns, desc.layout, desc.primaryKey), $container, config);
+                        }
+                        $(function() {
+                            var lineup = null;
+                            d3.json('lineup.js/demo/data/data_minimal.json', function (desc) {
+                                d3.tsv('lineup.js/demo/data/'+desc.file, function (_data) {
+                                    lineup = createLineUp(desc, _data);
+                                });
+                            });
+                        })
+                    </script>
+
+
             </div>
             <div class="tab-pane" id="adjacency-tab1">
-                <h3>LineUp View </h3>
+                <h3>Summary View </h3>
             </div>
         </div>
 
@@ -202,7 +234,7 @@
 
   <!-- right panel for graph 2 -->
 
-     <div class=col-md-4>
+     <div class=col-md-3>
         <select id='graph2-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px"></select>
         <p id='gb-summary'></p>
         <text  id="gb-nodeCount" style="margin-left:20px">0 </text>

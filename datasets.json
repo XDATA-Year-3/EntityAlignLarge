@@ -1,0 +1,19 @@
+{
+  "datasets": [
+    {
+      "baseURL": "/lineup.js/demo/data",
+      "descriptionFile": "data_small.json",
+      "name": "University Rankings"
+    },
+    {
+      "baseURL": "/lineup.js/demo/data",
+      "descriptionFile": "data.json",
+      "name": "University Ranking bigger"
+    },
+    {
+      "baseURL": "/lineup.js/demo/data",
+      "descriptionFile": "data_minimal.json",
+      "name": "University Ranking Minimal Desc"
+    }
+  ]
+}
