@@ -204,23 +204,6 @@
                 <div id="lugui-wrapper"></div>
                     <script src="lineup.js/dist/LineUpJS.js"></script>
 
-                    <script>
-                        var config = {
-                        };
-                        var $container = d3.select("#lugui-wrapper");
-                        function createLineUp(desc, data) {
-                            return LineUp.create(LineUp.createLocalStorage(data, desc.columns, desc.layout, desc.primaryKey), $container, config);
-                        }
-                        $(function() {
-                            var lineup = null;
-                            d3.json('lineup.js/demo/data/data_minimal.json', function (desc) {
-                                d3.tsv('lineup.js/demo/data/'+desc.file, function (_data) {
-                                    lineup = createLineUp(desc, _data);
-                                });
-                            });
-                        })
-                    </script>
-
 
             </div>
             <div class="tab-pane" id="adjacency-tab1">

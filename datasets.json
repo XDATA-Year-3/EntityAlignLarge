@@ -1,9 +1,9 @@
 {
   "datasets": [
     {
-      "baseURL": "/lineup.js/demo/data",
-      "descriptionFile": "data_small.json",
-      "name": "University Rankings"
+      "baseURL": "service/lineupdatasetdescription",
+      "descriptionFile": "topk",
+      "name": "FromTangeloService"
     },
     {
       "baseURL": "/lineup.js/demo/data",
