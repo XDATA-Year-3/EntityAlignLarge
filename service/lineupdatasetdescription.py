@@ -17,7 +17,7 @@ def run():
     response['separator'] = '\t'
     response['url'] = 'service/lineupdataset'
     response['columns'] = [ {'column': 'entity', 'type': 'string'},{'column': 'lev','type':'number', 'domain':[0,1]},{'column': 'substring','type':'number', 'domain':[0,1]}]
-    response['layout'] = {'primary': [   {'column': 'entity', 'type': 'string'},{'column': 'lev','type':'number', 'domain':[0,1]}, {'column': 'substring','type':'number', 'domain':[0,1]}]}
+    response['layout'] = {'primary': [   {'column': 'entity', 'width':100},{'column': 'lev','width':100}, {'column': 'substring','width':100}]}
 
     
     #client = MongoClient(host, 27017)

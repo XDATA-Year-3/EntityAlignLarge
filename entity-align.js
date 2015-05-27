@@ -321,12 +321,14 @@ function   initGraph1FromDatastore()
             }
             console.log('data returned:',response.result)
             entityAlign.graphA = {}
+            // KLUDGE *** had to add shift() here because the graph stayed at 0,0 without this.  No edges show visibly now, but the nodes display
             entityAlign.graphA.edges = response.result.links.shift()
             entityAlign.graphA.nodes = response.result.nodes 
 
             // save a copy to send to the tangelo service. D3 will change the original around, so lets 
             // clone the object before it is changed
             entityAlign.SavedGraphA = {}
+            // KLUDGE *** had to add shift() here because the graph stayed at 0,0 without this.  No edges show visibly now, but the nodes display
             entityAlign.SavedGraphA.edges   = jQuery.extend(true, {}, response.result.links.shift());
             entityAlign.SavedGraphA.nodes = jQuery.extend(true, {}, response.result.nodes);
 
@@ -1055,7 +1057,7 @@ function firstTimeInitialize() {
         d3.select("#align-button")
             .on("click", runSeededGraphMatching);
         d3.select("#onehop-button")
-            .on("click", initGraph1FromDatastore);
+            .on("click", ExploreLocalGraphAregion);
 
         d3.select("#show-matches-toggle")
             .attr("disabled", true)
@@ -1081,7 +1083,7 @@ function firstTimeInitialize() {
 window.onload = function ()  {
 
         firstTimeInitialize();    // Fill out the dataset selectors with graph datasets that we can choose from 
-        InitializeLineUpJS(); 
+       
 };
 
 
@@ -1251,5 +1253,27 @@ function runSeededGraphMatching() {
         }
 
     })
+}
+
+function InitializeLineUpAroundEntity(handle)
+{
+    //InitializeLineUpJS();
+
+    d3.json('service/lineupdatasetdescription',  function (err, desc) {
+        d3.json('service/lineupdataset/'+handle,  function (err, dataset) {
+            console.log('lineup loading description:',desc)
+            console.log('lineup loading dataset for handle:',handle,dataset.result)
+            loadDataImpl(name, desc, dataset.result);
+            });
+    });
+}
+
+function ExploreLocalGraphAregion() {
+
+    var centralHandle  = document.getElementById('ga-name').value;
+    //console.log('doing one hop around',centralHandle)
+
+    initGraph1FromDatastore();
+    InitializeLineUpAroundEntity(centralHandle); 
 }
 
