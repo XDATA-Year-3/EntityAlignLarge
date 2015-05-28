@@ -23,12 +23,16 @@ def run(host,database,graphname):
     collection = db[graphname]
      
     # loop through the records in the network and take the appropriate action for each type. Suppress
-    # the ID field because it doesn't serialize in JSON
+    # the ID field because it doesn't serialize in JSON.  If the node is named, return the name,  else return
+    # ID if there is an ID only
 
     nodes = collection.find({'type':'node'},{'_id':0})
     namelist = []
     for x in nodes:
-        namelist.append(x['data']['name'])
+        if 'name' in x['data']:
+            namelist.append(x['data']['name'])
+        elif 'id' in x['data']:
+            namelist.append(x['data']['id'])
 
     # Pack the results into the response object, and return it.
     response['result'] = {}

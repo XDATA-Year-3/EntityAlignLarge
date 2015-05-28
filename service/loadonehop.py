@@ -35,17 +35,18 @@ def run(host,database,graphname,centername):
     for record in collection.find({'type':'node'},{'_id':0}):
         # processing for nodes.  Add node to graph, then add attributes
             #print 'node:',record
-        if record['data']['name'] == centername:
-            centerid = record['data']['id']
-            centername = record['data']['name']
-            graph.add_node(centerid)
-            #print 'one hop: found node id:',centerid, 'node record:',record
-            for attrib in record['data']:
-                # don't need the test here because of _id suppression at the query above
-                #if (attrib != '_id'):
-                graph.node[centerid][attrib] = record['data'][attrib]
-                #print 'added',attrib,'to ',centerid,' record now:',graph.node[centerid]
-    print nx.info(graph,n=centerid)
+        if 'name' in record['data']:
+            if record['data']['name'] == centername:
+                centerid = record['data']['id']
+                centername = record['data']['name']
+                graph.add_node(centerid)
+                #print 'one hop: found node id:',centerid, 'node record:',record
+                for attrib in record['data']:
+                    # don't need the test here because of _id suppression at the query above
+                    #if (attrib != '_id'):
+                    graph.node[centerid][attrib] = record['data'][attrib]
+                    #print 'added',attrib,'to ',centerid,' record now:',graph.node[centerid]
+    #print nx.info(graph,n=centerid)
 
     # go through the links in the network and output any which are connected to te central node. Also output
     # the other node involved so a complete one-hop graph is generated
