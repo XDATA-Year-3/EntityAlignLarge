@@ -96,10 +96,10 @@ def run(host,database,graphname,centername):
     fixedNodes = []
     for node in graph.nodes(data=True):
         #print 'one-hop node:',node
-        if node[1]['name']:
+        if 'name' in node[1]:
             fixedNodes.append({'name' : node[1]['name'], 'id': node[1]['id'],'data': node, 'group':1})
         else:
-            fixedNodes.append({'name' : node,  'id': node[1]['id'],'data': node, 'group':2})
+            fixedNodes.append({'name' : node[1]['id'],  'id': node[1]['id'],'data': node, 'group':2})
 
     fixedEdges = []
     for edge in graph.edges():
