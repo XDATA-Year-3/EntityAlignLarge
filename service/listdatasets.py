@@ -23,7 +23,7 @@ def run(host,database):
     collection_list = db.collection_names(False)
     for coll in collection_list:
          # exclude the seeds collections
-        if coll[:6] != 'seeds_':
+        if (coll[:6] != 'seeds_') and (coll[:4] != 'topk'):
             print "found graph:", coll
             collectionNames.append(coll)
 
