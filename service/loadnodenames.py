@@ -26,13 +26,17 @@ def run(host,database,graphname):
     # the ID field because it doesn't serialize in JSON.  If the node is named, return the name,  else return
     # ID if there is an ID only
 
-    nodes = collection.find({'type':'node'},{'_id':0})
+    nodes = collection.find({'type':'node'},{'_id':0}).limit(99999)
     namelist = []
     for x in nodes:
-        if 'name' in x['data']:
+        if 'name' in x:
+            namelist.append(x['name'])
+        elif 'name' in x['data']:
             namelist.append(x['data']['name'])
+        elif 'username' in x['data']:
+            namelist.append(x['data']['username'])
         elif 'id' in x['data']:
-            namelist.append(x['data']['id'])
+            namelist.append('id_'+str(x['data']['id']))
 
     # Pack the results into the response object, and return it.
     response['result'] = {}

@@ -36,9 +36,17 @@ def run(host,database,graphname,centername):
         # processing for nodes.  Add node to graph, then add attributes
             #print 'node:',record
         if 'name' in record['data']:
-            if record['data']['name'] == centername:
+            recordname = record['data']['name']
+        elif 'username' in record['data']:
+            recordname = record['data']['username']
+        elif 'name' in record:
+            recordname = record['name']
+        else:
+            recordname = ''
+        
+        if recordname == centername:
                 centerid = record['data']['id']
-                centername = record['data']['name']
+                centername = recordname
                 graph.add_node(centerid)
                 #print 'one hop: found node id:',centerid, 'node record:',record
                 for attrib in record['data']:

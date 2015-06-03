@@ -339,7 +339,7 @@ function   initGraph1FromDatastore()
 }
 
 
-function   initGraph2FromDatastore()
+function   initGraph2FromDatastore(centralHandle)
 {
  
   "use strict";
@@ -366,7 +366,7 @@ function   initGraph2FromDatastore()
 
     $.ajax({
         // generalized collection definition
-        url: "service/loadgraph/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset,
+        url: "service/loadonehop/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle,
         data: data,
         dataType: "json",
         success: function (response) {
@@ -389,13 +389,13 @@ function   initGraph2FromDatastore()
 
             // make a copy that will support the D3-based visualization
             entityAlign.graphB = {}
-            entityAlign.graphB.edges = response.result.links
+            entityAlign.graphB.edges = response.result.links.shift()
             entityAlign.graphB.nodes = response.result.nodes 
 
             // save a copy to send to the tangelo service. D3 will change the original around, so lets 
             // clone the object before it is changed
             entityAlign.SavedGraphB = {}
-            entityAlign.SavedGraphB.edges   = jQuery.extend(true, {}, response.result.links);
+            entityAlign.SavedGraphB.edges   = jQuery.extend(true, {}, response.result.links.shift());
             entityAlign.SavedGraphB.nodes = jQuery.extend(true, {}, response.result.nodes);
             updateGraph2_d3_afterLoad();
         }
@@ -1258,15 +1258,20 @@ function runSeededGraphMatching() {
 function InitializeLineUpAroundEntity(handle)
 {
     //InitializeLineUpJS();
+     var graphPathname = d3.select("#graph1-selector").node();
+        var graphA = graphPathname.options[graphPathname.selectedIndex].text;
+     var graphPathname = d3.select("#graph2-selector").node();
+        var graphB = graphPathname.options[graphPathname.selectedIndex].text;
 
     d3.json('service/lineupdatasetdescription',  function (err, desc) {
-        d3.json('service/lineupdataset/'+handle,  function (err, dataset) {
+        d3.json('service/lineupdataset/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+graphB+'/'+handle,  function (err, dataset) {
             console.log('lineup loading description:',desc)
             console.log('lineup loading dataset for handle:',handle,dataset.result)
             loadDataImpl(name, desc, dataset.result);
             });
     });
 }
+
 
 function ExploreLocalGraphAregion() {
 
@@ -1275,5 +1280,15 @@ function ExploreLocalGraphAregion() {
 
     initGraph1FromDatastore();
     InitializeLineUpAroundEntity(centralHandle); 
+}
+
+
+
+function ExploreLocalGraphBregion(handle) {
+
+    // set the UI to show who we are exploring around in graphB
+    document.getElementById('gb-name').value = handle;
+
+    initGraph2FromDatastore(handle);
 }
 

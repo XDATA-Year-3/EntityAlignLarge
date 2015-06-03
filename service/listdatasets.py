@@ -7,7 +7,6 @@ import string
 import tangelo
 
 
-
 def run(host,database):
     # Create an empty response object.
     response = {}
@@ -17,7 +16,6 @@ def run(host,database):
    # that match the naming profile for tables.  This is matching to see if the collection name
    # begins with "seeds_" or not, since this routine can return the matching graphs (that don't start
     # with 'seeds_') or the matching seeds.
-
     
     client = MongoClient(host, 27017)
     db = client[database]
@@ -35,5 +33,5 @@ def run(host,database):
     response['result'] = collectionNames
 
     # Return the response object.
-    tangelo.log(str(response))
+    #tangelo.log(str(response))
     return json.dumps(response)
