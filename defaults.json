@@ -1,6 +1,5 @@
 {
 	"mongoHost" 			: "localhost",
 	"graphsDatabase"	  	: "year3_graphs",
-	"entityCountCollection" : "tweet_mentions_cleaned_isil_36_count"
 }
 

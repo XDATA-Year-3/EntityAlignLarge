@@ -1,8 +1,8 @@
-# EntityResolution
-User Interface for JHU Seeded Graph application
+# EntityResolutionLarge
+User Interface for exploring entity alignment between large networks 
 
 ## Requirements
 
-- Tangelo 0.7
+- Tangelo 0.9
 - PyMongo 2.7.2
 - NetworkX 1.9.1
