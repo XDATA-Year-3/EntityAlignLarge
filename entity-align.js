@@ -132,6 +132,8 @@ function updateGraph1() {
     //initGraph1FromDatastore()
     loadNodeNames("A")
     initGraphStats("A")
+    // clear out the person name element
+    document.getElementById('ga-name').value = '';
 
 }
 
@@ -143,6 +145,8 @@ function updateGraph2() {
     //updateGraph2_d3()
     loadNodeNames("B")
     initGraphStats("B")
+    // clear out the person name element
+    document.getElementById('gb-name').value = '';
 }
 
 
@@ -1304,10 +1308,10 @@ function ExploreLocalGraphBregion(handle) {
 function handleLineUpSelectorChange() {
     var displaymodeselector = d3.select("#lineup-selector").node();
     var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
-    if (displaymode=='left network') {
+    if (displaymode=='left network only') {
         ExploreLocalGraphAregion()
     }
-    else if (displaymode=='right network') {
+    else if (displaymode=='right network only') {
         ExploreLocalGraphBregion()
     }
     else {
@@ -1320,7 +1324,7 @@ function handleLineUpSelectorChange() {
 
 function fillLineUpSelector() {
     d3.select('#lineup-selector').selectAll("option")
-            .data(['left network','compare','right network'])
+            .data(['left network only','compare networks','right network only'])
             .enter().append("option")
             .text(function (d) { return d; });
 }
