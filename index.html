@@ -8,7 +8,19 @@
 <script src=cache/jquery-ui.min.js></script>
 <script src=cache/d3.v3.min.js charset=utf-8></script>
 <script src=https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js></script>
-<script src=/plugin/ui/controlPanel.js></script>
+<!-- <script src=/plugin/ui/controlPanel.js></script> -->
+
+<!-- for clique -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+<script src="cache/cola.v3.min.js"></script>
+<!--<script src="/plugin/tangelo/tangelo.js"></script> -->
+
+<link rel="stylesheet" href="https://bootswatch.com/paper/bootstrap.min.css">
+<link rel="stylesheet" href="index.css">
+
+<script src="cache/clique.js"></script>
+
 
 <!-- Driver script for this app -->
 
@@ -160,7 +172,7 @@
 </div>
 
 
-<!-- Create two side-by-side SVG elements -->
+<!-- Create  side-by-side panels -->
 
 <div class=row>
 
@@ -201,8 +213,9 @@
             <div class="tab-pane active" id="graph-tab1">
                 <h3 style="margin-left: 20px; height=500px">LineUp View</h3>
 -->     
+            <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px" ></select>
                 <!-- included excerpt from lineup definition -->
-                <div id="lugui-wrapper"></div>
+                <div id="lugui-wrapper" style="margin-top: 40px"></div>
                  <!--   <script src="lineup.js/dist/LineUpJS.js"></script> -->
 
 <!--

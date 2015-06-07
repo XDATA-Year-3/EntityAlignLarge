@@ -8,7 +8,7 @@ import tangelo
 
 
 
-def run(host,database,graphA,graphB,handle):
+def run(host,database,graphA,graphB,handle,displaymode):
     # Create an empty response object.
     response = {}
 
@@ -19,6 +19,7 @@ def run(host,database,graphA,graphB,handle):
     
     # build topk collection name from 
     topk_collection_name = 'topk_'+graphA+'_'+graphB
+    topk_collection_name = 'topk_twitter_geosample_mentions_v2_october_combined_instagram_mentions_nodelink_october'
     print 'looking for topk in collection', topk_collection_name
     #topk_collection_name = 'topk'
 

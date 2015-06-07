@@ -59,6 +59,10 @@ entityAlign.SavedGraphB = null
 entityAlign.currentMatches = []
 entityAlign.pairings = []
 
+entityAlign.cliqueA = null
+entityAlign.cliqueB = null
+
+
 entityAlign.monthNames = [
     "Jan",
     "Feb",
@@ -1045,6 +1049,7 @@ function firstTimeInitialize() {
         color = d3.scale.category20();
         //color = entityAlignDistanceFunction;
 
+        fillLineUpSelector()
         // set a watcher on the dataset selector so datasets are filled in
         // automatically when the user selects it via UI selector elements. 
 
@@ -1052,6 +1057,8 @@ function firstTimeInitialize() {
             .on("change", updateGraph1);
         d3.select("#graph2-selector")
             .on("change", updateGraph2);
+        d3.select("#lineup-selector")
+            .on("change", handleLineUpSelectorChange);
         d3.select('#show-pairings')
             .on("click", showPairings);
         d3.select("#align-button")
@@ -1264,8 +1271,11 @@ function InitializeLineUpAroundEntity(handle)
      var graphPathname = d3.select("#graph2-selector").node();
         var graphB = graphPathname.options[graphPathname.selectedIndex].text;
 
-    d3.json('service/lineupdatasetdescription',  function (err, desc) {
-        d3.json('service/lineupdataset/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+graphB+'/'+handle,  function (err, dataset) {
+    var displaymodeselector = d3.select("#lineup-selector").node();
+        var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
+
+    d3.json('service/lineupdatasetdescription/'+displaymode,  function (err, desc) {
+        d3.json('service/lineupdataset/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+graphB+'/'+handle+'/'+displaymode,  function (err, dataset) {
             console.log('lineup loading description:',desc)
             console.log('lineup loading dataset for handle:',handle,dataset.result)
             loadDataImpl(name, desc, dataset.result);
@@ -1274,23 +1284,45 @@ function InitializeLineUpAroundEntity(handle)
 }
 
 
-function ExploreLocalGraphAregion() {
 
+function ExploreLocalGraphAregion() {
     var centralHandle  = document.getElementById('ga-name').value;
     //console.log('doing one hop around',centralHandle)
-
-    initGraph1FromDatastore();
+    //initGraph1FromDatastore();
     InitializeLineUpAroundEntity(centralHandle); 
 }
 
 
 
 function ExploreLocalGraphBregion(handle) {
-
     // set the UI to show who we are exploring around in graphB
     document.getElementById('gb-name').value = handle;
-
     initGraph2FromDatastore(handle);
+}
+
+// this function resets lineup to the appropriate view whenever the focus selector is changed
+function handleLineUpSelectorChange() {
+    var displaymodeselector = d3.select("#lineup-selector").node();
+    var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
+    if (displaymode=='left network') {
+        ExploreLocalGraphAregion()
+    }
+    else if (displaymode=='right network') {
+        ExploreLocalGraphBregion()
+    }
+    else {
+        ExploreLocalGraphAregion()
+    }
+}
+
+// this function is called on initialization and it just fills a selector with the three options of 
+// comparing datasets or focusing on the left or right one
+
+function fillLineUpSelector() {
+    d3.select('#lineup-selector').selectAll("option")
+            .data(['left network','compare','right network'])
+            .enter().append("option")
+            .text(function (d) { return d; });
 }
 
 
