@@ -126,11 +126,11 @@
     <div class=modal-dialog>
         <div class=modal-content>
             <div class=modal-header>
-                <h3>Load Matching Seeds</h3>
+                <h3>Review Pairings</h3>
             </div>
 
             <div class=modal-body>
-                <p>Initialize from a currently loaded set of matching seeds.</p>
+                <p></p>
                 <nav>
                    <select id='seed-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" ></select>
                 </nav>
@@ -155,7 +155,7 @@
     <ul class="nav navbar-nav">
         <li class=active> <a>Large Network Alignment</a>
         <li><a style=cursor:pointer data-toggle=modal data-target=#info-panel><span class="glyphicon glyphicon-info-sign"></span> Info</a>
-        <li><a style=cursor:pointer data-toggle=modal data-target=#seed-panel><span class="caret"></span>Load Seeds</a>
+        <li><a style=cursor:pointer data-toggle=modal data-target=#seed-panel><span class="caret"></span>Review Pairings</a>
     </ul>
 </div>
 
@@ -231,6 +231,7 @@
         <text  style="margin-left:20px">matched nodes</text>
         <p></p>
         <input id='gb-name' style='margin-left:20px' disabled="disabled">Name being displayed:</input> 
+           <a id='accept-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Accept This Pairing</a>
         <div id='graph2'></div>
     </div>
 </div>

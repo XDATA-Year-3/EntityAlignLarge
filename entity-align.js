@@ -57,7 +57,7 @@ entityAlign.SavedGraphB = null
 // there is a global array corresponding to the current matches known between the two loaded graphs.  The matches are an array of JSON objects, each with a 
 // "ga" and "gb" attribute, whose corresponding values are integers that match the node IDs. 
 entityAlign.currentMatches = []
-
+entityAlign.pairings = []
 
 entityAlign.monthNames = [
     "Jan",
@@ -1052,13 +1052,14 @@ function firstTimeInitialize() {
             .on("change", updateGraph1);
         d3.select("#graph2-selector")
             .on("change", updateGraph2);
-        d3.select('#change-seeds')
-            .on("click", loadNewSeeds);
+        d3.select('#show-pairings')
+            .on("click", showPairings);
         d3.select("#align-button")
             .on("click", runSeededGraphMatching);
         d3.select("#onehop-button")
             .on("click", ExploreLocalGraphAregion);
-
+        d3.select("#accept-button")
+            .on("click", acceptListedPairing);
         d3.select("#show-matches-toggle")
             .attr("disabled", true)
             .on("click",  function () { entityAlign.showMatchesEnabled = !entityAlign.showMatchesEnabled; 
@@ -1292,3 +1293,23 @@ function ExploreLocalGraphBregion(handle) {
     initGraph2FromDatastore(handle);
 }
 
+
+function acceptListedPairing() {
+
+    var graphPathname = d3.select("#graph1-selector").node();
+    var graphA = graphPathname.options[graphPathname.selectedIndex].text;
+    var graphPathname = d3.select("#graph2-selector").node();
+    var graphB = graphPathname.options[graphPathname.selectedIndex].text;
+    var handleA  = document.getElementById('ga-name').value;
+    var handleB  = document.getElementById('gb-name').value;
+
+    newPairing = {'ga':graphA,'ga_id':handleA,'gb':graphB,'gb_id':handleB}
+    entityAlign.pairings.push(newPairing)
+    console.log('new pairing: ',newPairing)
+}
+
+
+function showPairings() {
+
+
+}
