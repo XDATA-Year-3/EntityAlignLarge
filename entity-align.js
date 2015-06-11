@@ -59,6 +59,13 @@ entityAlign.SavedGraphB = null
 entityAlign.currentMatches = []
 entityAlign.pairings = []
 
+// how far to go out on the default rendering of a local neightborhood
+entityAlign.numberHops = 2
+
+entityAlign.cliqueA = null
+entityAlign.cliqueB = null
+
+
 entityAlign.monthNames = [
     "Jan",
     "Feb",
@@ -128,6 +135,8 @@ function updateGraph1() {
     //initGraph1FromDatastore()
     loadNodeNames("A")
     initGraphStats("A")
+    // clear out the person name element
+    document.getElementById('ga-name').value = '';
 
 }
 
@@ -139,6 +148,8 @@ function updateGraph2() {
     //updateGraph2_d3()
     loadNodeNames("B")
     initGraphStats("B")
+    // clear out the person name element
+    document.getElementById('gb-name').value = '';
 }
 
 
@@ -296,15 +307,15 @@ function   initGraph1FromDatastore()
     var centralHandle  = document.getElementById('ga-name').value;
     console.log('doing one hop around',centralHandle)
 
-     var logText = "dataset1 select: start="+graphPathname;
-     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+    var logText = "dataset1 select: start="+graphPathname;
+    entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
 
-    $.ajax({
-        // generalized collection definition
-        url: "service/loadonehop/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle,
-        data: data,
-        dataType: "json",
-        success: function (response) {
+     d3.json("service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle, function (err, response) {
+        // host=None, db=None, coll=None, center=None, radius=None, deleted=json.dumps(False)):
+        //url: "service/loadonehop/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle,
+        //data: data,
+        //dataType: "json",
+        //success: function (response) {
             var angle,
                 enter,
                 svg,
@@ -315,27 +326,22 @@ function   initGraph1FromDatastore()
                 node,
                 tau;
 
-            if (response.error ) {
-                console.log("error: " + response.error);
-                return;
-            }
-            console.log('data returned:',response.result)
+            console.log('data returned:',response)
             entityAlign.graphA = {}
             // KLUDGE *** had to add shift() here because the graph stayed at 0,0 without this.  No edges show visibly now, but the nodes display
-            entityAlign.graphA.edges = response.result.links.shift()
-            entityAlign.graphA.nodes = response.result.nodes 
+            entityAlign.graphA.edges = jQuery.extend(true, {}, response.links);
+            entityAlign.graphA.nodes = jQuery.extend(true, {}, response.nodes);
 
             // save a copy to send to the tangelo service. D3 will change the original around, so lets 
             // clone the object before it is changed
             entityAlign.SavedGraphA = {}
             // KLUDGE *** had to add shift() here because the graph stayed at 0,0 without this.  No edges show visibly now, but the nodes display
-            entityAlign.SavedGraphA.edges   = jQuery.extend(true, {}, response.result.links.shift());
-            entityAlign.SavedGraphA.nodes = jQuery.extend(true, {}, response.result.nodes);
+            entityAlign.SavedGraphA.edges   = jQuery.extend(true, {}, response.links);
+            entityAlign.SavedGraphA.nodes = jQuery.extend(true, {}, response.nodes);
 
-            updateGraph1_d3_afterLoad();
-        }
+            //updateGraph1_d3_afterLoad();
+        });
 
-    });
 }
 
 
@@ -397,7 +403,7 @@ function   initGraph2FromDatastore(centralHandle)
             entityAlign.SavedGraphB = {}
             entityAlign.SavedGraphB.edges   = jQuery.extend(true, {}, response.result.links.shift());
             entityAlign.SavedGraphB.nodes = jQuery.extend(true, {}, response.result.nodes);
-            updateGraph2_d3_afterLoad();
+            //updateGraph2_d3_afterLoad();
         }
 
     });
@@ -416,7 +422,7 @@ function  updateGraph1_d3_afterLoad() {
 
             svg = d3.select("#graph1").append('svg')
                 .attr("id","graph1-drawing-canvas")
-                .attr("width",800)
+                .attr("width",400)
                 .attr("height",800)
 
 
@@ -1045,6 +1051,7 @@ function firstTimeInitialize() {
         color = d3.scale.category20();
         //color = entityAlignDistanceFunction;
 
+        fillLineUpSelector()
         // set a watcher on the dataset selector so datasets are filled in
         // automatically when the user selects it via UI selector elements. 
 
@@ -1052,6 +1059,8 @@ function firstTimeInitialize() {
             .on("change", updateGraph1);
         d3.select("#graph2-selector")
             .on("change", updateGraph2);
+        d3.select("#lineup-selector")
+            .on("change", handleLineUpSelectorChange);
         d3.select('#show-pairings')
             .on("click", showPairings);
         d3.select("#align-button")
@@ -1076,6 +1085,21 @@ function firstTimeInitialize() {
             });
 
     });
+
+
+    // declare a Boostrap table to display pairings made by the analyst
+
+    $('#pairings-table').bootstrapTable({
+        data: entityAlign.pairings,
+        columns: [{
+            field: 'twitter',
+            title: 'Twitter Username'
+        }, {
+            field: 'instagram',
+            title: 'Instagram Username'
+        }]
+    });
+
 }
 
 
@@ -1264,21 +1288,38 @@ function InitializeLineUpAroundEntity(handle)
      var graphPathname = d3.select("#graph2-selector").node();
         var graphB = graphPathname.options[graphPathname.selectedIndex].text;
 
-    d3.json('service/lineupdatasetdescription',  function (err, desc) {
-        d3.json('service/lineupdataset/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+graphB+'/'+handle,  function (err, dataset) {
-            console.log('lineup loading description:',desc)
-            console.log('lineup loading dataset for handle:',handle,dataset.result)
-            loadDataImpl(name, desc, dataset.result);
+    //var displaymodeselector = d3.select("#lineup-selector").node();
+     //   var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
+
+     var displaymode = 'compare networks'
+    d3.json('service/lineupdatasetdescription/'+displaymode,  function (err, desc) {
+        console.log('description:',desc)
+        if (displaymode == 'compare networks') {
+            console.log('comparing networks')
+            d3.json('service/lineupdataset/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+graphB+'/'+handle+'/'+displaymode,  function (err, dataset) {
+                console.log('lineup loading description:',desc)
+                console.log('lineup loading dataset for handle:',handle,dataset.result)
+                loadDataImpl(name, desc, dataset.result);
+                });
+        } else {
+            console.log('local network')
+            d3.json("service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + graphA+ "/" + handle, function (err, response) {
+                var encodedEntityList = JSON.stringify(response.nodes)
+                d3.json('service/lineupdataset_neighborhood/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+handle+'/'+encodedEntityList+'/'+displaymode,  function (err, dataset) {
+                    console.log('lineup loading description:',desc)
+                    console.log('lineup loading dataset for handle:',handle,dataset.result)
+                    loadDataImpl(name, desc, dataset.result);
+                    });
             });
+        }
     });
 }
 
 
-function ExploreLocalGraphAregion() {
 
+function ExploreLocalGraphAregion() {
     var centralHandle  = document.getElementById('ga-name').value;
     //console.log('doing one hop around',centralHandle)
-
     initGraph1FromDatastore();
     InitializeLineUpAroundEntity(centralHandle); 
 }
@@ -1286,11 +1327,35 @@ function ExploreLocalGraphAregion() {
 
 
 function ExploreLocalGraphBregion(handle) {
-
     // set the UI to show who we are exploring around in graphB
     document.getElementById('gb-name').value = handle;
-
     initGraph2FromDatastore(handle);
+}
+
+// this function resets lineup to the appropriate view whenever the focus selector is changed
+function handleLineUpSelectorChange() {
+    var displaymodeselector = d3.select("#lineup-selector").node();
+    var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
+    if (displaymode=='left network only') {
+        ExploreLocalGraphAregion()
+    }
+    else if (displaymode=='right network only') {
+        ExploreLocalGraphBregion()
+    }
+    else {
+        ExploreLocalGraphAregion()
+    }
+}
+
+// this function is called on initialization and it just fills a selector with the three options of 
+// comparing datasets or focusing on the left or right one
+
+// *** disable the lineup options until they work by having only one entry in the selector
+
+function fillLineUpSelector() {
+    d3.select('#lineup-selector').selectAll("option")
+            .data(['compare networks','left network only','right network only'])
+            .text(function (d) { return d; });
 }
 
 
@@ -1303,9 +1368,16 @@ function acceptListedPairing() {
     var handleA  = document.getElementById('ga-name').value;
     var handleB  = document.getElementById('gb-name').value;
 
-    newPairing = {'ga':graphA,'ga_id':handleA,'gb':graphB,'gb_id':handleB}
+    newPairing = {'twitter' : handleA,'instagram':handleB}
     entityAlign.pairings.push(newPairing)
     console.log('new pairing: ',newPairing)
+
+    // this is the pairing (seed) display table which is in a modal popover.  This is used to
+    // draw a nice table using Bootstrap an jQuery
+
+
+    // update the table
+    $('#pairings-table').bootstrapTable('load', entityAlign.pairings);
 }
 
 

@@ -5,10 +5,29 @@
 <!-- <script src=https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false></script> -->
 <!-- <script src=cache/jquery-1.9.1.min.js></script> -->
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<!-- <script src="cache2/jquery.min.js"></script>  -->
 <script src=cache/jquery-ui.min.js></script>
 <script src=cache/d3.v3.min.js charset=utf-8></script>
 <script src=https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.2/underscore-min.js></script>
-<script src=/plugin/ui/controlPanel.js></script>
+
+<!-- <script src=/plugin/ui/controlPanel.js></script> -->
+
+<!-- for clique -->
+<!-- <script src="cache2/underscore-min.js"></script> -->
+<script src="cache2/backbone-min.js"></script>
+<script src="cache/cola.v3.min.js"></script>
+<!--<script src="/plugin/tangelo/tangelo.js"></script> -->
+
+<link rel="stylesheet" href="cache2/bootstrap.min.css">
+<link rel="stylesheet" href="index.css">
+
+<!-- <script src="cache/clique.js"></script>  -->
+
+<!-- for bootstrap table
+<script src="jquery.min.js"></script>
+<script src="bootstrap.min.js"></script>
+<script src="bootstrap-table.js"></script>
+-->
 
 <!-- Driver script for this app -->
 
@@ -20,10 +39,9 @@
 
 <link rel="shortcut icon" href=/img/tangelo.ico>
 
-<link href=http://bootswatch.com/cosmo/bootstrap.min.css rel=stylesheet>
 <!-- modals didn't workwhen I used 3.3.2, so backing down to 3.0.2 -->
+<!-- <script src="cache2/bootstrap.min.js"></script> -->
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
-
 <link href=//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css rel=stylesheet>
 
 <!--
@@ -49,6 +67,10 @@
 <script src="lineup_js/src/lineup_mappingeditor.js"></script>
 
 <script src="lineup_js/demo/lineup_demo.js"></script>
+
+
+<!-- Latest compiled and minified Bootstrap Table JavaScript for the pairings list -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/bootstrap-table.min.js"></script>
 
 
 <style>
@@ -96,6 +118,9 @@
   nav ol{overflow:hidden; overflow-y:scroll;}
 </style>
 
+<!-- for the bootstrap table in the pairings popover -->
+<link rel="stylesheet" href="bootstrap-table.css">
+
 <title>Large Network Alignment</title>
 
 <body class=fuelux>
@@ -130,10 +155,8 @@
             </div>
 
             <div class=modal-body>
-                <p></p>
-                <nav>
-                   <select id='seed-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" ></select>
-                </nav>
+                <p>Below is a list of the entity pairs that have been selected, during this session, between the two networks:</p>
+               <table id="pairings-table"></table>
             </div>
 
             <div class=modal-footer>
@@ -160,7 +183,7 @@
 </div>
 
 
-<!-- Create two side-by-side SVG elements -->
+<!-- Create  side-by-side panels -->
 
 <div class=row>
 
@@ -184,6 +207,8 @@
         <a id='onehop-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Explore local network</a>
         <p></p>
         <div id='graph1'></div>
+        
+
     </div>
 
    <!-- center panel for showing the ranking results -->
@@ -201,8 +226,9 @@
             <div class="tab-pane active" id="graph-tab1">
                 <h3 style="margin-left: 20px; height=500px">LineUp View</h3>
 -->     
+            <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px" ></select>
                 <!-- included excerpt from lineup definition -->
-                <div id="lugui-wrapper"></div>
+                <div id="lugui-wrapper" style="margin-top: 40px"></div>
                  <!--   <script src="lineup.js/dist/LineUpJS.js"></script> -->
 
 <!--
@@ -230,7 +256,7 @@
         <text  id="gb-matchCount" style="margin-left:20px">0 </text>
         <text  style="margin-left:20px">matched nodes</text>
         <p></p>
-        <input id='gb-name' style='margin-left:20px' disabled="disabled">Name being displayed:</input> 
+        <input id='gb-name' style='margin-left:20px' disabled="disabled"> Displayed Entity</input> 
            <a id='accept-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Accept This Pairing</a>
         <div id='graph2'></div>
     </div>
@@ -250,7 +276,7 @@
     </div>
 
       <div class=col-md-4>
-         <p>third column content </p>
+         <p></p>
     </div>
 </div>
 
