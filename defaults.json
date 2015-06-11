@@ -1,5 +1,5 @@
 {
 	"mongoHost" 			: "localhost",
-	"graphsDatabase"	  	: "year3_challenge2"
+	"graphsDatabase"	  	: "year3_challenge2_v2"
 }
 

@@ -1088,7 +1088,7 @@ function firstTimeInitialize() {
 
 
     // declare a Boostrap table to display pairings made by the analyst
-    
+
     $('#pairings-table').bootstrapTable({
         data: entityAlign.pairings,
         columns: [{
@@ -1288,16 +1288,30 @@ function InitializeLineUpAroundEntity(handle)
      var graphPathname = d3.select("#graph2-selector").node();
         var graphB = graphPathname.options[graphPathname.selectedIndex].text;
 
-    var displaymodeselector = d3.select("#lineup-selector").node();
-        var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
+    //var displaymodeselector = d3.select("#lineup-selector").node();
+     //   var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
 
+     var displaymode = 'compare networks'
     d3.json('service/lineupdatasetdescription/'+displaymode,  function (err, desc) {
         console.log('description:',desc)
-        d3.json('service/lineupdataset/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+graphB+'/'+handle+'/'+displaymode,  function (err, dataset) {
-            console.log('lineup loading description:',desc)
-            console.log('lineup loading dataset for handle:',handle,dataset.result)
-            loadDataImpl(name, desc, dataset.result);
+        if (displaymode == 'compare networks') {
+            console.log('comparing networks')
+            d3.json('service/lineupdataset/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+graphB+'/'+handle+'/'+displaymode,  function (err, dataset) {
+                console.log('lineup loading description:',desc)
+                console.log('lineup loading dataset for handle:',handle,dataset.result)
+                loadDataImpl(name, desc, dataset.result);
+                });
+        } else {
+            console.log('local network')
+            d3.json("service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + graphA+ "/" + handle, function (err, response) {
+                var encodedEntityList = JSON.stringify(response.nodes)
+                d3.json('service/lineupdataset_neighborhood/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+handle+'/'+encodedEntityList+'/'+displaymode,  function (err, dataset) {
+                    console.log('lineup loading description:',desc)
+                    console.log('lineup loading dataset for handle:',handle,dataset.result)
+                    loadDataImpl(name, desc, dataset.result);
+                    });
             });
+        }
     });
 }
 
@@ -1336,10 +1350,11 @@ function handleLineUpSelectorChange() {
 // this function is called on initialization and it just fills a selector with the three options of 
 // comparing datasets or focusing on the left or right one
 
+// *** disable the lineup options until they work by having only one entry in the selector
+
 function fillLineUpSelector() {
     d3.select('#lineup-selector').selectAll("option")
-            .data(['left network only','compare networks','right network only'])
-            .enter().append("option")
+            .data(['compare networks','left network only','right network only'])
             .text(function (d) { return d; });
 }
 
