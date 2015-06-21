@@ -277,6 +277,341 @@ function updateUserList(namelist) {
 
 // ------ end of autocomplete users 
 
+var vegaspec = {
+  "width": 500,
+  "height": 500,
+  "padding": {"top":0, "bottom":0, "left":0, "right":0},
+
+  "data": [
+    {
+      "name": "edges",
+    },
+    {
+      "name": "nodes",
+      "transform": [
+        {
+          "type": "force",
+          "links": "edges",
+          "linkDistance": 70,
+          "charge": -100,
+          "iterations": 1000
+        }
+      ]
+    }
+  ],
+
+  "scales": [
+    {
+      "name": "shapes",
+      "type": "ordinal",
+      "domain": {"data": "nodes", "field": "group"},
+      "range": "shapes"
+    }
+  ],
+
+  "marks": [
+    {
+      "type": "path",
+      "from": {
+        "data": "edges",
+        "transform": [
+          {"type": "linkpath", "shape": "line"}
+        ]
+      },
+      "properties": {
+        "update": {
+          "path": {"field": "layout_path"},
+          "stroke": {"value": "#ccc"},
+          "strokeWidth": {"value": 0.5}
+        }
+      }
+    },
+    {
+      "type": "symbol",
+      "from": {"data": "nodes"},
+      "properties": {
+        "enter": {
+          "shape": {"scale": "shapes", "field": "group"},
+          "fillOpacity": {"value": 0.3},
+          "stroke": {"value": "steelblue"}
+        },
+        "update": {
+          "x": {"field": "layout_x"},
+          "y": {"field": "layout_y"},
+          "fill": {"value": "steelblue"}
+        },
+        "hover": {
+          "fill": {"value": "#f00"}
+        }
+      }
+    }
+  ]
+}
+
+// bind data  with the vega spec
+function parseVega1Spec(element, spec, dynamicData) {
+        console.log("parsing vega spec"); 
+   vg.parse.spec(spec, function(chart) { 
+        vegaview = chart({
+                el: element, 
+                data: {edges: dynamicData.edges, nodes:dynamicData.nodes},
+                renderer: "canvas"
+            })
+            .update()
+            .on("mouseover", function(event, item) {
+                    console.log('item',item.mark.marktype,' detected')
+                    if (item.mark.marktype === 'symbol') {
+                        vegaview.update({
+                            props: 'hover0',
+                            items: item.cousin(1)
+                        });
+                    } 
+            })
+            .on("mouseout", function(event, item) {
+                    if (item.mark.marktype === 'symbol') {
+                        vegaview.update({
+                            props: 'update0',
+                            items: item.cousin(1)
+                        });
+                    }
+             })
+             });
+}
+
+// bind data  with the vega spec
+function parseVegaSpec(element, spec, dynamicData) {
+        console.log("parsing vega spec"); 
+   vg.parse.spec(vegaspec, function(chart) { 
+        self.view1 = chart({
+                el: element, 
+                data: {edges: dynamicData.edges, nodes: dynamicData.nodes},
+                renderer: "canvas"
+            })
+            .update()
+            .on("mouseover", function(event, item) {
+                    console.log('item',item.mark.marktype,' detected')
+                    if (item.mark.marktype === 'symbol') {
+                        vegaview.update({
+                            props: 'hover0',
+                            items: item.cousin(1)
+                        });
+                    } 
+            })
+            .on("mouseout", function(event, item) {
+                    if (item.mark.marktype === 'symbol') {
+                        vegaview.update({
+                            props: 'update0',
+                            items: item.cousin(1)
+                        });
+                    }
+             })
+             });
+}
+
+
+
+
+
+function updateGraph1_d3() {
+    "use strict";
+     //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
+     entityAlign.ac.logSystemActivity('entityAlign - updateGraph 1 display executed');
+    var center,
+        data,
+        end_date,
+        hops,
+        change_button,
+        start_date,
+        update;
+
+
+    d3.select("#nodes1").selectAll("*").remove();
+    d3.select("#links1").selectAll("*").remove();
+
+    // Get the name of the graph dataset to render
+    var graphPathname = d3.select("#graph1-selector").node();
+    var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+
+    var centralHandle  = document.getElementById('ga-name').value;
+    console.log('doing one hop around',centralHandle)
+
+     var logText = "dataset1 select: start="+graphPathname;
+     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+
+ //d3.json("service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + graphA+ "/" + handle, function (err, response) {
+   
+ $.ajax({
+        // generalized collection definition
+        url: "service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle,
+        data: data,
+        dataType: "json",
+        success: function (response) {
+
+            var angle,
+                enterselect,
+                svg,
+                svg2,
+                link,
+                map,
+                newidx,
+                node,
+                tau;
+
+
+            console.log('data returned:',response)
+            graph = {}
+           
+            graph.edges = jQuery.extend(true, {}, response.edges);
+            graph.nodes = jQuery.extend(true, {}, response.nodes);
+            transition_time = 600;
+
+
+            // remove any previous graph
+            $('#graph1-drawing-canvas').remove();
+
+            svg = d3.select("#graph1").append('svg')
+                .attr("id","graph1-drawing-canvas")
+                .attr("width",800)
+                .attr("height",800)
+
+
+            link = svg.selectAll(".link")
+                .data(graph.edges)
+                .enter()
+                .append("line")
+                .classed("link", true)
+                .style("stroke-width", 2.0);
+
+
+            node = svg.selectAll(".node")
+                .data(graph.nodes, function (d) { return d.name; })
+                .on("mouseover", function(d) {
+                        loggedVisitToEntry(d);
+                });
+
+            // support two different modes, where circular nodes are drawn for each entity or for where the
+            // sender name is used inside a textbox. if entityAlign.textmode = true, then render text
+
+            if (!entityAlign.textmode) {
+                    enterselect = node.enter().append("circle")
+                        .classed("node", true)
+                        .attr("r", 5)
+                        .style("opacity", 0.0)
+                        .style("fill", "red")
+                        .on("click", function(d) {
+                            loggedVisitToEntry(d);
+                            //centerOnClickedGraphNode(d.tweet);
+                        });
+
+                    enterselect.transition()
+                        .duration(transition_time)
+                        .attr("r", 12)
+                        .style("opacity", 1.0)
+                        .style("fill", function (d) {
+                            return color(1);
+                        });
+
+                    enterselect.call(entityAlign.force1.drag)
+                        .append("title")
+                        //.call(entityAlign.force2.drag)
+                        .text(function (d) {
+                            var returntext = ""
+                            for (var attrib in d) {
+                                if (attrib != 'data') {
+                                    returntext = returntext + attrib+":"+d[attrib]+"\n" 
+                                }
+                            }
+                            return returntext;
+                        })
+                        .on("mouseover", function(d) {
+                        loggedDragVisitToEntry(d);
+                        });
+
+                    node.exit()
+                        .transition()
+                        .duration(transition_time)
+                        .style("opacity", 0.0)
+                        .attr("r", 0.0)
+                        .style("fill", "black")
+                        .remove();
+
+                    entityAlign.force1.nodes(graph.nodes)
+                        .links(graph.edges)
+                        .start();
+
+                    entityAlign.force1.on("tick", function () {
+                        link.attr("x1", function (d) { return d.source.x; })
+                            .attr("y1", function (d) { return d.source.y; })
+                            .attr("x2", function (d) { return d.target.x; })
+                            .attr("y2", function (d) { return d.target.y; });
+
+                        node.attr("cx", function (d) { return d.x; })
+                            .attr("cy", function (d) { return d.y; });
+                    });
+            } else {
+
+                enterselect = node.enter()
+                    .append("g")
+                    .classed("node", true);
+
+                enterselect.append("text")
+                    .text(function (d) {
+                        return d.tweet;
+                    })
+
+                    // use the default cursor so the text doesn't look editable
+                    .style('cursor', 'default')
+
+                    // enable click to recenter
+                    .on("click", function(d) {
+                        loggedVisitToEntry(d);
+                    })
+
+
+                enterselect.insert("rect", ":first-child")
+                    .attr("width", function (d) { return d.bbox.width + 4; })
+                    .attr("height", function (d) { return d.bbox.height + 4; })
+                    .attr("y", function (d) { return d.bbox.y - 2; })
+                    .attr("x", function (d) { return d.bbox.x - 2; })
+                    .attr('rx', 4)
+                    .attr('ry', 4)
+                    .style("stroke", function (d) {
+                        return color(d.distance);
+                    })
+                    .style("stroke-width", "2px")
+                    .style("fill", "#e5e5e5")
+                    .style("fill-opacity", 0.8);
+
+                entityAlign.force2.on("tick", function () {
+                    link.attr("x1", function (d) { return d.source.x; })
+                        .attr("y1", function (d) { return d.source.y; })
+                        .attr("x2", function (d) { return d.target.x; })
+                        .attr("y2", function (d) { return d.target.y; });
+
+                    node.attr("transform", function (d) {
+                        return "translate(" + d.x + ", " + d.y + ")";
+                    });
+                });
+               entityAlign.force1.linkDistance(100);
+            }
+            entityAlign.force1.nodes(graph.nodes)
+                .links(graph.edges)
+                .start();
+
+        
+            enterselect.call(entityAlign.force1.drag);
+
+            node.exit()
+                .transition()
+                .duration(transition_time)
+                .style("opacity", 0.0)
+                .attr("r", 0.0)
+                .style("fill", "black")
+                .remove();
+        }
+    });
+}
+
 
 // The InitGraph functions are called the first time a graph is loaded from the graph datastore.  The ajax call to load from the store
 // is included here.  Globals variables are filled with the graph nodes and links.  No rendering is done in this method.  A method is 
@@ -310,12 +645,14 @@ function   initGraph1FromDatastore()
     var logText = "dataset1 select: start="+graphPathname;
     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
 
-     d3.json("service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle, function (err, response) {
-        // host=None, db=None, coll=None, center=None, radius=None, deleted=json.dumps(False)):
-        //url: "service/loadonehop/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle,
-        //data: data,
-        //dataType: "json",
-        //success: function (response) {
+
+ $.ajax({
+        // generalized collection definition
+        url: "service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle,
+        data: data,
+        dataType: "json",
+        success: function (response) {
+
             var angle,
                 enter,
                 svg,
@@ -329,18 +666,20 @@ function   initGraph1FromDatastore()
             console.log('data returned:',response)
             entityAlign.graphA = {}
             // KLUDGE *** had to add shift() here because the graph stayed at 0,0 without this.  No edges show visibly now, but the nodes display
-            entityAlign.graphA.edges = jQuery.extend(true, {}, response.links);
+            entityAlign.graphA.edges = jQuery.extend(true, {}, response.edges);
             entityAlign.graphA.nodes = jQuery.extend(true, {}, response.nodes);
 
             // save a copy to send to the tangelo service. D3 will change the original around, so lets 
             // clone the object before it is changed
             entityAlign.SavedGraphA = {}
             // KLUDGE *** had to add shift() here because the graph stayed at 0,0 without this.  No edges show visibly now, but the nodes display
-            entityAlign.SavedGraphA.edges   = jQuery.extend(true, {}, response.links);
+            entityAlign.SavedGraphA.edges   = jQuery.extend(true, {}, response.edges);
             entityAlign.SavedGraphA.nodes = jQuery.extend(true, {}, response.nodes);
 
-            //updateGraph1_d3_afterLoad();
-        });
+            parseVegaSpec("#graph1","force.json",entityAlign.graphA)
+            //updateGraph1_d3_afterLoad()
+        }
+    });
 
 }
 
@@ -391,19 +730,19 @@ function   initGraph2FromDatastore(centralHandle)
                 console.log("error: " + response.error);
                 return;
             }
-            console.log('data returned:',response.result)
+            console.log('data returned:',response)
 
             // make a copy that will support the D3-based visualization
             entityAlign.graphB = {}
-            entityAlign.graphB.edges = response.result.links.shift()
-            entityAlign.graphB.nodes = response.result.nodes 
+            entityAlign.graphB.edges = response.edges
+            entityAlign.graphB.nodes = response.nodes 
 
             // save a copy to send to the tangelo service. D3 will change the original around, so lets 
             // clone the object before it is changed
             entityAlign.SavedGraphB = {}
-            entityAlign.SavedGraphB.edges   = jQuery.extend(true, {}, response.result.links.shift());
-            entityAlign.SavedGraphB.nodes = jQuery.extend(true, {}, response.result.nodes);
-            //updateGraph2_d3_afterLoad();
+            entityAlign.SavedGraphB.edges   = jQuery.extend(true, {}, response.edges);
+            entityAlign.SavedGraphB.nodes = jQuery.extend(true, {}, response.nodes);
+            updateGraph2_d3_afterLoad();
         }
 
     });
@@ -422,7 +761,7 @@ function  updateGraph1_d3_afterLoad() {
 
             svg = d3.select("#graph1").append('svg')
                 .attr("id","graph1-drawing-canvas")
-                .attr("width",400)
+                .attr("width",800)
                 .attr("height",800)
 
 
@@ -1320,7 +1659,8 @@ function InitializeLineUpAroundEntity(handle)
 function ExploreLocalGraphAregion() {
     var centralHandle  = document.getElementById('ga-name').value;
     //console.log('doing one hop around',centralHandle)
-    initGraph1FromDatastore();
+    //initGraph1FromDatastore();
+    updateGraph1_d3();
     InitializeLineUpAroundEntity(centralHandle); 
 }
 
@@ -1377,6 +1717,7 @@ function acceptListedPairing() {
 
 
     // update the table
+    $('#pairings-table').bootstrapTable('hideLoading');
     $('#pairings-table').bootstrapTable('load', entityAlign.pairings);
 }
 
