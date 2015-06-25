@@ -82,7 +82,7 @@ def run(host,database,graphname,centername,degree=2):
 
     # Create a chained iterable from all the rewound partial results.
     all_results = itertools.chain(*all_results)
-    #print 'all results:',all_results
+    print 'all results:',all_results
 
     # Create a list of graph edges suitable for use by D3 - replace each record
     # in the data with one that carries an index into the tweeters list.
@@ -96,21 +96,27 @@ def run(host,database,graphname,centername,degree=2):
                 #"id": ident }
         edges.append(rec)
         
-    talkers = [{"entity": n, "distance": distance[n]} for n in talkers]
+    talkers = [{"id": n, "distance": distance[n],'group':1} for n in talkers]
 
+    #fixedNodes = []
+    #for node in talkers:
+    #    centerrecord = c.find_one({'data.id':node})        
+    #    fixedNodes.append({'name' : centerrecord['data']['name'],  'id': node['id'],'data': centerrecord['data'], 'distance':node['distance']})
 
+    print 'edges:',edges
     fixedEdges = []
     for edge in edges:
-        #print "found edge: [0] is:",edge[0]
         fixedEdges.append({'source':int(edge['source']),'target': int(edge['target']),'weight':1})
     # Stuff the graph data into the response object, and return it.
-    response = { "nodes": talkers, "dummylinks":fixedEdges,"links": fixedEdges }
-
-
+    
     client.close()
+    
+    response =  dict()
+    response["edges"] =  fixedEdges
+    response["nodes"] = talkers
 
-    #print 'response returned:'
-    #print response
+    print 'response returned:'
+    print response
 
     # Return the response object.
     #tangelo.log(str(response))
