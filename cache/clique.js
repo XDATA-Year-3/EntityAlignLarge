@@ -2079,14 +2079,18 @@ jade_mixins["item"](item[0], item[1]);
 }).call(this);
 
 buf.push("</table></div></div><div class=\"row\"><h5>Node</h5><button type=\"button\" class=\"space-right btn btn-info btn-xs remove\">Hide <span class=\"glyphicon glyphicon-eye-close\"></span></button>");
-if ( node.deleted)
-{
-buf.push("<button type=\"button\" class=\"space-right btn btn-danger btn-xs delete\">Undelete <span class=\"glyphicon glyphicon-remove\"></span></button>");
-}
-else
-{
-buf.push("<button type=\"button\" class=\"space-right btn btn-danger btn-xs delete\">Delete <span class=\"glyphicon glyphicon-remove\"></span></button>");
-}
+
+// *** CRL 6/2015 - removed the delete button so users can accidentaly change the database or get confused between hide and delete.
+
+//if ( node.deleted)
+//{
+//buf.push("<button type=\"button\" class=\"space-right btn btn-danger btn-xs delete\">Undelete <span class=\"glyphicon glyphicon-remove\"></span></button>");
+//}
+//else
+//{
+//buf.push("<button type=\"button\" class=\"space-right btn btn-danger btn-xs delete\">Delete <span class=\"glyphicon glyphicon-remove\"></span></button>");
+//}
+
 buf.push("<button type=\"button\" class=\"btn btn-primary btn-xs expand\">Expand <span class=\"glyphicon glyphicon-fullscreen\"></span></button></div>");
 if ( selectionSize > 1)
 {
