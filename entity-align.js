@@ -137,6 +137,11 @@ function updateGraph1() {
     initGraphStats("A")
     // clear out the person name element
     document.getElementById('ga-name').value = '';
+    document.getElementById('gb-name').value = '';
+    $('#graph1').empty();
+    $('#info1').empty();
+    // below is too powerful, it clears the LineUp area, but LU doesn't work anymore
+    //$('#lugui-wrapper').empty()
 
 }
 
@@ -150,6 +155,9 @@ function updateGraph2() {
     initGraphStats("B")
     // clear out the person name element
     document.getElementById('gb-name').value = '';
+    $('#graph2').empty();
+    $('#info2').empty();
+    //$('#lugui-wrapper').empty()
 }
 
 
