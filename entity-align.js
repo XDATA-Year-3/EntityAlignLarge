@@ -277,363 +277,25 @@ function updateUserList(namelist) {
 
 // ------ end of autocomplete users 
 
-var vegaspec = {
-  "width": 500,
-  "height": 500,
-  "padding": {"top":0, "bottom":0, "left":0, "right":0},
-
-  "data": [
-    {
-      "name": "edges",
-    },
-    {
-      "name": "nodes",
-      "transform": [
-        {
-          "type": "force",
-          "links": "edges",
-          "linkDistance": 70,
-          "charge": -100,
-          "iterations": 1000
-        }
-      ]
-    }
-  ],
-
-  "scales": [
-    {
-      "name": "shapes",
-      "type": "ordinal",
-      "domain": {"data": "nodes", "field": "group"},
-      "range": "shapes"
-    }
-  ],
-
-  "marks": [
-    {
-      "type": "path",
-      "from": {
-        "data": "edges",
-        "transform": [
-          {"type": "linkpath", "shape": "line"}
-        ]
-      },
-      "properties": {
-        "update": {
-          "path": {"field": "layout_path"},
-          "stroke": {"value": "#ccc"},
-          "strokeWidth": {"value": 0.5}
-        }
-      }
-    },
-    {
-      "type": "symbol",
-      "from": {"data": "nodes"},
-      "properties": {
-        "enter": {
-          "shape": {"scale": "shapes", "field": "group"},
-          "fillOpacity": {"value": 0.3},
-          "stroke": {"value": "steelblue"}
-        },
-        "update": {
-          "x": {"field": "layout_x"},
-          "y": {"field": "layout_y"},
-          "fill": {"value": "steelblue"}
-        },
-        "hover": {
-          "fill": {"value": "#f00"}
-        }
-      }
-    }
-  ]
-}
-
-// bind data  with the vega spec
-function parseVega1Spec(element, spec, dynamicData) {
-        console.log("parsing vega spec"); 
-   vg.parse.spec(spec, function(chart) { 
-        vegaview = chart({
-                el: element, 
-                data: {edges: dynamicData.edges, nodes:dynamicData.nodes},
-                renderer: "canvas"
-            })
-            .update()
-            .on("mouseover", function(event, item) {
-                    console.log('item',item.mark.marktype,' detected')
-                    if (item.mark.marktype === 'symbol') {
-                        vegaview.update({
-                            props: 'hover0',
-                            items: item.cousin(1)
-                        });
-                    } 
-            })
-            .on("mouseout", function(event, item) {
-                    if (item.mark.marktype === 'symbol') {
-                        vegaview.update({
-                            props: 'update0',
-                            items: item.cousin(1)
-                        });
-                    }
-             })
-             });
-}
-
-// bind data  with the vega spec
-function parseVegaSpec(element, spec, dynamicData) {
-        console.log("parsing vega spec"); 
-   vg.parse.spec(vegaspec, function(chart) { 
-        self.view1 = chart({
-                el: element, 
-                data: {edges: dynamicData.edges, nodes: dynamicData.nodes},
-                renderer: "canvas"
-            })
-            .update()
-            .on("mouseover", function(event, item) {
-                    console.log('item',item.mark.marktype,' detected')
-                    if (item.mark.marktype === 'symbol') {
-                        vegaview.update({
-                            props: 'hover0',
-                            items: item.cousin(1)
-                        });
-                    } 
-            })
-            .on("mouseout", function(event, item) {
-                    if (item.mark.marktype === 'symbol') {
-                        vegaview.update({
-                            props: 'update0',
-                            items: item.cousin(1)
-                        });
-                    }
-             })
-             });
-}
-
-
-
-
-
-function updateGraph1_d3() {
-    "use strict";
-     //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     entityAlign.ac.logSystemActivity('entityAlign - updateGraph 1 display executed');
-    var center,
-        data,
-        end_date,
-        hops,
-        change_button,
-        start_date,
-        update;
-
-
-    d3.select("#nodes1").selectAll("*").remove();
-    d3.select("#links1").selectAll("*").remove();
-
-    // Get the name of the graph dataset to render
-    var graphPathname = d3.select("#graph1-selector").node();
-    var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
-
-    var centralHandle  = document.getElementById('ga-name').value;
-    console.log('doing one hop around',centralHandle)
-
-     var logText = "dataset1 select: start="+graphPathname;
-     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
-
- //d3.json("service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + graphA+ "/" + handle, function (err, response) {
-   
- $.ajax({
-        // generalized collection definition
-        url: "service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle,
-        data: data,
-        dataType: "json",
-        success: function (response) {
-
-            var angle,
-                enterselect,
-                svg,
-                svg2,
-                link,
-                map,
-                newidx,
-                node,
-                tau;
-
-
-            console.log('data returned:',response)
-            graph = {}
-           
-            graph.edges = jQuery.extend(true, {}, response.edges);
-            graph.nodes = jQuery.extend(true, {}, response.nodes);
-            transition_time = 600;
-
-
-            // remove any previous graph
-            $('#graph1-drawing-canvas').remove();
-
-            svg = d3.select("#graph1").append('svg')
-                .attr("id","graph1-drawing-canvas")
-                .attr("width",800)
-                .attr("height",800)
-
-
-            link = svg.selectAll(".link")
-                .data(graph.edges)
-                .enter()
-                .append("line")
-                .classed("link", true)
-                .style("stroke-width", 2.0);
-
-
-            node = svg.selectAll(".node")
-                .data(graph.nodes, function (d) { return d.name; })
-                .on("mouseover", function(d) {
-                        loggedVisitToEntry(d);
-                });
-
-            // support two different modes, where circular nodes are drawn for each entity or for where the
-            // sender name is used inside a textbox. if entityAlign.textmode = true, then render text
-
-            if (!entityAlign.textmode) {
-                    enterselect = node.enter().append("circle")
-                        .classed("node", true)
-                        .attr("r", 5)
-                        .style("opacity", 0.0)
-                        .style("fill", "red")
-                        .on("click", function(d) {
-                            loggedVisitToEntry(d);
-                            //centerOnClickedGraphNode(d.tweet);
-                        });
-
-                    enterselect.transition()
-                        .duration(transition_time)
-                        .attr("r", 12)
-                        .style("opacity", 1.0)
-                        .style("fill", function (d) {
-                            return color(1);
-                        });
-
-                    enterselect.call(entityAlign.force1.drag)
-                        .append("title")
-                        //.call(entityAlign.force2.drag)
-                        .text(function (d) {
-                            var returntext = ""
-                            for (var attrib in d) {
-                                if (attrib != 'data') {
-                                    returntext = returntext + attrib+":"+d[attrib]+"\n" 
-                                }
-                            }
-                            return returntext;
-                        })
-                        .on("mouseover", function(d) {
-                        loggedDragVisitToEntry(d);
-                        });
-
-                    node.exit()
-                        .transition()
-                        .duration(transition_time)
-                        .style("opacity", 0.0)
-                        .attr("r", 0.0)
-                        .style("fill", "black")
-                        .remove();
-
-                    entityAlign.force1.nodes(graph.nodes)
-                        .links(graph.edges)
-                        .start();
-
-                    entityAlign.force1.on("tick", function () {
-                        link.attr("x1", function (d) { return d.source.x; })
-                            .attr("y1", function (d) { return d.source.y; })
-                            .attr("x2", function (d) { return d.target.x; })
-                            .attr("y2", function (d) { return d.target.y; });
-
-                        node.attr("cx", function (d) { return d.x; })
-                            .attr("cy", function (d) { return d.y; });
-                    });
-            } else {
-
-                enterselect = node.enter()
-                    .append("g")
-                    .classed("node", true);
-
-                enterselect.append("text")
-                    .text(function (d) {
-                        return d.tweet;
-                    })
-
-                    // use the default cursor so the text doesn't look editable
-                    .style('cursor', 'default')
-
-                    // enable click to recenter
-                    .on("click", function(d) {
-                        loggedVisitToEntry(d);
-                    })
-
-
-                enterselect.insert("rect", ":first-child")
-                    .attr("width", function (d) { return d.bbox.width + 4; })
-                    .attr("height", function (d) { return d.bbox.height + 4; })
-                    .attr("y", function (d) { return d.bbox.y - 2; })
-                    .attr("x", function (d) { return d.bbox.x - 2; })
-                    .attr('rx', 4)
-                    .attr('ry', 4)
-                    .style("stroke", function (d) {
-                        return color(d.distance);
-                    })
-                    .style("stroke-width", "2px")
-                    .style("fill", "#e5e5e5")
-                    .style("fill-opacity", 0.8);
-
-                entityAlign.force2.on("tick", function () {
-                    link.attr("x1", function (d) { return d.source.x; })
-                        .attr("y1", function (d) { return d.source.y; })
-                        .attr("x2", function (d) { return d.target.x; })
-                        .attr("y2", function (d) { return d.target.y; });
-
-                    node.attr("transform", function (d) {
-                        return "translate(" + d.x + ", " + d.y + ")";
-                    });
-                });
-               entityAlign.force1.linkDistance(100);
-            }
-            entityAlign.force1.nodes(graph.nodes)
-                .links(graph.edges)
-                .start();
-
-        
-            enterselect.call(entityAlign.force1.drag);
-
-            node.exit()
-                .transition()
-                .duration(transition_time)
-                .style("opacity", 0.0)
-                .attr("r", 0.0)
-                .style("fill", "black")
-                .remove();
-        }
-    });
-}
 
 
 // The InitGraph functions are called the first time a graph is loaded from the graph datastore.  The ajax call to load from the store
 // is included here.  Globals variables are filled with the graph nodes and links.  No rendering is done in this method.  A method is 
 // written for graph1 and graph2.  The only difference between the graph1 and graph2 methods is that they fill different global variables.
 
-function   initGraph1FromDatastore()
+
+
+function   initGraph1WithClique()
 {
  
   "use strict";
      //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     entityAlign.ac.logSystemActivity('entityAlign - initialize graph A executed');
-    var center,
-        data,
-        end_date,
-        hops,
-        change_button,
-        start_date,
-        update;
-
-
-    d3.select("#nodes1").selectAll("*").remove();
-    d3.select("#links1").selectAll("*").remove();
+     entityAlign.ac.logSystemActivity('entityAlign - initialize subgraph A executed');
+    var data,
+        graphData,
+        graph1,
+        view1,
+        info1
 
     // Get the name of the graph dataset to render
     var graphPathname = d3.select("#graph1-selector").node();
@@ -645,708 +307,101 @@ function   initGraph1FromDatastore()
     var logText = "dataset1 select: start="+graphPathname;
     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
 
+    window.graph1 = graph1 = new clique.Graph({
+            adapter: clique.adapter.Mongo,
+            options: {
+                host:  entityAlign.host,
+                database: entityAlign.graphsDatabase,
+                collection: selectedDataset
+            }
+        });
 
- $.ajax({
-        // generalized collection definition
-        url: "service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle,
-        data: data,
-        dataType: "json",
-        success: function (response) {
+    graph1.adapter.findNode({name: centralHandle})
+            .then(function (center) {
+                console.log('center:',center)
+                if (center) {
+                    graph1.addNeighborhood({
+                        center: center,
+                        radius: 1,
+                        deleted: false
+                    });
 
-            var angle,
-                enter,
-                svg,
-                svg2,
-                link,
-                map,
-                newidx,
-                node,
-                tau;
+                }
+            });
 
-            console.log('data returned:',response)
-            entityAlign.graphA = {}
-            // KLUDGE *** had to add shift() here because the graph stayed at 0,0 without this.  No edges show visibly now, but the nodes display
-            entityAlign.graphA.edges = jQuery.extend(true, {}, response.edges);
-            entityAlign.graphA.nodes = jQuery.extend(true, {}, response.nodes);
+    window.view1 = view1 = new clique.view.Cola({
+        model: graph1,
+        el: "#graph1"
+    });
 
-            // save a copy to send to the tangelo service. D3 will change the original around, so lets 
-            // clone the object before it is changed
-            entityAlign.SavedGraphA = {}
-            // KLUDGE *** had to add shift() here because the graph stayed at 0,0 without this.  No edges show visibly now, but the nodes display
-            entityAlign.SavedGraphA.edges   = jQuery.extend(true, {}, response.edges);
-            entityAlign.SavedGraphA.nodes = jQuery.extend(true, {}, response.nodes);
-
-            parseVegaSpec("#graph1","force.json",entityAlign.graphA)
-            //updateGraph1_d3_afterLoad()
-        }
+    window.info1 = info1 = new clique.view.SelectionInfo({
+        model: view1.selection,
+        el: "#info1",
+        graph: graph1
     });
 
 }
 
 
-function   initGraph2FromDatastore(centralHandle)
+
+function   initGraph2WithClique()
 {
  
   "use strict";
      //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     entityAlign.ac.logSystemActivity('entityAlign - initialize graph A executed');
-    var center,
-        data,
-        end_date,
-        hops,
-        change_button,
-        start_date,
-        update;
-
-
-    d3.select("#nodes2").selectAll("*").remove();
-    d3.select("#links2").selectAll("*").remove();
+     entityAlign.ac.logSystemActivity('entityAlign - initialize subgraph B executed');
+    var data,
+        graphData,
+        graph2,
+        view2,
+        info2
 
     // Get the name of the graph dataset to render
     var graphPathname = d3.select("#graph2-selector").node();
     var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
 
-     var logText = "dataset2 select: start="+graphPathname;
-     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+    var centralHandle  = document.getElementById('gb-name').value;
+    console.log('doing one hop around',centralHandle)
 
-    $.ajax({
-        // generalized collection definition
-        url: "service/loadonehop/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset+ "/" + centralHandle,
-        data: data,
-        dataType: "json",
-        success: function (response) {
-            var angle,
-                enter,
-                svg,
-                svg2,
-                link,
-                map,
-                newidx,
-                node,
-                tau;
+    var logText = "dataset2 select: start="+graphPathname;
+    entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
 
-
-            if (response.error ) {
-                console.log("error: " + response.error);
-                return;
+    window.graph2 = graph2 = new clique.Graph({
+            adapter: clique.adapter.Mongo,
+            options: {
+                host:  entityAlign.host,
+                database: entityAlign.graphsDatabase,
+                collection: selectedDataset
             }
-            console.log('data returned:',response)
+        });
 
-            // make a copy that will support the D3-based visualization
-            entityAlign.graphB = {}
-            entityAlign.graphB.edges = response.edges
-            entityAlign.graphB.nodes = response.nodes 
 
-            // save a copy to send to the tangelo service. D3 will change the original around, so lets 
-            // clone the object before it is changed
-            entityAlign.SavedGraphB = {}
-            entityAlign.SavedGraphB.edges   = jQuery.extend(true, {}, response.edges);
-            entityAlign.SavedGraphB.nodes = jQuery.extend(true, {}, response.nodes);
-            updateGraph2_d3_afterLoad();
-        }
+    graph2.adapter.findNode({name: centralHandle})
+            .then(function (center) {
+                console.log('center:',center)
+                if (center) {
+                    graph2.addNeighborhood({
+                        center: center,
+                        radius: 1,
+                        deleted: false
+                    });
 
+                }
+            });
+
+    window.view2 = view2 = new clique.view.Cola({
+        model: graph2,
+        el: "#graph2"
     });
-}
 
-// The update_afterLoad routines are called whenever the graph should be visually refreshed from new state in the global variables:
-// entityAlign.graphA and .graphB.   
-
-function  updateGraph1_d3_afterLoad() {
-
-    var enter;
-    transition_time = 600;
-
-            // remove any previous graph
-            $('#graph1-drawing-canvas').remove();
-
-            svg = d3.select("#graph1").append('svg')
-                .attr("id","graph1-drawing-canvas")
-                .attr("width",800)
-                .attr("height",800)
-
-
-            link = svg.selectAll(".link")
-                .data(entityAlign.graphA.edges)
-                .enter()
-                .append("line")
-                .classed("link", true)
-                .style("stroke-width", 2.0);
-
-
-            node = svg.selectAll(".node")
-                .data(entityAlign.graphA.nodes, nodeKeyFunction)
-                .on("mouseover", function(d) {
-                        loggedVisitToEntry(d);
-                });
-
-            // support two different modes, where circular nodes are drawn for each entity or for where the
-            // sender name is used inside a textbox. if entityAlign.textmode = true, then render text
-
-            if (!entityAlign.textmode) {
-                    enter = node.enter().append("circle")
-                        .classed("node", true)
-                        .attr("r", 5)
-                        .style("opacity", 0.0)
-                        .style("fill", "red")
-                        .on("click", function(d) {
-                            loggedVisitToEntry(d);
-                            //centerOnClickedGraphNode(d.tweet);
-                        });
-
-
-                    enter.transition()
-                        .duration(transition_time)
-                        .attr("r", 12)
-                        .style("opacity", 1.0)
-                        .style("fill", 
-                            function (d) {if (d.matched) {return "DarkRed"} else {return color(1)};}
-                        );
-
-                    enter.call(entityAlign.force1.drag)
-                        .append("title")
-                        .text(function (d) {
-                            var returntext = ""
-                            for (var attrib in d) {
-                                // mask away the display of attributes not associated with the network.  Hide the D3 specific
-                                // position and velocity stuff
-                                if (!_.contains(['data','x','y','px','py'],attrib)) {
-                                    returntext = returntext + attrib+":"+d[attrib]+"\n" 
-                                }
-                            }
-                            return returntext;
-                        })
-                        .on("mouseover", function(d) {
-                        loggedDragVisitToEntry(d);
-                        });
-
-                    // adjust the color according to the matched state. Make matched be dark red, otherwise pass the default color.
-                    // should amend this to use the entity distance color, but the datasets don't currently 
-
-                    node
-                        .filter(function(d,i) { return d.id != 0})
-                        .style("fill", function (d) {if (d.matched>-1) {return "DarkRed"} else {return color(1)}});
-
-                    node
-                        .filter(function(d,i) { return d.id == 0})
-                        .style("fill", "orange");
-
-                    node.exit()
-                        .transition()
-                        .duration(transition_time)
-                        .style("opacity", 0.0)
-                        .attr("r", 0.0)
-                        .style("fill", "black")
-                        .remove();
-
-                    entityAlign.force1.nodes(entityAlign.graphA.nodes)
-                        .links(entityAlign.graphA.edges)
-                        .start();
-
-                    entityAlign.force1.on("tick", function () {
-                        link.attr("x1", function (d) { return d.source.x; })
-                            .attr("y1", function (d) { return d.source.y; })
-                            .attr("x2", function (d) { return d.target.x; })
-                            .attr("y2", function (d) { return d.target.y; });
-
-                        node.attr("cx", function (d) { return d.x; })
-                            .attr("cy", function (d) { return d.y; });
-                    });
-            } else {
-
-                enter = node.enter()
-                    .append("g")
-                    .classed("node", true);
-
-                enter.append("text")
-                    .text(function (d) {
-                        return d.tweet;
-                    })
-
-                    // use the default cursor so the text doesn't look editable
-                    .style('cursor', 'default')
-
-                    // enable click to recenter
-                    .on("click", function(d) {
-                        loggedVisitToEntry(d);
-                    });
-
-
-                enter.insert("rect", ":first-child")
-                    .attr("width", function (d) { return d.bbox.width + 4; })
-                    .attr("height", function (d) { return d.bbox.height + 4; })
-                    .attr("y", function (d) { return d.bbox.y - 2; })
-                    .attr("x", function (d) { return d.bbox.x - 2; })
-                    .attr('rx', 4)
-                    .attr('ry', 4)
-                    .style("stroke", function (d) {
-                        return color(d.distance);
-                    })
-                    .style("stroke-width", "2px")
-                    .style("fill", "#e5e5e5")
-                    .style("fill-opacity", 0.8);
-
-                entityAlign.force1.on("tick", function () {
-                    link.attr("x1", function (d) { return d.source.x; })
-                        .attr("y1", function (d) { return d.source.y; })
-                        .attr("x2", function (d) { return d.target.x; })
-                        .attr("y2", function (d) { return d.target.y; });
-
-                    node.attr("transform", function (d) {
-                        return "translate(" + d.x + ", " + d.y + ")";
-                    });
-                });
-               entityAlign.force1.linkDistance(100);
-            }
-            entityAlign.force1.nodes(entityAlign.graphA.nodes)
-                .links(entityAlign.graphA.edges)
-                .start();
-
-        
-            enter.call(entityAlign.force1.drag);
-
-            node.exit()
-                .transition()
-                .duration(transition_time)
-                .style("opacity", 0.0)
-                .attr("r", 0.0)
-                .style("fill", "black")
-                .remove();
-}
-
-
-// this is still not being called yet, because of the zoom/translate differences and missing nodes.  
-
-function  updateGraph2_d3_afterLoad() {
-
-    var enter;
-    transition_time = 600;
-
-            // remove any previous graph
-            $('#graph2-drawing-canvas').remove();
-
-            svg = d3.select("#graph2").append('svg')
-                .attr("id","graph2-drawing-canvas")
-                .attr("width",800)
-                .attr("height",800)
-
-
-            link = svg.selectAll(".link")
-                .data(entityAlign.graphB.edges)
-                .enter()
-                .append("line")
-                .classed("link", true)
-                .style("stroke-width", 2.0);
-
-
-            node = svg.selectAll(".node")
-                .data(entityAlign.graphB.nodes, nodeKeyFunction)
-                .on("mouseover", function(d) {
-                        loggedVisitToEntry(d);
-                });
-
-            // support two different modes, where circular nodes are drawn for each entity or for where the
-            // sender name is used inside a textbox. if entityAlign.textmode = true, then render text
-
-            if (!entityAlign.textmode) {
-                    enter = node.enter().append("circle")
-                        .classed("node", true)
-                        .attr("r", 5)
-                        .style("opacity", 0.0)
-                        .style("fill", "red")
-                        .on("click", function(d) {
-                            loggedVisitToEntry(d);
-                            //centerOnClickedGraphNode(d.tweet);
-                        });
-
-
-                    enter.transition()
-                        .duration(transition_time)
-                        .attr("r", 12)
-                        .style("opacity", 1.0)
-                        .style("fill", 
-                            function (d) {if (d.matched) {return "DarkRed"} else {return color(1)};}
-                        );
-
-                    enter.call(entityAlign.force2.drag)
-                        .append("title")
-                        .text(function (d) {
-                            var returntext = ""
-                            for (var attrib in d) {
-                                // mask away the display of attributes not associated with the network.  Hide the D3 specific
-                                // position and velocity stuff
-                                if (!_.contains(['data','x','y','px','py'],attrib)) {
-                                    returntext = returntext + attrib+":"+d[attrib]+"\n" 
-                                }
-                            }
-                            return returntext;
-                        })
-                        .on("mouseover", function(d) {
-                        loggedDragVisitToEntry(d);
-                        });
-
-                    // adjust the color according to the matched state. Make matched be dark red, otherwise pass the default color.
-                    // should amend this to use the entity distance color, but the datasets don't currently 
-
-                    //node.style("fill", function (d) {if (d.matched) {return "DarkRed"} else {return color(1)}});
-
-                    node.style("fill", function (d) {if (d.matched) {return "DarkRed"} else {return color(1)}});
-
-                    node.exit()
-                        .transition()
-                        .duration(transition_time)
-                        .style("opacity", 0.0)
-                        .attr("r", 0.0)
-                        .style("fill", "black")
-                        .remove();
-
-                    entityAlign.force2.nodes(entityAlign.graphB.nodes)
-                        .links(entityAlign.graphB.edges)
-                        .start();
-
-                    entityAlign.force2.on("tick", function () {
-                        link.attr("x1", function (d) { return d.source.x; })
-                            .attr("y1", function (d) { return d.source.y; })
-                            .attr("x2", function (d) { return d.target.x; })
-                            .attr("y2", function (d) { return d.target.y; });
-
-                        node.attr("cx", function (d) { return d.x; })
-                            .attr("cy", function (d) { return d.y; });
-                    });
-            } else {
-
-                enter = node.enter()
-                    .append("g")
-                    .classed("node", true);
-
-                enter.append("text")
-                    .text(function (d) {
-                        return d.tweet;
-                    })
-
-                    // use the default cursor so the text doesn't look editable
-                    .style('cursor', 'default')
-
-                    // enable click to recenter
-                    .on("click", function(d) {
-                        loggedVisitToEntry(d);
-                    });
-
-
-                enter.insert("rect", ":first-child")
-                    .attr("width", function (d) { return d.bbox.width + 4; })
-                    .attr("height", function (d) { return d.bbox.height + 4; })
-                    .attr("y", function (d) { return d.bbox.y - 2; })
-                    .attr("x", function (d) { return d.bbox.x - 2; })
-                    .attr('rx', 4)
-                    .attr('ry', 4)
-                    .style("stroke", function (d) {
-                        return color(d.distance);
-                    })
-                    .style("stroke-width", "2px")
-                    .style("fill", "#e5e5e5")
-                    .style("fill-opacity", 0.8);
-
-                entityAlign.force2.on("tick", function () {
-                    link.attr("x1", function (d) { return d.source.x; })
-                        .attr("y1", function (d) { return d.source.y; })
-                        .attr("x2", function (d) { return d.target.x; })
-                        .attr("y2", function (d) { return d.target.y; });
-
-                    node.attr("transform", function (d) {
-                        return "translate(" + d.x + ", " + d.y + ")";
-                    });
-                });
-               entityAlign.force2.linkDistance(100);
-            }
-            entityAlign.force2.nodes(entityAlign.graphB.nodes)
-                .links(entityAlign.graphB.edges)
-                .start();
-
-        
-            enter.call(entityAlign.force2.drag);
-
-            node.exit()
-                .transition()
-                .duration(transition_time)
-                .style("opacity", 0.0)
-                .attr("r", 0.0)
-                .style("fill", "black")
-                .remove();
-}
-
-
-var drag = d3.behavior.drag()
-    .origin(function(d) { return d; })
-    .on("dragstart", dragstarted)
-    .on("drag", dragged)
-    .on("dragend", dragended);
-
-
-function updateGraph2_d3() {
-    "use strict";
-     //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     entityAlign.ac.logSystemActivity('entityAlign - updateGraph 2 display executed');
-    var center,
-        data,
-        end_date,
-        hops,
-        change_button,
-        start_date,
-        update;
-
-
-    d3.select("#nodes2").selectAll("*").remove();
-    d3.select("#links2").selectAll("*").remove();
-
-    // Get the name of the graph dataset to render
-    var graphPathname = d3.select("#graph2-selector").node();
-    var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
-
-     var logText = "dataset2 select: start="+graphPathname;
-     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
-     
-
-    $.ajax({
-        // generalized collection definition
-        url: "service/loadgraph/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset,
-        data: data,
-        dataType: "json",
-        success: function (response) {
-            var angle,
-                enter,
-                svg,
-                svg2,
-                link,
-                map,
-                newidx,
-                node,
-                tau;
-
-
-            if (response.error ) {
-                console.log("error: " + response.error);
-                return;
-            }
-            console.log('data returned:',response.result)
-            graph = {}
-            graph.edges = response.result.links
-            graph.nodes = response.result.nodes
-
-            transition_time = 600;
-
-            // remove any previous graph
-            $('#graph2-drawing-canvas').remove();
-
-            var margin = {top: -5, right: -5, bottom: -5, left: -5},
-            width = 820 - margin.left - margin.right,
-            height = 820 - margin.top - margin.bottom;
-
-        // adding logic for dragging & zooming
-
-        var zoom = d3.behavior.zoom()
-            .scaleExtent([0.1, 10])
-            .on("zoom", zoomed);
-
-
-        
-        // added for drag & scale
-        svg = d3.select("#graph2").append('svg')
-            .attr("id","graph2-drawing-canvas")
-            .attr("width",width + margin.left + margin.right)
-            .attr("height",height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.right + ")")
-            .call(zoom);
-
-        var rect = svg.append("rect")
-            .attr("width", width)
-            .attr("height", height)
-            .style("fill", "none")
-            .style("pointer-events", "all");
-
-        var container = svg.append("g");
-
-   //For zooming the graph #2
-        function zoomed() {
-          container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-        }
-
-       
-        // end of added for drag & scale
-
-            link = container.selectAll(".link")
-                .data(graph.edges)
-                .enter()
-                .append("line")
-                .classed("link", true)
-                .style("opacity",0.8)
-                .style("color","red")
-                .style("stroke-width", 2.0);
-
-
-
-            node = container.selectAll(".node")
-                .data(graph.nodes, function (d) { return d.name; })
-                .on("mouseover", function(d) {
-                        loggedVisitToEntry(d);
-                });
-
-            // support two different modes, where circular nodes are drawn for each entity or for where the
-            // sender name is used inside a textbox. if entityAlign.textmode = true, then render text
-
-            if (!entityAlign.textmode) {
-                    enter = node.enter().append("circle")
-                        .attr("r", 5)
-                        .style("opacity", 0.0)
-                        .style("fill", "orange")
-                        .call(drag)
-                        .on("click", function(d) {
-                            loggedVisitToEntry(d);
-                            //centerOnClickedGraphNode(d.tweet);
-                        })
-
-
-                    enter.transition()
-                        .duration(transition_time)
-                        .attr("r", 12)
-                        .style("opacity", 1.0)
-                        .style("fill", function (d) {
-                            return color(2);
-                        });
-
-                    // add hover titles to the nodes.  the text is derived from the node attributes
-                    enter.append("title")
-                        //.call(entityAlign.force2.drag)
-                        .text(function (d) {
-                            var returntext = ""
-                            // look through all the attributes in the node record and list them 
-                            // in the textover field, except for the 'data' attribute, which is 
-                            // currently a complex JSON object
-                            for (var attrib in d) {
-                                if (attrib != 'data') {
-                                    returntext = returntext + attrib+":"+d[attrib]+"\n" 
-                                }
-                            }
-                            return returntext;
-                        })
-                        .on("mouseover", function(d) {
-                        loggedDragVisitToEntry(d);
-                        });
-
-                    node.exit()
-                        .transition()
-                        .duration(transition_time)
-                        .style("opacity", 0.0)
-                        .attr("r", 0.0)
-                        .style("fill", "black")
-                        .remove();
-
-                    entityAlign.force2.nodes(graph.nodes)
-                        .links(graph.edges)
-                        .start();
-
-                    entityAlign.force2.on("tick", function () {
-                        link.attr("x1", function (d) { return d.source.x; })
-                            .attr("y1", function (d) { return d.source.y; })
-                            .attr("x2", function (d) { return d.target.x; })
-                            .attr("y2", function (d) { return d.target.y; });
-
-                        node.attr("cx", function (d) { return d.x; })
-                            .attr("cy", function (d) { return d.y; });
-                    });
-            } else {
-
-                enter = node.enter()
-                    .append("g")
-                    .classed("node", true)
-                    .call(drag);
-
-                enter.append("text")
-                    .text(function (d) {
-                        return d.tweet;
-                    })
-
-                    // use the default cursor so the text doesn't look editable
-                    .style('cursor', 'default')
-
-                    // enable click to recenter
-                    .on("click", function(d) {
-                        loggedVisitToEntry(d);
-                    })
-
-
-                enter.insert("rect", ":first-child")
-                    .attr("width", function (d) { return d.bbox.width + 4; })
-                    .attr("height", function (d) { return d.bbox.height + 4; })
-                    .attr("y", function (d) { return d.bbox.y - 2; })
-                    .attr("x", function (d) { return d.bbox.x - 2; })
-                    .attr('rx', 4)
-                    .attr('ry', 4)
-                    .style("stroke", function (d) {
-                        return color(d.distance);
-                    })
-                    .style("stroke-width", "2px")
-                    .style("fill", "#e5e5e5")
-                    .style("fill-opacity", 0.8);
-
-                entityAlign.force2.on("tick", function () {
-                    link.attr("x1", function (d) { return d.source.x; })
-                        .attr("y1", function (d) { return d.source.y; })
-                        .attr("x2", function (d) { return d.target.x; })
-                        .attr("y2", function (d) { return d.target.y; });
-
-                    node.attr("transform", function (d) {
-                        return "translate(" + d.x + ", " + d.y + ")";
-                    });
-                });
-               entityAlign.force2.linkDistance(100);
-            }
-            entityAlign.force2.nodes(graph.nodes)
-                .links(graph.edges)
-                .start();
-
-        
-            enter.call(entityAlign.force2.drag);
-
-            node.exit()
-                .transition()
-                .duration(transition_time)
-                .style("opacity", 0.0)
-                .attr("r", 0.0)
-                .style("fill", "black")
-                .remove();
-        }
+    window.info2 = info2 = new clique.view.SelectionInfo({
+        model: view2.selection,
+        el: "#info2",
+        graph: graph2
     });
+
 }
 
-// These three routines below handle dragging events so dragging can take place of zooming
-
-function dragstarted(d) {
-  d3.event.sourceEvent.stopPropagation();
-  console.log("drag start")
-  d3.select(this).classed("dragging", true);
-}
-
-function dragged(d) {
-  d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
-}
-
-function dragended(d) {
-  d3.select(this).classed("dragging", false);
-}
-
-
-function entityAlignDistanceFunction( distance) {
-        // make alternating blue and tan colors gradually fading to background to add color gradient to network
-        // see http://en.wikipedia.org/wiki/Web_colors
-
-        // for really far away distances, wrap the colors, avoid the red at the center.  This allows this algorithm to always
-        // produce a cycle of acceptable colors
-        if (distance > entityAlign.nodeColorArray.length-1)
-                return entityAlign.nodeColorArray[(distance%(entityAlign.nodeColorArray.length-1))+1];
-         else
-                return entityAlign.nodeColorArray[distance];
-}
 
 
 function firstTimeInitialize() {
@@ -1660,7 +715,7 @@ function ExploreLocalGraphAregion() {
     var centralHandle  = document.getElementById('ga-name').value;
     //console.log('doing one hop around',centralHandle)
     //initGraph1FromDatastore();
-    updateGraph1_d3();
+    initGraph1WithClique()
     InitializeLineUpAroundEntity(centralHandle); 
 }
 
@@ -1669,7 +724,7 @@ function ExploreLocalGraphAregion() {
 function ExploreLocalGraphBregion(handle) {
     // set the UI to show who we are exploring around in graphB
     document.getElementById('gb-name').value = handle;
-    initGraph2FromDatastore(handle);
+    initGraph2WithClique()
 }
 
 // this function resets lineup to the appropriate view whenever the focus selector is changed

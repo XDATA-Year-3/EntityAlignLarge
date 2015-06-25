@@ -2042,37 +2042,37 @@ window.clique.template.selectionInfo = function template(locals) {
 var buf = [];
 var jade_mixins = {};
 var jade_interp;
-;var locals_for_with = (locals || {});(function (_, clique, node, selectionSize, undefined) {
+;var locals_for_with = (locals || {});(function (_, node, selectionSize, undefined) {
 jade_mixins["item"] = function(key, value){
 var block = (this && this.block), attributes = (this && this.attributes) || {};
 buf.push("<tr><td class=\"text-right\"><strong>" + (jade.escape(null == (jade_interp = key) ? "" : jade_interp)) + "</strong></td><td>" + (jade.escape(null == (jade_interp = value) ? "" : jade_interp)) + "</td></tr>");
 };
-buf.push("<div class=\"container\">");
+buf.push("<div class=\"container noclick\">");
 if ( _.isUndefined(node))
 {
 buf.push("<em>(Selection is empty)</em>");
 }
 else
 {
-buf.push("<nav><ul class=\"pagination\"><li class=\"prev\"><a aria-label=\"Previous\" class=\"virtual-link prev\"><span aria-hidden=\"true\">&laquo;</span></a></li><li class=\"next\"><a aria-label=\"Next\" class=\"virtual-link next\"><span aria-hidden=\"true\">&raquo;</span></a></li></ul></nav><div class=\"container\"><div class=\"row\"><div class=\"col-md-1\"><table class=\"table table-striped table-bordered\">");
-jade_mixins["item"]("key", node.key);
-// iterate _.filter(_.keys(node), _.negate(_.bind(clique.ignore.has, clique.ignore)))
+buf.push("<nav><ul class=\"pagination\"><li class=\"prev\"><a aria-label=\"Previous\" class=\"virtual-link prev\"><span aria-hidden=\"true\">&laquo;</span></a></li><li class=\"next\"><a aria-label=\"Next\" class=\"virtual-link next\"><span aria-hidden=\"true\">&raquo;</span></a></li></ul></nav><div class=\"container noclick\"><div class=\"row\"><div class=\"col-md-1\"><table class=\"table table-striped table-bordered\">");
+jade_mixins["item"]("key", node.key());
+// iterate node.getAllData()
 ;(function(){
-  var $$obj = _.filter(_.keys(node), _.negate(_.bind(clique.ignore.has, clique.ignore)));
+  var $$obj = node.getAllData();
   if ('number' == typeof $$obj.length) {
 
     for (var $index = 0, $$l = $$obj.length; $index < $$l; $index++) {
-      var prop = $$obj[$index];
+      var item = $$obj[$index];
 
-jade_mixins["item"](prop, node[prop]);
+jade_mixins["item"](item[0], item[1]);
     }
 
   } else {
     var $$l = 0;
     for (var $index in $$obj) {
-      $$l++;      var prop = $$obj[$index];
+      $$l++;      var item = $$obj[$index];
 
-jade_mixins["item"](prop, node[prop]);
+jade_mixins["item"](item[0], item[1]);
     }
 
   }
@@ -2094,14 +2094,494 @@ buf.push("<div class=\"row\"><h5>Selection</h5><button type=\"button\" class=\"s
 }
 buf.push("</div>");
 }
-buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _!=="undefined"?_:undefined,"clique" in locals_for_with?locals_for_with.clique:typeof clique!=="undefined"?clique:undefined,"node" in locals_for_with?locals_for_with.node:typeof node!=="undefined"?node:undefined,"selectionSize" in locals_for_with?locals_for_with.selectionSize:typeof selectionSize!=="undefined"?selectionSize:undefined,"undefined" in locals_for_with?locals_for_with.undefined:typeof undefined!=="undefined"?undefined:undefined));;return buf.join("");
+buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _!=="undefined"?_:undefined,"node" in locals_for_with?locals_for_with.node:typeof node!=="undefined"?node:undefined,"selectionSize" in locals_for_with?locals_for_with.selectionSize:typeof selectionSize!=="undefined"?selectionSize:undefined,"undefined" in locals_for_with?locals_for_with.undefined:typeof undefined!=="undefined"?undefined:undefined));;return buf.join("");
 }})(window);
+
+(function (clique, _, $) {
+    "use strict";
+
+    clique.adapter = {};
+
+    clique.adapter.NodeLinkList = function (cfg) {
+        var nodes = clique.util.deepCopy(cfg.nodes),
+            links = clique.util.deepCopy(cfg.links),
+            orig = cfg,
+            nodeIndex = {},
+            sourceIndex = {},
+            targetIndex = {},
+            mutators = {},
+            getMutator,
+            matchmaker;
+
+        clique.util.require(nodes, "nodes");
+        clique.util.require(links, "links");
+
+        getMutator = function (key) {
+            if (!_.has(nodeIndex, key)) {
+                return undefined;
+            }
+
+            if (!_.has(mutators, key)) {
+                mutators[key] = new clique.util.Mutator({
+                    target: nodeIndex[key]
+                });
+            }
+
+            return mutators[key];
+        };
+
+        window.matchmaker = matchmaker = function (spec) {
+            var key,
+                m,
+                matcher,
+                spec2;
+
+            if (_.has(spec, "key")) {
+                key = spec.key;
+
+                spec2 = clique.util.deepCopy(spec);
+                delete spec2.key;
+
+                m = _.matcher(spec2);
+
+                matcher = function (obj) {
+                    return m(obj.data) && obj.key === key;
+                };
+            } else {
+                matcher = _.compose(_.matcher(spec), _.property("data"));
+            }
+
+            return matcher;
+        };
+
+        _.each(nodes, function (n) {
+            var hash,
+                ns,
+                tmpNs = "data";
+
+            // Promote the data elements into a dedicated namespace.
+            //
+            // First figure out a suitable temporary name to use for the
+            // namespace.
+            while (_.has(n, tmpNs)) {
+                tmpNs += "x";
+            }
+
+            // Create the namespace.
+            ns = n[tmpNs] = {};
+
+            // Move all top-level properties into the namespace.
+            _.each(n, function (v, k) {
+                if (k !== tmpNs) {
+                    ns[k] = v;
+                    delete n[k];
+                }
+            });
+
+            // Rename the temporary namespace as "data".
+            if (tmpNs !== "data") {
+                n.data = ns;
+                delete n[tmpNs];
+            }
+
+            // Install a unique key in the node.
+            hash = clique.util.md5(_.uniqueId() + JSON.stringify(n));
+            n.key = hash;
+
+            // Store the node in the hash table.
+            nodeIndex[hash] = n;
+        });
+
+        _.each(links, function (e) {
+            var sourceNode = nodes[e.source],
+                targetNode = nodes[e.target];
+
+            sourceIndex[sourceNode.key] = sourceIndex[sourceNode.key] || {};
+            sourceIndex[sourceNode.key][targetNode.key] = targetNode.key;
+
+            targetIndex[targetNode.key] = targetIndex[targetNode.key] || {};
+            targetIndex[targetNode.key][sourceNode.key] = sourceNode.key;
+        });
+
+        return {
+            findNodes: function (spec) {
+                var def = new $.Deferred();
+                def.resolve(_.map(_.pluck(_.filter(nodes, matchmaker(spec)), "key"), getMutator));
+                return def;
+            },
+
+            findNode: function (spec) {
+                var node = _.find(nodes, matchmaker(spec)),
+                    def = new $.Deferred();
+
+                if (node) {
+                    node = getMutator(node.key);
+                }
+
+                def.resolve(node);
+                return def;
+            },
+
+            neighborhood: function (options) {
+                var frontier,
+                    neighborNodes = new clique.util.Set(),
+                    neighborLinks = new clique.util.Set(),
+                    def = new $.Deferred();
+
+                clique.util.require(options.center, "center");
+                clique.util.require(options.radius, "radius");
+
+                options.center.setTransient("root", true);
+
+                frontier = new clique.util.Set();
+
+                // Don't start the process with a "deleted" node (unless deleted
+                // nodes are specifically allowed).
+                if (options.deleted || !options.center.getData("deleted")) {
+                    neighborNodes.add(options.center.key());
+                    frontier.add(options.center.key());
+                }
+
+                // Fan out from the center to reach the requested radius.
+                _.each(_.range(options.radius), function () {
+                    var newFrontier = new clique.util.Set();
+
+                    // Find all links to and from the current frontier
+                    // nodes.
+                    _.each(frontier.items(), function (nodeKey) {
+                        // Do not add links to nodes that are deleted (unless
+                        // deleted nodes are specifically allowed).
+                        _.each(sourceIndex[nodeKey], function (neighborKey) {
+                            if (options.deleted || !nodeIndex[neighborKey].data.deleted) {
+                                neighborLinks.add(JSON.stringify([nodeKey, neighborKey]));
+                            }
+                        });
+
+                        _.each(targetIndex[nodeKey], function (neighborKey) {
+                            if (options.deleted || !nodeIndex[neighborKey].data.deleted) {
+                                neighborLinks.add(JSON.stringify([neighborKey, nodeKey]));
+                            }
+                        });
+                    });
+
+                    // Collect the nodes named in the links.
+                    _.each(neighborLinks.items(), function (link) {
+                        link = JSON.parse(link);
+
+                        if (!neighborNodes.has(link[0])) {
+                            newFrontier.add(link[0]);
+                        }
+
+                        if (!neighborNodes.has(link[1])) {
+                            newFrontier.add(link[1]);
+                        }
+
+                        neighborNodes.add(link[0]);
+                        neighborNodes.add(link[1]);
+                    });
+
+                    frontier = newFrontier;
+                });
+
+                def.resolve({
+                    nodes: _.map(neighborNodes.items(), _.propertyOf(nodeIndex)),
+                    links: _.map(neighborLinks.items(), function (link) {
+                        link = JSON.parse(link);
+
+                        return {
+                            source: link[0],
+                            target: link[1]
+                        };
+                    })
+                });
+                return def;
+            },
+
+            sync: function () {
+                orig.nodes = clique.util.deepCopy(_.pluck(nodes, "data"));
+            }
+        };
+    };
+}(window.clique, window._, window.jQuery));
+
+(function (clique, Hashes, _, Backbone) {
+    "use strict";
+
+    clique.util = {};
+
+    clique.util.md5 = (function () {
+        var md5 = new Hashes.MD5();
+
+        return function (s) {
+            return md5.hex(s);
+        };
+    }());
+
+    clique.util.deepCopy = function (o) {
+        if (_.isUndefined(o)) {
+            return undefined;
+        }
+        return JSON.parse(JSON.stringify(o));
+    };
+
+    clique.util.Set = function () {
+        var items = {};
+
+        return {
+            add: function (item) {
+                items[item] = null;
+            },
+
+            remove: function (item) {
+                delete items[item];
+            },
+
+            has: function (item) {
+                return _.has(items, item);
+            },
+
+            items: function (mapper) {
+                var stuff = _.keys(items);
+                if (mapper) {
+                    stuff = _.map(stuff, mapper);
+                }
+                return stuff;
+            },
+
+            size: function () {
+                return _.size(items);
+            }
+        };
+    };
+
+    clique.util.MultiTable = function () {
+        var table = {};
+
+        return {
+            add: function (key, item) {
+                if (!_.has(table, key)) {
+                    table[key] = new clique.util.Set();
+                }
+
+                table[key].add(item);
+            },
+
+            remove: function (key, item) {
+                if (_.has(table, key)) {
+                    table[key].remove(item);
+                }
+            },
+
+            strike: function (key) {
+                delete table[key];
+            },
+
+            has: function (key, item) {
+                return _.has(table, key) && (_.isUndefined(item) || table[key].has(item));
+            },
+
+            items: function (key) {
+                if (_.has(table, key)) {
+                    return table[key].items();
+                }
+            }
+        };
+    };
+
+    clique.util.require = function (arg, name) {
+        if (_.isUndefined(arg)) {
+            throw new Error("argument '" + name + "' is required");
+        }
+    };
+
+    clique.util.Mutator = function (cfg) {
+        var target = cfg.target,
+            disallowed = cfg.disallowed || [];
+
+        clique.util.require(target, "target");
+
+        (function () {
+            var disallowedList = disallowed;
+
+            disallowed = new clique.util.Set();
+            _.each(disallowedList, function (d) {
+                disallowed.add(d);
+            });
+        }());
+
+        return _.extend({
+            key: function () {
+                return target.key;
+            },
+
+            getTransient: function (prop) {
+                return target[prop];
+            },
+
+            setTransient: function (prop, value) {
+                if (prop === "key" || disallowed.has(prop)) {
+                    return false;
+                }
+
+                target[prop] = value;
+                return true;
+            },
+
+            clearTransient: function (prop) {
+                if (disallowed.has(prop)) {
+                    return false;
+                }
+
+                delete target[prop];
+                return true;
+            },
+
+            getAllData: function () {
+                return _.pairs(target.data);
+            },
+
+            getData: function (prop) {
+                return target.data[prop];
+            },
+
+            setData: function (prop, value) {
+                target.data[prop] = value;
+                this.trigger("changed", this, prop, value);
+            },
+
+            clearData: function (prop) {
+                delete target.data[prop];
+                this.trigger("cleared", this, prop);
+            },
+
+            getTarget: function () {
+                return target;
+            }
+        }, Backbone.Events);
+    };
+}(window.clique, window.Hashes, window._, window.Backbone));
+
+(function (clique, $, _, Backbone) {
+    "use strict";
+
+    clique.adapter.Mongo = function (cfg) {
+        var findNodesService = "service/findNodes",
+            mutators = {},
+            mongoStore = {
+                host: cfg.host || "localhost",
+                db: cfg.database,
+                coll: cfg.collection
+            };
+
+        clique.util.require(cfg.database, "database");
+        clique.util.require(cfg.collection, "collection");
+
+        return _.extend({
+            findNodes: function (spec) {
+                var data = _.extend({
+                    spec: JSON.stringify(spec)
+                }, mongoStore);
+
+                return $.getJSON(findNodesService, data)
+                   .then(_.partial(_.map, _, _.bind(this.getMutator, this)));
+            },
+
+            findNode: function (spec) {
+                var data = _.extend({
+                    spec: JSON.stringify(spec),
+                    singleton: JSON.stringify(true)
+                }, mongoStore);
+
+                return $.getJSON(findNodesService, data)
+                    .then(_.bind(function (result) {
+                        var def = new $.Deferred();
+
+                        if (result) {
+                            result = this.getMutator(result);
+                        }
+
+                        def.resolve(result);
+                        return def;
+                    }, this));
+            },
+
+            neighborhood: function (options) {
+                clique.util.require(options.center, "center");
+                clique.util.require(options.radius, "radius");
+
+                options = _.clone(options);
+                options.center = options.center.key();
+                options = _.extend(options, mongoStore);
+
+                return $.getJSON("service/neighborhood", options)
+                   .then(_.bind(function (results) {
+                       var def = new $.Deferred();
+
+                       _.each(results.nodes, _.bind(function (node, i) {
+                            var mut = this.getMutator(node);
+
+                            if (mut.key() === options.center) {
+                                mut.setTransient("root", true);
+                            }
+
+                            results.nodes[i] = mut.getTarget();
+                        }, this));
+
+                       def.resolve(results);
+                       return def;
+                   }, this));
+            },
+
+            sync: function () {
+                var def = new $.Deferred();
+                def.resolve();
+                return def;
+            },
+
+            getMutator: function (mongoRec) {
+                var key = mongoRec._id.$oid;
+
+                if (!_.has(mutators, key)) {
+                    mutators[key] = new clique.util.Mutator({
+                        target: {
+                            key: key,
+                            data: mongoRec.data
+                        }
+                    });
+
+                    this.listenTo(mutators[key], "changed", function (mutator, prop, value) {
+                        $.getJSON("plugin/mongo/update", _.extend({
+                            key: mutator.key(),
+                            prop: prop,
+                            value: value
+                        }, mongoStore));
+                    });
+                }
+
+                return mutators[key];
+            }
+        }, Backbone.Events);
+    };
+}(window.clique, window.jQuery, window._, window.Backbone));
 
 (function (clique, Backbone, _) {
     "use strict";
 
     var linkHash = function (link) {
-        return JSON.stringify([link.source.key, link.target.key]);
+        var source,
+            target;
+
+        source = link.source;
+        if (!_.isString(source)) {
+            source = source.key;
+        }
+
+        target = link.target;
+        if (!_.isString(target)) {
+            target = target.key;
+        }
+
+        return JSON.stringify([source, target]);
     };
 
     clique.Graph = Backbone.Model.extend({
@@ -2127,33 +2607,38 @@ buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _
         },
 
         addNeighborhood: function (options) {
-            var nbd = this.adapter.neighborhood(options),
-                newNodes = [],
-                newLinks = [];
+            this.adapter.neighborhood(options)
+                .then(_.bind(function (nbd) {
+                    var newNodes = [],
+                        newLinks = [];
 
-            _.each(nbd.nodes, _.bind(function (node) {
-                if (!_.has(this.nodes, node.key)) {
-                    this.nodes[node.key] = node;
-                    newNodes.push(node);
-                }
-            }, this));
+                    _.each(nbd.nodes, _.bind(function (node) {
+                        if (!_.has(this.nodes, node.key)) {
+                            this.nodes[node.key] = node;
+                            newNodes.push(node);
+                        }
+                    }, this));
 
-            _.each(nbd.links, _.bind(function (link) {
-                var linkKey = linkHash(link);
-                if (!this.links.has(linkKey)) {
-                    this.links.add(linkKey);
+                    _.each(nbd.links, _.bind(function (link) {
+                        var linkKey = linkHash(link);
+                        if (!this.links.has(linkKey)) {
+                            this.links.add(linkKey);
 
-                    this.forward.add(link.source.key, link.target.key);
-                    this.back.add(link.target.key, link.source.key);
+                            this.forward.add(link.source, link.target);
+                            this.back.add(link.target, link.source);
 
-                    newLinks.push(link);
-                }
-            }, this));
+                            link.source = this.nodes[link.source];
+                            link.target = this.nodes[link.target];
 
-            this.set({
-                nodes: this.get("nodes").concat(newNodes),
-                links: this.get("links").concat(newLinks)
-            });
+                            newLinks.push(link);
+                        }
+                    }, this));
+
+                    this.set({
+                        nodes: this.get("nodes").concat(newNodes),
+                        links: this.get("links").concat(newLinks)
+                    });
+                }, this));
         },
 
         removeNeighborhood: function (options) {
@@ -2175,10 +2660,10 @@ buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _
             // Compute the set of nodes that lie within the requested
             // neighborhood of the central node.
             neighborhood = new clique.util.Set();
-            neighborhood.add(center.key);
+            neighborhood.add(center.key());
 
             frontier = new clique.util.Set();
-            frontier.add(center.key);
+            frontier.add(center.key());
 
             _.each(_.range(radius), _.bind(function () {
                 var newFrontier = new clique.util.Set();
@@ -2651,20 +3136,24 @@ buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _
 
     clique.view.SelectionInfo = Backbone.View.extend({
         initialize: function (options) {
+            var debRender;
+
             clique.util.require(this.model, "model");
             clique.util.require(options.graph, "graph");
 
             options = options || {};
             this.graph = options.graph;
 
-            this.listenTo(this.model, "change", this.render);
-            this.listenTo(this.model, "focused", this.render);
-            this.listenTo(this.graph, "change", this.render);
+            debRender = _.debounce(this.render, 100);
+
+            this.listenTo(this.model, "change", debRender);
+            this.listenTo(this.model, "focused", debRender);
+            this.listenTo(this.graph, "change", debRender);
         },
 
         hideNode: function (node) {
-            node.selected = false;
-            delete node.root;
+            node.setTransient("selected", false);
+            node.clearTransient("root");
             this.graph.removeNeighborhood({
                 center: node,
                 radius: 0
@@ -2672,12 +3161,11 @@ buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _
         },
 
         deleteNode: function (node, deleted) {
-            node.deleted = deleted;
-
-            if (node.deleted) {
+            if (deleted) {
+                node.setData("deleted", true);
                 this.hideNode(node);
             } else {
-                delete node.deleted;
+                node.clearData("deleted");
                 this.render();
             }
         },
@@ -2690,290 +3178,72 @@ buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _
         },
 
         render: function () {
-            var node = this.graph.adapter.findNode({
-                key: this.model.focused()
-            });
+            var focused,
+                renderTemplate;
 
-            this.$el.html(clique.template.selectionInfo({
-                node: node,
-                selectionSize: this.model.size()
-            }));
-
-            this.$("a.prev")
-                .on("click", _.bind(function () {
-                    this.model.focusLeft();
-                }, this));
-
-            this.$("a.next")
-                .on("click", _.bind(function () {
-                    this.model.focusRight();
-                }, this));
-
-            this.$("button.remove").on("click", _.bind(function () {
-                this.hideNode(this.graph.adapter.findNode({
-                    key: this.model.focused()
+            renderTemplate = _.bind(function (node) {
+                this.$el.html(clique.template.selectionInfo({
+                    node: node,
+                    selectionSize: this.model.size()
                 }));
-            }, this));
 
-            this.$("button.remove-sel").on("click", _.bind(function () {
-                _.each(this.model.items(), _.bind(function (key) {
-                    this.hideNode(this.graph.adapter.findNode({
-                        key: key
-                    }));
+                this.$("a.prev")
+                    .on("click", _.bind(function () {
+                        this.model.focusLeft();
+                    }, this));
+
+                this.$("a.next")
+                    .on("click", _.bind(function () {
+                        this.model.focusRight();
+                    }, this));
+
+                this.$("button.remove").on("click", _.bind(function () {
+                    this.graph.adapter.findNode({key: this.model.focused()})
+                        .then(_.bind(this.hideNode, this));
                 }, this));
-            }, this));
 
-            this.$("button.delete").on("click", _.bind(function () {
-                var node = this.graph.adapter.findNode({
-                    key: this.model.focused()
-                });
-                this.deleteNode(node, !node.deleted);
-            }, this));
-
-            this.$("button.delete-sel").on("click", _.bind(function () {
-                _.each(this.model.items(), _.bind(function (key) {
-                    this.deleteNode(this.graph.adapter.findNode({
-                        key: key
-                    }), true);
+                this.$("button.remove-sel").on("click", _.bind(function () {
+                    _.each(this.model.items(), _.bind(function (key) {
+                        this.graph.adapter.findNode({key: key})
+                            .then(_.bind(this.hideNode, this));
+                    }, this));
                 }, this));
-            }, this));
 
-            this.$("button.expand").on("click", _.bind(function () {
-                this.expandNode(this.graph.adapter.findNode({
-                    key: this.model.focused()
-                }));
-            }, this));
-
-            this.$("button.expand-sel").on("click", _.bind(function () {
-                _.each(this.model.items(), _.bind(function (key) {
-                    this.expandNode(this.graph.adapter.findNode({
-                        key: key
-                    }));
+                this.$("button.delete").on("click", _.bind(function () {
+                    this.graph.adapter.findNode({key: this.model.focused()})
+                        .then(_.bind(function (node) {
+                            this.deleteNode(node, !node.getData("deleted"));
+                        }, this));
                 }, this));
-            }, this));
+
+                this.$("button.delete-sel").on("click", _.bind(function () {
+                    _.each(this.model.items(), _.bind(function (key) {
+                        this.graph.adapter.findNode({key: key})
+                            .then(_.bind(this.deleteNode, this, _, true));
+                    }, this));
+                }, this));
+
+                this.$("button.expand").on("click", _.bind(function () {
+                    this.graph.adapter.findNode({key: this.model.focused()})
+                        .then(_.bind(this.expandNode, this));
+                }, this));
+
+                this.$("button.expand-sel").on("click", _.bind(function () {
+                    _.each(this.model.items(), _.bind(function (key) {
+                        this.graph.adapter.findNode({ key: key})
+                            .then(_.bind(this.expandNode, this));
+                    }, this));
+                }, this));
+            }, this);
+
+            focused = this.model.focused();
+
+            if (!focused) {
+                renderTemplate(focused);
+            } else {
+                this.graph.adapter.findNode({key: focused})
+                    .then(renderTemplate);
+            }
         }
     });
 }(window.clique, window.Backbone, window._));
-
-(function (clique, _) {
-    "use strict";
-
-    clique.adapter = {};
-
-    clique.adapter.NodeLinkList = function (cfg) {
-        var nodes = clique.util.deepCopy(cfg.nodes),
-            links = clique.util.deepCopy(cfg.links),
-            orig = cfg,
-            nodeIndex = {},
-            sourceIndex = {},
-            targetIndex = {};
-
-        clique.util.require(nodes, "nodes");
-        clique.util.require(links, "links");
-
-        _.each(nodes, function (n) {
-            var hash = clique.util.md5(_.uniqueId() + JSON.stringify(n));
-            n.key = hash;
-            nodeIndex[hash] = n;
-        });
-
-        _.each(links, function (e) {
-            var sourceNode = nodes[e.source],
-                targetNode = nodes[e.target];
-
-            sourceIndex[sourceNode.key] = sourceIndex[sourceNode.key] || {};
-            sourceIndex[sourceNode.key][targetNode.key] = targetNode.key;
-
-            targetIndex[targetNode.key] = targetIndex[targetNode.key] || {};
-            targetIndex[targetNode.key][sourceNode.key] = sourceNode.key;
-        });
-
-        return {
-            findNodes: function (spec) {
-                return _.where(nodes, spec);
-            },
-
-            findNode: function (spec) {
-                return _.findWhere(nodes, spec);
-            },
-
-            neighborhood: function (options) {
-                var frontier,
-                    neighborNodes = new clique.util.Set(),
-                    neighborLinks = new clique.util.Set();
-
-                clique.util.require(options.center, "center");
-                clique.util.require(options.radius, "radius");
-
-                options.center.root = true;
-
-                frontier = new clique.util.Set();
-
-                // Don't start the process with a "deleted" node (unless deleted
-                // nodes are specifically allowed).
-                if (options.deleted || !options.center.deleted) {
-                    neighborNodes.add(options.center.key);
-                    frontier.add(options.center.key);
-                }
-
-                // Fan out from the center to reach the requested radius.
-                _.each(_.range(options.radius), function () {
-                    var newFrontier = new clique.util.Set();
-
-                    // Find all links to and from the current frontier
-                    // nodes.
-                    _.each(frontier.items(), function (nodeKey) {
-                        // Do not add links to nodes that are deleted (unless
-                        // deleted nodes are specifically allowed).
-                        _.each(sourceIndex[nodeKey], function (neighborKey) {
-                            if (options.deleted || !nodeIndex[neighborKey].deleted) {
-                                neighborLinks.add(JSON.stringify([nodeKey, neighborKey]));
-                            }
-                        });
-
-                        _.each(targetIndex[nodeKey], function (neighborKey) {
-                            if (options.deleted || !nodeIndex[neighborKey].deleted) {
-                                neighborLinks.add(JSON.stringify([neighborKey, nodeKey]));
-                            }
-                        });
-                    });
-
-                    // Collect the nodes named in the links.
-                    _.each(neighborLinks.items(), function (link) {
-                        link = JSON.parse(link);
-
-                        if (!neighborNodes.has(link[0])) {
-                            newFrontier.add(link[0]);
-                        }
-
-                        if (!neighborNodes.has(link[1])) {
-                            newFrontier.add(link[1]);
-                        }
-
-                        neighborNodes.add(link[0]);
-                        neighborNodes.add(link[1]);
-                    });
-
-                    frontier = newFrontier;
-                });
-
-                return {
-                    nodes: _.map(neighborNodes.items(), _.propertyOf(nodeIndex)),
-                    links: _.map(neighborLinks.items(), function (link) {
-                        link = JSON.parse(link);
-
-                        return {
-                            source: nodeIndex[link[0]],
-                            target: nodeIndex[link[1]]
-                        };
-                    })
-                };
-            },
-
-            write: function () {
-                orig.nodes = _.map(nodes, function (n) {
-                    var node = {};
-                    _.map(n, function (value, key) {
-                        if (!clique.ignore.has(key)) {
-                            node[key] = clique.util.deepCopy(value);
-                        }
-                    });
-
-                    return node;
-                });
-            }
-        };
-    };
-}(window.clique, window._));
-
-(function (clique, Hashes, _) {
-    "use strict";
-
-    clique.util = {};
-
-    clique.util.md5 = (function () {
-        var md5 = new Hashes.MD5();
-
-        return function (s) {
-            return md5.hex(s);
-        };
-    }());
-
-    clique.util.deepCopy = function (o) {
-        if (_.isUndefined(o)) {
-            return undefined;
-        }
-        return JSON.parse(JSON.stringify(o));
-    };
-
-    clique.util.Set = function () {
-        var items = {};
-
-        return {
-            add: function (item) {
-                items[item] = null;
-            },
-
-            remove: function (item) {
-                delete items[item];
-            },
-
-            has: function (item) {
-                return _.has(items, item);
-            },
-
-            items: function (mapper) {
-                var stuff = _.keys(items);
-                if (mapper) {
-                    stuff = _.map(stuff, mapper);
-                }
-                return stuff;
-            }
-        };
-    };
-
-    clique.ignore = new clique.util.Set();
-    _.each(["key", "root", "index", "x", "y", "variable", "bounds", "fixed", "px", "py"], function (val) {
-        clique.ignore.add(val);
-    });
-
-    clique.util.MultiTable = function () {
-        var table = {};
-
-        return {
-            add: function (key, item) {
-                if (!_.has(table, key)) {
-                    table[key] = new clique.util.Set();
-                }
-
-                table[key].add(item);
-            },
-
-            remove: function (key, item) {
-                if (_.has(table, key)) {
-                    table[key].remove(item);
-                }
-            },
-
-            strike: function (key) {
-                delete table[key];
-            },
-
-            has: function (key, item) {
-                return _.has(table, key) && (_.isUndefined(item) || table[key].has(item));
-            },
-
-            items: function (key) {
-                if (_.has(table, key)) {
-                    return table[key].items();
-                }
-            }
-        };
-    };
-
-    clique.util.require = function (arg, name) {
-        if (_.isUndefined(arg)) {
-            throw new Error("argument '" + name + "' is required");
-        }
-    };
-}(window.clique, window.Hashes, window._));

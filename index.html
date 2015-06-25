@@ -22,7 +22,8 @@
 <link rel="stylesheet" href="cache2/bootstrap.min.css">
 <link rel="stylesheet" href="index.css">
 
-<!-- <script src="cache/clique.js"></script>  -->
+
+<script src="cache/clique.js"></script>  
 
 <!-- for bootstrap table
 <script src="jquery.min.js"></script>
@@ -77,7 +78,7 @@
 
 <style>
     html, body {
-        height: 100%;
+        height: 1000px;
         background-color: lightgray;
     }
 
@@ -208,7 +209,10 @@
         <p></p>
         <a id='onehop-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Explore local network</a>
         <p></p>
-        <div id='graph1'></div>
+        <div style-"height:500; width:350 margin-left:20px margin-right:40px">
+          <svg id='graph1' ></svg>
+        </div>
+        <div id='info1' style='margin-top:40px'></div>
         
 
     </div>
@@ -228,7 +232,7 @@
             <div class="tab-pane active" id="graph-tab1">
                 <h3 style="margin-left: 20px; height=500px">LineUp View</h3>
 -->     
-            <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px" ></select>
+            <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px" display='none'></select>
                 <!-- included excerpt from lineup definition -->
                 <div id="lugui-wrapper" style="margin-top: 40px"></div>
                  <!--   <script src="lineup.js/dist/LineUpJS.js"></script> -->
@@ -260,7 +264,8 @@
         <p></p>
         <input id='gb-name' style='margin-left:20px' disabled="disabled"> Displayed Entity</input> 
            <a id='accept-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Accept This Pairing</a>
-        <div id='graph2'></div>
+        <svg id='graph2'></svg>
+        <div id='info2' style='margin-top:40px'></div>
     </div>
 </div>
 
