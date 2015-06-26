@@ -2094,7 +2094,9 @@ buf.push("</table></div></div><div class=\"row\"><h5>Node</h5><button type=\"but
 buf.push("<button type=\"button\" class=\"btn btn-primary btn-xs expand\">Expand <span class=\"glyphicon glyphicon-fullscreen\"></span></button></div>");
 if ( selectionSize > 1)
 {
-buf.push("<div class=\"row\"><h5>Selection</h5><button type=\"button\" class=\"space-right btn btn-info btn-xs remove-sel\">Hide <span class=\"glyphicon glyphicon-eye-close\"></span></button><button type=\"button\" class=\"space-right btn btn-danger btn-xs delete-sel\">Delete <span class=\"glyphicon glyphicon-remove\"></span></button><button type=\"button\" class=\"btn btn-primary btn-xs expand-sel\">Expand <span class=\"glyphicon glyphicon-fullscreen\"></span></button></div>");
+//buf.push("<div class=\"row\"><h5>Selection</h5><button type=\"button\" class=\"space-right btn btn-info btn-xs remove-sel\">Hide <span class=\"glyphicon glyphicon-eye-close\"></span></button><button type=\"button\" class=\"space-right btn btn-danger btn-xs delete-sel\">Delete <span class=\"glyphicon glyphicon-remove\"></span></button><button type=\"button\" class=\"btn btn-primary btn-xs expand-sel\">Expand <span class=\"glyphicon glyphicon-fullscreen\"></span></button></div>");
+//}
+buf.push("<div class=\"row\"><h5>Selection</h5><button type=\"button\" class=\"space-right btn btn-info btn-xs remove-sel\">Hide <span class=\"glyphicon glyphicon-eye-close\"></span></button><button type=\"button\" class=\"btn btn-primary btn-xs expand-sel\">Expand <span class=\"glyphicon glyphicon-fullscreen\"></span></button></div>");
 }
 buf.push("</div>");
 }
@@ -2835,7 +2837,7 @@ buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _
             this.transitionTime = 500;
 
             this.cola = cola.d3adaptor()
-                .linkDistance(options.linkDistance || 100)
+                .linkDistance(options.linkDistance || 50)
                 .avoidOverlaps(true)
                 .size([this.$el.width(), this.$el.height()])
                 .start();
