@@ -12,7 +12,7 @@ import networkx as nx
 
 
 
-def run(host,database,graphname,centername):
+def run(host,database,graphname,centername,degree=1):
     # Create an empty response object.
     response = {}
     collectionNames = []
@@ -121,8 +121,8 @@ def run(host,database,graphname,centername):
 
     # Pack the results into the response object, and return it.
     response['result'] = {}
-    response['result']['links'] = fixedEdges
-    response['result']['nodes'] = fixedNodes
+    response['edges'] = fixedEdges
+    response['nodes'] = fixedNodes
 
     client.close()
 
