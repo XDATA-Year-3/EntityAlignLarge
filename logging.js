@@ -77,7 +77,7 @@ function logSetupLineUp() {
                 tags: ['lineup']
             };
             log(msg);
-            console('lineupSetup')
+            console.log('lineupSetup')
 }
 // this is called when the user selects a particular row of LineUp for the graphB neighborhood
 // to be explored
