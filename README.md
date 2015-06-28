@@ -4,5 +4,4 @@ User Interface for exploring entity alignment between large networks
 ## Requirements
 
 - Tangelo 0.9
-- PyMongo 2.7.2
-- NetworkX 1.9.1
+- PyMongo 2.7.2+

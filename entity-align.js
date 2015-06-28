@@ -18,22 +18,23 @@ entityAlign.host = null;
 entityAlign.ac = null;
 entityAlign.textmode = false;
 
+// logging is handled largely in 
 
-//var LoggingLocation = "http://xd-draper.xdata.data-tactics-corp.com:1337"
-var LoggingLocation = "http://10.1.90.46:1337/";
-// testmode = false means logging is on
-entityAlign.testMode = true;
-entityAlign.echoLogsToConsole = false;
-//entityAlign.ac = new activityLogger().echo(entityAlign.echoLogsToConsole).testing(entityAlign.testMode);
-//entityAlign.ac.registerActivityLogger(LoggingLocation, "Kitware_Entity_Alignment", "0.8");
-
-
-function logUserActivity(messagedetail, messagesummary, activityEnumeration) {
-
-}
-
-function logSystemActivity(messagedetail, messagesummary, activityEnumeration) {
-
+function logSystemActivity(group, element,activityEnum, action, tags) {
+    group = typeof group !== 'undefined' ? group : 'system_group';
+    activityEnum = typeof activityEnum !== 'undefined' ? activityEnum : 'show';
+    action = typeof action !== 'undefined' ? action : 'SHOW';
+    tags = typeof tags !== 'undefined' ? tags : [];
+    var msg = {
+        activity: activityEnum,
+        action: action,
+        elementId:  element,
+        elementType: 'OTHER',
+        elementGroup: group,
+        source: 'system',
+        tags: tags
+    };
+    log(msg);
 }
 
 entityAlign.dayColor = d3.scale.category10();
@@ -185,8 +186,8 @@ function   initGraphStats(graphIndexString)
 {
  
   "use strict";
-     //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     logSystemActivity('entityAlign - initialize graph A executed');
+    var graphelement = (graphIndexString == 'A') ? '#graph1' : '#graph2'
+     logSystemActivity('graph_'+graphIndexString+'_group',graphelement,'inspect','OPEN');
     var data
 
     // Get the name of the graph dataset to render
@@ -202,7 +203,7 @@ function   initGraphStats(graphIndexString)
         entityAlign.graphB_dataset = selectedDataset        
     }
      var logText = "dataset " + graphIndexString + " select: start="+graphPathname;
-     logSystemActivity('Kitware entityAlign - '+logText);
+     //logSystemActivity('Kitware entityAlign - '+logText);
 
     $.ajax({
         // generalized collection definition
@@ -294,11 +295,9 @@ function updateUserList(namelist) {
 // ------ end of autocomplete users 
 
 
-
 // The InitGraph functions are called the first time a graph is loaded from the graph datastore.  The ajax call to load from the store
 // is included here.  Globals variables are filled with the graph nodes and links.  No rendering is done in this method.  A method is 
 // written for graph1 and graph2.  The only difference between the graph1 and graph2 methods is that they fill different global variables.
-
 
 
 function   initGraph1WithClique()
@@ -306,7 +305,7 @@ function   initGraph1WithClique()
  
   "use strict";
      //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     logSystemActivity('entityAlign - initialize subgraph A executed');
+     logSystemActivity('graph_A_group','#graph1','EXAMINE','SHOW',['clique','neightborhood']);
     var data,
         graphData,
         graph1,
@@ -321,7 +320,7 @@ function   initGraph1WithClique()
     console.log('doing one hop around',centralHandle)
 
     var logText = "dataset1 select: start="+graphPathname;
-    logSystemActivity('Kitware entityAlign - '+logText);
+    //logSystemActivity('Kitware entityAlign - '+logText);
 
     window.graph1 = graph1 = new clique.Graph({
             adapter: clique.adapter.Mongo,
@@ -364,8 +363,7 @@ function   initGraph2WithClique()
 {
  
   "use strict";
-     //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     logSystemActivity('entityAlign - initialize subgraph B executed');
+      logSystemActivity('graph_B_group','#graph2','EXAMINE','SHOW',['clique','neightborhood']);
     var data,
         graphData,
         graph2,
@@ -380,7 +378,7 @@ function   initGraph2WithClique()
     console.log('doing one hop around',centralHandle)
 
     var logText = "dataset2 select: start="+graphPathname;
-    logSystemActivity('Kitware entityAlign - '+logText);
+    //logSystemActivity('Kitware entityAlign - '+logText);
 
     window.graph2 = graph2 = new clique.Graph({
             adapter: clique.adapter.Mongo,
@@ -390,7 +388,6 @@ function   initGraph2WithClique()
                 collection: selectedDataset
             }
         });
-
 
     graph2.adapter.findNode({name: centralHandle})
             .then(function (center) {
@@ -418,6 +415,10 @@ function   initGraph2WithClique()
 
 }
 
+function publishPairLists() {
+    logPublishPairings()
+    console.log('publishing')
+}
 
 
 function firstTimeInitialize() {
@@ -444,22 +445,6 @@ function firstTimeInitialize() {
         // set up the keystroke and mouse logger
         initializeLoggingFramework(defaults);
 
-        // 3/2014: changed link strength down from charge(-500), link(100) to charge(-2000)
-        // to reduce the node overlap but still allow some node wandering animation without being too stiff
-
-        entityAlign.force1 = d3.layout.force()
-            .charge(-200)
-            .linkDistance(75)
-            .gravity(0.2)
-            .friction(0.6)
-            .size([width/3, height/2]);
-
-        entityAlign.force2 = d3.layout.force()
-            .charge(-200)
-            .linkDistance(75)
-            .gravity(0.2)
-            .friction(0.6)
-            .size([width/3, height/2]);
 
         color = d3.scale.category20();
         //color = entityAlignDistanceFunction;
@@ -476,8 +461,6 @@ function firstTimeInitialize() {
             .on("change", handleLineUpSelectorChange);
         d3.select('#show-pairings')
             .on("click", showPairings);
-        d3.select("#align-button")
-            .on("click", runSeededGraphMatching);
         d3.select("#onehop-button")
             .on("click", ExploreLocalGraphAregion);
         d3.select("#accept-button")
@@ -492,13 +475,15 @@ function firstTimeInitialize() {
         // of the right clicks will be on the graph, this has to be at the document level so newly
         // added graph nodes are all covered by this handler.
 
-        $(document).bind('contextmenu', function(e){
-            e.preventDefault();
-            return false;
-            });
+      //  $(document).bind('contextmenu', function(e){
+      //      e.preventDefault();
+      //      return false;
+      //      });
 
     });
 
+        d3.select("#publish-parings-button")
+            .on("click", publishPairLists);
 
     // declare a Boostrap table to display pairings made by the analyst
 
@@ -557,144 +542,10 @@ function fillSeedList(element) {
 }
 
 
-// change the stagus of the global show matches 
-function toggleShowMatches() {
-
-}
-
-// restore the graph to a state where there are no matches recorded for any nodes by deleting the matched properties on all nodes in the graphs.
-
-function removeMatchingRecordsFromGraphs() {
-    console.log('graphA:',entityAlign.graphA)
-    for (node in entityAlign.graphA.nodes) {
-        if (node.hasOwnProperty('matched')) {
-            delete node.matched
-        }
-    }
-    console.log('graphA after:',entityAlign.graphA)
-    // repeat for graphB
-    for (node in entityAlign.graphB.nodes) {
-        if (node.matched != 'undefined') {
-            delete node.matched
-        }
-    }
-}
-
-// this routine reads the dataset pointed to by the seed selector and reads the seeds out of the dataset using the "loadseeds" python service.  The seeds
-// come across as an array of JSON objects.   It is assumed the seed objects have a "ga" and "gb" component. Once the data is read, it is loaded into a 
-// currentMatches array, which may be augmented by the graph matching algorithm later.  The seeds function as the initial values in the matching array. 
-
-function loadNewSeeds() {
-    console.log("loading seeds");
-    // re-initialize the matches to an empty set
-    entityAlign.currentMatches = []
-    removeMatchingRecordsFromGraphs()
-    var pathname = d3.select("#seed-selector").node();
-    var selectedDataset = pathname.options[pathname.selectedIndex].text;
-
-     var logText = "seed select: "+pathname;
-     logSystemActivity('Kitware entityAlign - '+logText);
-
-    $.ajax({
-        // generalized collection definition
-        url: "service/loadseeds/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset,
-        dataType: "json",
-        success: function (response) {
-
-            if (response.error ) {
-                console.log("error: " + response.error);
-                return;
-            }
-            console.log('data returned: from seeds',response.result)
-            for (seed in response.result.seeds) {
-                //console.log( response.result.seeds[seed])
-                entityAlign.currentMatches.push(response.result.seeds[seed])
-            }
-            // set the attributes in the graph nodes so color can show existing matches
-            updateMatchingStatusInGraphs()
-            updateGraph2_d3_afterLoad()
-            // allow time for the layout of the first graph before doing the layout on the second.  This won't scale for large graphs,
-            // but it works for our simple testcases.  
-            setTimeout(function(){
-                updateGraph1_d3_afterLoad()
-            },1250);
-            // this is turned off until we figure out why rendering graph2 confuses the layout of graph1
-
- 
-        }
-
-    })
-}
-
-// this function is called after a new set of seeds are loaded.  Assuming there are graphs present, we traverse through the graphs and set
-// the "matched" attribute to have the ID of the node in the opposing graph, which matches it. 
-
-function updateMatchingStatusInGraphs() {
-    clearMatchedStatusForGraph(entityAlign.graphA)
-    clearMatchedStatusForGraph(entityAlign.graphB)
-    for (match in  entityAlign.currentMatches) {
-        // set matched attributes
-        var match_record = entityAlign.currentMatches[match]
-        //console.log('match',match,'match_record',match_record)
-        var ga_index = match_record.ga
-        var gb_index = match_record.gb
-        //console.log('match',match,'ga',ga_index)
-        var ga_node = entityAlign.graphA.nodes[ga_index]
-        var gb_node = entityAlign.graphB.nodes[gb_index]
-        ga_node.matched = match_record.gb
-        gb_node.matched = match_record.ga
-    }
-}
-
-
-function clearMatchedStatusForGraph(graph) {
-
-}
-
-
-function runSeededGraphMatching() {
-    console.log("do graph matching")
-    console.log(entityAlign.graphB,entityAlign.graphA)
-    $.ajax({
-        type: 'PUT',
-        // generalized collection definition
-        url: "service/jhu_seeded_graph_matching" ,
-        // + "/" + entityAlign.currentMatches
-        data: {
-            graphAnodes: JSON.stringify(entityAlign.SavedGraphA.nodes),
-            graphAedges: JSON.stringify(entityAlign.SavedGraphA.edges),    
-            graphBnodes: JSON.stringify(entityAlign.SavedGraphB.nodes),         
-            graphBedges: JSON.stringify(entityAlign.SavedGraphB.edges),
-            seeds: JSON.stringify(entityAlign.currentMatches)
-        },
-        dataType: "json",
-        success: function (response) {
-
-            if (response.error ) {
-                console.log("error: " + response.error);
-                return;
-            }
-            console.log('data returned: from SGM',response.result)
-            entityAlign.currentMatches = []
-            for (match in response.result.matches) {
-                //console.log( response.result.seeds[seed])
-                entityAlign.currentMatches.push(response.result.matches[match])
-            }
-            // set the attributes in the graph nodes so color can show existing matches
-            updateMatchingStatusInGraphs()
-            updateGraph2_d3_afterLoad()
-            // allow time for the layout of the first graph before doing the layout on the second.  This won't scale for large graphs,
-            // but it works for our simple testcases.       
-            setTimeout(function(){
-                updateGraph1_d3_afterLoad()
-            },1250);
-        }
-
-    })
-}
 
 function InitializeLineUpAroundEntity(handle)
 {
+    logSetupLineUp()
     //InitializeLineUpJS();
      var graphPathname = d3.select("#graph1-selector").node();
         var graphA = graphPathname.options[graphPathname.selectedIndex].text;
@@ -704,7 +555,10 @@ function InitializeLineUpAroundEntity(handle)
     //var displaymodeselector = d3.select("#lineup-selector").node();
      //   var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
 
-     var displaymode = 'compare networks'
+    // setup the machinery to allow the interface to be used to introspect inside a single dataset or compare between the datasets
+    // a displaymode selector (currently disabled) can be set to determine which mode the UI shuld be in.  
+
+    var displaymode = 'compare networks'
     d3.json('service/lineupdatasetdescription/'+displaymode,  function (err, desc) {
         console.log('description:',desc)
         if (displaymode == 'compare networks') {
@@ -742,6 +596,7 @@ function ExploreLocalGraphAregion() {
 
 function ExploreLocalGraphBregion(handle) {
     // set the UI to show who we are exploring around in graphB
+    logSelectLineUpEntry()
     document.getElementById('gb-name').value = handle;
     initGraph2WithClique()
 }

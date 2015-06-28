@@ -2860,6 +2860,7 @@ buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _
         },
 
         render: function () {
+            logCliqueRenderAction();
             var nodeData = this.model.get("nodes"),
                 linkData = this.model.get("links"),
                 drag,
@@ -2877,6 +2878,8 @@ buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _
             drag = this.cola.drag()
                 .on("drag", _.bind(function () {
                     this.dragging = true;
+                    // *** add logging call, throttled
+                    logCliqueNodeDrag();
                 }, this));
 
             this.nodes.datum(function (d) {
@@ -3177,6 +3180,7 @@ buf.push("</div>");}.call(this,"_" in locals_for_with?locals_for_with._:typeof _
         },
 
         expandNode: function (node) {
+            logExpandNodeAction(node)
             this.graph.addNeighborhood({
                 center: node,
                 radius: 1
