@@ -24,9 +24,17 @@ var LoggingLocation = "http://10.1.90.46:1337/";
 // testmode = false means logging is on
 entityAlign.testMode = true;
 entityAlign.echoLogsToConsole = false;
-entityAlign.ac = new activityLogger().echo(entityAlign.echoLogsToConsole).testing(entityAlign.testMode);
-ac = entityAlign.ac;
-entityAlign.ac.registerActivityLogger(LoggingLocation, "Kitware_Entity_Alignment", "0.8");
+//entityAlign.ac = new activityLogger().echo(entityAlign.echoLogsToConsole).testing(entityAlign.testMode);
+//entityAlign.ac.registerActivityLogger(LoggingLocation, "Kitware_Entity_Alignment", "0.8");
+
+
+function logUserActivity(messagedetail, messagesummary, activityEnumeration) {
+
+}
+
+function logSystemActivity(messagedetail, messagesummary, activityEnumeration) {
+
+}
 
 entityAlign.dayColor = d3.scale.category10();
 entityAlign.monthColor = d3.scale.category20();
@@ -178,7 +186,7 @@ function   initGraphStats(graphIndexString)
  
   "use strict";
      //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     entityAlign.ac.logSystemActivity('entityAlign - initialize graph A executed');
+     logSystemActivity('entityAlign - initialize graph A executed');
     var data
 
     // Get the name of the graph dataset to render
@@ -194,7 +202,7 @@ function   initGraphStats(graphIndexString)
         entityAlign.graphB_dataset = selectedDataset        
     }
      var logText = "dataset " + graphIndexString + " select: start="+graphPathname;
-     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+     logSystemActivity('Kitware entityAlign - '+logText);
 
     $.ajax({
         // generalized collection definition
@@ -298,7 +306,7 @@ function   initGraph1WithClique()
  
   "use strict";
      //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     entityAlign.ac.logSystemActivity('entityAlign - initialize subgraph A executed');
+     logSystemActivity('entityAlign - initialize subgraph A executed');
     var data,
         graphData,
         graph1,
@@ -313,7 +321,7 @@ function   initGraph1WithClique()
     console.log('doing one hop around',centralHandle)
 
     var logText = "dataset1 select: start="+graphPathname;
-    entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+    logSystemActivity('Kitware entityAlign - '+logText);
 
     window.graph1 = graph1 = new clique.Graph({
             adapter: clique.adapter.Mongo,
@@ -357,7 +365,7 @@ function   initGraph2WithClique()
  
   "use strict";
      //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     entityAlign.ac.logSystemActivity('entityAlign - initialize subgraph B executed');
+     logSystemActivity('entityAlign - initialize subgraph B executed');
     var data,
         graphData,
         graph2,
@@ -372,7 +380,7 @@ function   initGraph2WithClique()
     console.log('doing one hop around',centralHandle)
 
     var logText = "dataset2 select: start="+graphPathname;
-    entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+    logSystemActivity('Kitware entityAlign - '+logText);
 
     window.graph2 = graph2 = new clique.Graph({
             adapter: clique.adapter.Mongo,
@@ -432,6 +440,9 @@ function firstTimeInitialize() {
 
         width = $(window).width();
         height = $(window).height();
+
+        // set up the keystroke and mouse logger
+        initializeLoggingFramework(defaults);
 
         // 3/2014: changed link strength down from charge(-500), link(100) to charge(-2000)
         // to reduce the node overlap but still allow some node wandering animation without being too stiff
@@ -582,7 +593,7 @@ function loadNewSeeds() {
     var selectedDataset = pathname.options[pathname.selectedIndex].text;
 
      var logText = "seed select: "+pathname;
-     entityAlign.ac.logSystemActivity('Kitware entityAlign - '+logText);
+     logSystemActivity('Kitware entityAlign - '+logText);
 
     $.ajax({
         // generalized collection definition
