@@ -481,10 +481,14 @@ function firstTimeInitialize() {
         // of the right clicks will be on the graph, this has to be at the document level so newly
         // added graph nodes are all covered by this handler.
 
+        /**
+         * No! Only block context menu on _specific_ elements!
+         *
         $(document).bind('contextmenu', function(e){
             e.preventDefault();
             return false;
             });
+        */
 
     });
 
