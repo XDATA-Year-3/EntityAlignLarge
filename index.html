@@ -202,14 +202,16 @@
         <div >
           <svg id='graph1' style="height:300; margin-top:20px; margin-left:20px" ></svg>
         </div>
-        <div id='info1' style='margin-top:20px'></div>
-        
+        <div id='info1' style='margin-top:20px'></div> 
 
     </div>
 
    <!-- center panel for showing the ranking results -->
-    <div id='controls' class=col-md-6> 
-            <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px" display='none'></select>
+
+    <div id='controls' class=col-md-6>
+   
+            <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
+
                 <!-- included excerpt from lineup definition -->
                 <div id="lugui-wrapper" style="margin-top: 40px"></div>
                  <!--   <script src="lineup.js/dist/LineUpJS.js"></script> -->
@@ -231,7 +233,7 @@
         <text  id="gb-matchCount" style="margin-left:20px">0 </text>
         <text  style="margin-left:20px">matched nodes</text>
         <p></p>
-        <input id='gb-name' style='margin-left:20px' disabled="disabled"> Displayed Entity</input> 
+        <input id='gb-name' style='margin-left:20px' readonly> Displayed Entity</input>
            <a id='accept-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Accept This Pairing</a>
         <svg id='graph2' style="height:300; margin-top:20px; margin-left:20px" ></svg>
         <div id='info2' style='margin-top:20px'></div>
@@ -255,6 +257,7 @@
          <p></p>
     </div>
 </div>
+
 <script src="js/userale.js"></script>
 <script src="logging.js"></script>
 <!-- Driver script for this app -->
