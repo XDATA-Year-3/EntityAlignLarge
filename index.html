@@ -68,7 +68,7 @@
 
 <style>
     html, body {
-        height: 1000px;
+        height: 100%;
         background-color: lightgray;
     }
 
@@ -78,13 +78,17 @@
 
     #control-panel {
         background-color: lightgray;
-        padding-bottom: 20px;
     }
 
     #controls {
-        background-color: ghostwhite;
-        padding-bottom: 100%;
-    }    
+      background-color: ghostwhite;
+      height: 100%;
+    }
+
+    .row {
+        height: 100%;
+    }
+
 
     p {
         color: gray;
@@ -213,7 +217,7 @@
             <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
 
                 <!-- included excerpt from lineup definition -->
-                <div id="lugui-wrapper" style="margin-top: 40px"></div>
+                <div id="lugui-wrapper"></div>
                  <!--   <script src="lineup.js/dist/LineUpJS.js"></script> -->
 
     </div>
@@ -238,25 +242,7 @@
         <svg id='graph2' style="height:300; margin-top:20px; margin-left:20px" ></svg>
         <div id='info2' style='margin-top:20px'></div>
     </div>
-</div>
-
-<!-- second row of the UI content across all columns -->
-<div class=row>
-    <!-- left panel for graph 1 -->
-    <div class=col-md-4>
-
-        <!-- <div id=graph1 style='width=1000px; '> -->
-    </div>
-
-    <!-- center column -->
-    <div class=col-md-4>
-       
-    </div>
-
-      <div class=col-md-4>
-         <p></p>
-    </div>
-</div>
+  </div>
 
 <script src="js/userale.js"></script>
 <script src="logging.js"></script>
