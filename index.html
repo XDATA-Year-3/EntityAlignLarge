@@ -83,12 +83,22 @@
     #controls {
       background-color: ghostwhite;
       height: 100%;
+      overflow: scroll;
+    }
+
+    .container-fluid {
+      height: 100%;
     }
 
     .row {
         height: 100%;
     }
 
+    select.form-control {
+      background-color: white;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
 
     p {
         color: gray;
@@ -181,12 +191,12 @@
 
 
 <!-- Create  side-by-side panels -->
-
+<div class=container-fluid>
 <div class=row>
 
    <!-- left panel for graph 1 -->
     <div class=col-md-3>
-        <select id='graph1-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" >
+        <select id='graph1-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; width: calc(100% - 30px);" >
             <option selected disabled hidden value=''>Select a dataset</option>
         </select>
         <p id='ga-summary'></p>
@@ -227,7 +237,7 @@
   <!-- right panel for graph 2 -->
 
      <div class=col-md-3>
-        <select id='graph2-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" >
+        <select id='graph2-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px; width: calc(100% - 30px);" >
             <option selected disabled hidden value=''>Select a dataset</option>
         </select>
         <p id='gb-summary'></p>
@@ -246,7 +256,7 @@
         <div id='info2' style='margin-top:20px'></div>
     </div>
   </div>
-
+</div>
 <script src="js/userale.js"></script>
 <script src="logging.js"></script>
 <!-- Driver script for this app -->
