@@ -1,5 +1,8 @@
 {
 	"mongoHost" 			: "localhost",
-	"graphsDatabase"	  	: "year3_challenge2_v2"
+	"graphsDatabase"	  	: "year3_challenge2_v2",
+	"loggingUrl"			: "http://172.16.1.100",
+	"toolVersion"			:"1.0.0",
+	"sendLogs"				: true
 }
 

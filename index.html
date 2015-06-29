@@ -31,9 +31,6 @@
 <script src="bootstrap-table.js"></script>
 -->
 
-<!-- Driver script for this app -->
-
-<script src=draper.activity_logger-2.0.js></script>
 
 
 <link href=cache/jquery-ui.css rel=stylesheet>
@@ -44,12 +41,6 @@
 <!-- <script src="cache2/bootstrap.min.js"></script> -->
 
 <link href=//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css rel=stylesheet>
-
-
-<script src="http://trifacta.github.io/vega/vega.js"></script>
-<!--
-<script src="cache/vega2.js"></script>
--->
 
 <!--  lineup inclusions -->
 
@@ -149,7 +140,7 @@
 
 
 
-<div id=seed-panel class="modal fade draper" data-wf="1"  data-description="list seeds">
+<div id='seed-panel' class="modal fade draper" data-wf="1"  data-description="list seeds">
     <div class=modal-dialog>
         <div class=modal-content>
             <div class=modal-header>
@@ -162,8 +153,8 @@
             </div>
 
             <div class=modal-footer>
-                <a class="btn btn-default" data-dismiss=modal>Cancel</a>
-                <a id='change-seeds' class="btn btn-success" data-dismiss=modal>OK</a>
+                <a class="btn btn-default" data-dismiss=modal>Close Window</a>
+                <a id='publish-parings-button' class="btn btn-success" data-dismiss=modal>Pubish Pairing</a>
             </div>
         </div>
     </div>
@@ -211,38 +202,19 @@
         <div >
           <svg id='graph1' style="height:300; margin-top:20px; margin-left:20px" ></svg>
         </div>
-        <div id='info1' style='margin-top:20px'></div>
-        
+        <div id='info1' style='margin-top:20px'></div> 
 
     </div>
 
    <!-- center panel for showing the ranking results -->
-    <div id='controls' class=col-md-6>
-<!--
-        <a id='align-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Seeded Graph Matching</a>
-        <a id='show-matches-toggle' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Exact Name Substring</a>
-        <a id='position-button' class="btn btn-default" style="margin-top: 20px; margin-bottom: 20px" data-dismiss=modal>Fuzzy Name Matching</a>
 
-        <ul id="tabs" class="nav nav-tabs" data-tabs="tabs" >
-          <li class="active" style="margin-left: 20px;"><a href="#graph-tab1" data-toggle="tab">LineUp View</a></li>
-          <li><a href="#adjacency-tab1" data-toggle="tab">LineUp Entity View A</a></li>
-        </ul>
-        <div id="graph1-content" class="tab-content" style='height=500px'>
-            <div class="tab-pane active" id="graph-tab1">
-                <h3 style="margin-left: 20px; height=500px">LineUp View</h3>
--->     
+    <div id='controls' class=col-md-6>
+   
             <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
+
                 <!-- included excerpt from lineup definition -->
                 <div id="lugui-wrapper" style="margin-top: 40px"></div>
                  <!--   <script src="lineup.js/dist/LineUpJS.js"></script> -->
-
-<!--
-            </div>
-            <div class="tab-pane" id="adjacency-tab1">
-                <h3>Summary View </h3>
-            </div>
-        </div>
--->
 
     </div>
    
@@ -286,5 +258,8 @@
     </div>
 </div>
 
+<script src="js/userale.js"></script>
+<script src="logging.js"></script>
+<!-- Driver script for this app -->
 <script src=entity-align.js></script>
 </body>
