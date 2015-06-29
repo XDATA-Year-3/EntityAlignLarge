@@ -186,8 +186,9 @@
 
    <!-- left panel for graph 1 -->
     <div class=col-md-3>
-
-        <select id='graph1-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" ></select>
+        <select id='graph1-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" >
+            <option selected disabled hidden value=''>Select a dataset</option>
+        </select>
         <p id='ga-summary'></p>
         
         <text  id="ga-nodeCount" style="margin-left:20px">0 </text>
@@ -226,7 +227,9 @@
   <!-- right panel for graph 2 -->
 
      <div class=col-md-3>
-        <select id='graph2-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px"></select>
+        <select id='graph2-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" >
+            <option selected disabled hidden value=''>Select a dataset</option>
+        </select>
         <p id='gb-summary'></p>
         <text  id="gb-nodeCount" style="margin-left:20px">0 </text>
         <text  style="margin-left:20px">nodes loaded</text>
