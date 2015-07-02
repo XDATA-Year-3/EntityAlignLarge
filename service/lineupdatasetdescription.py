@@ -28,7 +28,7 @@ def run(displaymode):
         response['separator'] = '\t'
         response['url'] = 'service/lineupdataset'
         response['columns'] = [ {'column': 'entity', 'type': 'string'}, {'column': 'apriori','type':'number', 'domain':[0,1]}, {'column': 'LSGM','type':'number', 'domain':[0,1]},{'column': 'lev','type':'number', 'domain':[0,1]},{'column': 'substring','type':'number', 'domain':[0,1]}, {'column': '1hop','type':'number', 'domain':[0,1]}, {'column': '2hop','type':'number', 'domain':[0,1]}]
-        response['layout'] = {'primary': [   {'column': 'entity', 'width':100},{'column': 'LSGM','width':75},{'column': 'lev','width':75}, {'column': 'substring','width':75},  {'column': '1hop','width':50}, {'column': '2hop','width':50}, {"type": "stacked","label": "Combined", "children": [{'column': 'apriori','width':100},{'column': 'lev','width':50}, {'column': 'substring','width':50}, {'column': '1hop','width':50}, {'column': '2hop','width':50}]}]}
+        response['layout'] = {'primary': [   {'column': 'entity', 'width':100}, {"type": "stacked","label": "Combined", "children": [{'column': 'LSGM','width':125},{'column': 'apriori','width':150},{'column': 'lev','width':150}, {'column': 'substring','width':80}, {'column': '1hop','width':80}, {'column': '2hop','width':80}]}]}
 
     #tangelo.log(str(response))
     return json.dumps(response)
