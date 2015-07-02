@@ -68,7 +68,7 @@
 
 <style>
     html, body {
-        height: 1000px;
+        height: 100%;
         background-color: lightgray;
     }
 
@@ -78,13 +78,27 @@
 
     #control-panel {
         background-color: lightgray;
-        padding-bottom: 20px;
     }
 
     #controls {
-        background-color: ghostwhite;
-        padding-bottom: 100%;
-    }    
+      background-color: ghostwhite;
+      height: 100%;
+      overflow: scroll;
+    }
+
+    .container-fluid {
+      height: 100%;
+    }
+
+    .row {
+        height: 100%;
+    }
+
+    select.form-control {
+      background-color: white;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
 
     p {
         color: gray;
@@ -177,13 +191,14 @@
 
 
 <!-- Create  side-by-side panels -->
-
+<div class=container-fluid>
 <div class=row>
 
    <!-- left panel for graph 1 -->
     <div class=col-md-3>
-
-        <select id='graph1-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px" ></select>
+        <select id='graph1-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; width: calc(100% - 30px);" >
+            <option selected disabled hidden value=''>Select a dataset</option>
+        </select>
         <p id='ga-summary'></p>
         
         <text  id="ga-nodeCount" style="margin-left:20px">0 </text>
@@ -213,7 +228,7 @@
             <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
 
                 <!-- included excerpt from lineup definition -->
-                <div id="lugui-wrapper" style="margin-top: 40px"></div>
+                <div id="lugui-wrapper"></div>
                  <!--   <script src="lineup.js/dist/LineUpJS.js"></script> -->
 
     </div>
@@ -222,7 +237,9 @@
   <!-- right panel for graph 2 -->
 
      <div class=col-md-3>
-        <select id='graph2-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px"></select>
+        <select id='graph2-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px; width: calc(100% - 30px);" >
+            <option selected disabled hidden value=''>Select a dataset</option>
+        </select>
         <p id='gb-summary'></p>
         <text  id="gb-nodeCount" style="margin-left:20px">0 </text>
         <text  style="margin-left:20px">nodes loaded</text>
@@ -238,26 +255,8 @@
         <svg id='graph2' style="height:300; margin-top:20px; margin-left:20px" ></svg>
         <div id='info2' style='margin-top:20px'></div>
     </div>
+  </div>
 </div>
-
-<!-- second row of the UI content across all columns -->
-<div class=row>
-    <!-- left panel for graph 1 -->
-    <div class=col-md-4>
-
-        <!-- <div id=graph1 style='width=1000px; '> -->
-    </div>
-
-    <!-- center column -->
-    <div class=col-md-4>
-       
-    </div>
-
-      <div class=col-md-4>
-         <p></p>
-    </div>
-</div>
-
 <script src="js/userale.js"></script>
 <script src="logging.js"></script>
 <!-- Driver script for this app -->

@@ -616,7 +616,7 @@ var LineUp;
 
     function showTooltip(content, xy) {
       $tooltip.html(content).css({
-        left: xy.x + 'px',
+        left: xy.x - $container.offset().left + 'px',
         top: (xy.y + xy.height - $container.offset().top) + 'px'
       }).fadeIn();
 
@@ -634,7 +634,7 @@ var LineUp;
     function moveTooltip(xy) {
       if (xy.x) {
         $tooltip.css({
-          left: xy.x + 'px'
+          left: xy.x - $container.offset().left + 'px'
         });
       }
       if (xy.y) {
