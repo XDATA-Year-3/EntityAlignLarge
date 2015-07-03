@@ -137,9 +137,21 @@ function loggedDragVisitToEntry(d) {
         //entityAlign.ac.logUserActivity("drag entity: "+d.tweet, "hover", entityAlign.ac.WF_EXPLORE);
 }
 
-
+function getDatasetName(label) {
+    if (label === "Twitter") {
+        return entityAlign.twitter;
+    } else if (label === "Instagram") {
+        return entityAlign.instagram;
+    }
+}
 
 function updateGraph1() {
+    var graph1opt = d3.select("#graph1-selector").node();
+    graph1opt = graph1opt.options[graph1opt.selectedIndex].text;
+
+    d3.select("#graph2-selector")
+        .text(graph1opt === "Twitter" ? "Instagram" : "Twitter");
+
     //updateGraph1_d3()
     //initGraph1FromDatastore()
     loadNodeNames("A")
@@ -193,12 +205,12 @@ function   initGraphStats(graphIndexString)
     // Get the name of the graph dataset to render
     if (graphIndexString == "A") {
         var graphPathname = d3.select("#graph1-selector").node();
-        var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+        var selectedDataset = getDatasetName(graphPathname.options[graphPathname.selectedIndex].text);
         // save the current dataset name for the graph
         entityAlign.graphA_dataset = selectedDataset
     } else {
-        var graphPathname = d3.select("#graph2-selector").node();
-        var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+        var graphPathname = d3.select("#graph2-selector").text();
+        var selectedDataset = getDatasetName(graphPathname);
         // save the current dataset name for the graph
         entityAlign.graphB_dataset = selectedDataset        
     }
@@ -233,15 +245,17 @@ function   initGraphStats(graphIndexString)
 // do a non-blocking call to a python service that returns all the names in the graph.  Assign this to a global variable
 function loadNodeNames(graphIndexString)
 {
+    var selectedDataset;
 
   // Get the name of the graph dataset to render
     if (graphIndexString == "A") {
         var graphPathname = d3.select("#graph1-selector").node();
-        var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+        selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
     } else {
-        var graphPathname = d3.select("#graph2-selector").node();
-        var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;        
+        selectedDataset = d3.select("#graph2-selector").text();
     }
+
+    selectedDataset = getDatasetName(selectedDataset);
 
     // non-blocking call to initialize this 
     var data
@@ -314,7 +328,7 @@ function   initGraph1WithClique()
 
     // Get the name of the graph dataset to render
     var graphPathname = d3.select("#graph1-selector").node();
-    var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+    var selectedDataset = getDatasetName(graphPathname.options[graphPathname.selectedIndex].text);
 
     var centralHandle  = document.getElementById('ga-name').value;
     console.log('doing one hop around',centralHandle)
@@ -371,8 +385,7 @@ function   initGraph2WithClique()
         info2
 
     // Get the name of the graph dataset to render
-    var graphPathname = d3.select("#graph2-selector").node();
-    var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+    var selectedDataset = getDatasetName(d3.select("#graph2-selector").text());
 
     var centralHandle  = document.getElementById('gb-name').value;
     console.log('doing one hop around',centralHandle)
@@ -435,8 +448,9 @@ function firstTimeInitialize() {
         entityAlign.graphsDatabase = defaults.graphsDatabase || "year3_graphs"
         console.log('set graphs database: ',entityAlign.graphsDatabase)
 
-        fillDatassetList('#graph1-selector')
-        fillDatassetList('#graph2-selector')
+        entityAlign.twitter = defaults.twitter;
+        entityAlign.instagram = defaults.instagram;
+
         fillSeedList('#seed-selector')
 
         width = $(window).width();
@@ -454,9 +468,10 @@ function firstTimeInitialize() {
         // automatically when the user selects it via UI selector elements. 
 
         d3.select("#graph1-selector")
-            .on("change", updateGraph1);
-        d3.select("#graph2-selector")
-            .on("change", updateGraph2);
+            .on("change", function () {
+                updateGraph1();
+                updateGraph2();
+            });
         d3.select("#lineup-selector")
             .on("change", handleLineUpSelectorChange);
         d3.select('#show-pairings')
@@ -552,9 +567,8 @@ function InitializeLineUpAroundEntity(handle)
     logSetupLineUp()
     //InitializeLineUpJS();
      var graphPathname = d3.select("#graph1-selector").node();
-        var graphA = graphPathname.options[graphPathname.selectedIndex].text;
-     var graphPathname = d3.select("#graph2-selector").node();
-        var graphB = graphPathname.options[graphPathname.selectedIndex].text;
+        var graphA = getDatasetName(graphPathname.options[graphPathname.selectedIndex].text);
+     var graphB = getDatasetName(d3.select("#graph2-selector").text());
 
     //var displaymodeselector = d3.select("#lineup-selector").node();
      //   var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
