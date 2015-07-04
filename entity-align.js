@@ -390,7 +390,7 @@ function   initGraph2WithClique()
     var centralHandle  = document.getElementById('gb-name').value;
     console.log('doing one hop around',centralHandle)
 
-    var logText = "dataset2 select: start="+graphPathname;
+    //var logText = "dataset2 select: start="+graphPathname;
     //logSystemActivity('Kitware entityAlign - '+logText);
 
     window.graph2 = graph2 = new clique.Graph({
@@ -608,6 +608,11 @@ function ExploreLocalGraphAregion() {
     //initGraph1FromDatastore();
     initGraph1WithClique()
     InitializeLineUpAroundEntity(centralHandle); 
+
+    // clear possible leftover state from a previous search
+    document.getElementById('gb-name').value = '';
+    $('#graph2').empty();
+    $('#info2').empty();
 }
 
 
@@ -648,20 +653,33 @@ function fillLineUpSelector() {
 
 function acceptListedPairing() {
 
-    var graphPathname = d3.select("#graph1-selector").node();
-    var graphA = graphPathname.options[graphPathname.selectedIndex].text;
-    var graphPathname = d3.select("#graph2-selector").node();
-    var graphB = graphPathname.options[graphPathname.selectedIndex].text;
+    // these aren't set anymore in the streamlined UI
+    //var graphPathname = d3.select("#graph1-selector").node();
+    //var graphA = graphPathname.options[graphPathname.selectedIndex].text;
+    //var graphPathname = d3.select("#graph2-selector").node();
+    //var graphB = graphPathname.options[graphPathname.selectedIndex].text;
+
     var handleA  = document.getElementById('ga-name').value;
     var handleB  = document.getElementById('gb-name').value;
 
     newPairing = {'twitter' : handleA,'instagram':handleB}
-    entityAlign.pairings.push(newPairing)
-    console.log('new pairing: ',newPairing)
+
+    // store an entry only if the array doesn't already have the entry
+    // tried $.inArray()  and .indexOf() unsuccessfully
+    
+    var found = false
+    for (var pair in entityAlign.pairings) {
+        if ((pair['twitter'] == handleA) && (pair['instagram'] == handleB)) {
+            found = true
+        }
+    }
+    if (found == false) {
+        entityAlign.pairings.push(newPairing)
+        console.log('new pairing: ',newPairing)
+    }
 
     // this is the pairing (seed) display table which is in a modal popover.  This is used to
     // draw a nice table using Bootstrap an jQuery
-
 
     // update the table
     $('#pairings-table').bootstrapTable('hideLoading');
