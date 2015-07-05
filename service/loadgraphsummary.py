@@ -6,9 +6,6 @@ from pymongo import MongoClient
 import string
 import tangelo
 
-import networkx as nx
-
-
 
 def run(host,database,graphname):
     # Create an empty response object.
