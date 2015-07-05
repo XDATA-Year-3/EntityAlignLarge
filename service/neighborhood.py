@@ -33,7 +33,6 @@ def run(host=None, db=None, coll=None, center=None, radius=None, deleted=json.du
 
     # Find the center node in the database.
     center_node = graph.find_one({"_id": ObjectId(center)})
-    print 'found center node:',center_node
 
     if center_node is not None and deleted or not center_node["data"].get("deleted"):
         frozen = freeze(center_node)
@@ -53,8 +52,6 @@ def run(host=None, db=None, coll=None, center=None, radius=None, deleted=json.du
                                        {"data.target": id}]}]}
 
             links = graph.find(query)
-            print 'frontier query:',query
-            print 'query result length:',links.count()
 
             # Collect the neighbors of the node, and add them to the new
             # frontier if appropriate.
