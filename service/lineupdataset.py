@@ -1,11 +1,14 @@
-import bson
-import pymongo
 import json
-from bson import ObjectId
 from pymongo import MongoClient
-import string
-import tangelo
 
+
+translate = {"apriori": "self-reported",
+             "entity": "username",
+             "lev": "edit match",
+             "substring": "substring match",
+             "2hop": "2-hop nbd size",
+             "1hop": "1-hop nbd size",
+             "2spectral": "2-hop nbd match"}
 
 
 def run(host,database,graphA,graphB,handle,displaymode):
@@ -33,7 +36,12 @@ def run(host,database,graphA,graphB,handle,displaymode):
     # return only the columns to potentially display in LineUp.  We don't want to return the gA entity we used to search by
     topk = topk_collection.find(query,{'_id':0,'ga':0})
     for row in topk:
-        tablerows.append(row)
+        newrow = json.loads(json.dumps(row))
+        for k in row:
+            if k in translate:
+                newrow[translate[k]] = row[k]
+
+        tablerows.append(newrow)
 
     client.close()
 
