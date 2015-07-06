@@ -585,6 +585,7 @@ function InitializeLineUpAroundEntity(handle)
                 console.log('lineup loading description:',desc)
                 console.log('lineup loading dataset for handle:',handle,dataset.result)
                 loadDataImpl(name, desc, dataset.result);
+                lineup.sortBy("Combined");
                 });
         } else {
             console.log('local network')
