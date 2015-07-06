@@ -2,13 +2,13 @@ import json
 from pymongo import MongoClient
 
 
-translate = {"apriori": "self-reported",
-             "entity": "username",
-             "lev": "edit match",
-             "substring": "substring match",
-             "2hop": "2-hop nbd size",
-             "1hop": "1-hop nbd size",
-             "2spectral": "2-hop nbd match"}
+translate = {"apriori": "Self reported match",
+             "entity": "Username",
+             "lev": "Username similarity",
+             "substring": "Username substring match",
+             "2hop": "2-hop neighborhood size similarity",
+             "1hop": "1-hop neighborhood size similarity",
+             "2spectral": "2-hop neighborhood structural similarity"}
 
 
 def run(host,database,graphA,graphB,handle,displaymode):
