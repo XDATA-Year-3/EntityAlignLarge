@@ -65,6 +65,33 @@ function logPublishPairings() {
             console.log('pubish pairing logged')
 }
 
+function logOpenTwitterWindow() {
+      var msg = {
+                activity: 'SHOW',
+                action: 'CLICK',
+                elementId: 'graph1-graph2-homepage',
+                elementType: 'button',
+                elementGroup: 'system_group',
+                source: 'system',
+                tags: ['window','homepage']
+            };
+            log(msg);
+            console.log('open twitter window logged')
+}
+
+function logOpenInstagramWindow() {
+      var msg = {
+                activity: 'SHOW',
+                action: 'CLICK',
+                elementId: 'graph1-graph2-homepage',
+                elementType: 'button',
+                elementGroup: 'system_group',
+                source: 'system',
+                tags: ['window','homepage']
+            };
+            log(msg);
+            console.log('open instagram window logged')
+}
 
 function logSetupLineUp() {
     var msg = {
@@ -278,6 +305,45 @@ function initializeLoggingFramework(defaults) {
             log(msg);
         });
 
+ $('#graph1-homepage')
+        .mouseover(function () {
+            var msg = {
+                activity: 'select',
+                action: 'MOUSEOVER',
+                elementId: this.getAttribute('id') || 'UNK',
+                elementType: 'button',
+                elementGroup: 'graph_A_group',
+                source: 'user',
+                tags: ['grapha','homepage']
+            };
+            log(msg);
+        })
+        .mouseout(function () {
+            var msg = {
+                activity: 'select',
+                action: 'MOUSEOUT',
+                elementId: this.getAttribute('id') || 'UNK',
+                elementType: 'button',
+                elementGroup: 'graph_A_group',
+                source: 'user',
+                tags: ['grapha','homepage']
+            };
+            log(msg);
+        })
+        .click(function () {
+            //console.log($(this).parent().hasClass('open'))
+            var msg = {
+                activity: 'select',
+                action: 'KEYUP',
+                elementId: this.getAttribute('id') || 'UNK',
+                elementType: 'button',
+                elementGroup: 'graph_A_group',
+                source: 'user',
+                tags: ['grapha','homepage']
+            };
+            log(msg);
+        });       
+
     // **** graph B group ***************
 
    $('#graph2-selector')
@@ -357,6 +423,45 @@ function initializeLoggingFramework(defaults) {
             };
             log(msg);
         });
+
+$('#graph2-homepage')
+        .mouseover(function () {
+            var msg = {
+                activity: 'select',
+                action: 'MOUSEOVER',
+                elementId: this.getAttribute('id') || 'UNK',
+                elementType: 'button',
+                elementGroup: 'graph_B_group',
+                source: 'user',
+                tags: ['grapha','homepage']
+            };
+            log(msg);
+        })
+        .mouseout(function () {
+            var msg = {
+                activity: 'select',
+                action: 'MOUSEOUT',
+                elementId: this.getAttribute('id') || 'UNK',
+                elementType: 'button',
+                elementGroup: 'graph_B_group',
+                source: 'user',
+                tags: ['grapha','homepage']
+            };
+            log(msg);
+        })
+        .click(function () {
+            //console.log($(this).parent().hasClass('open'))
+            var msg = {
+                activity: 'select',
+                action: 'KEYUP',
+                elementId: this.getAttribute('id') || 'UNK',
+                elementType: 'button',
+                elementGroup: 'graph_B_group',
+                source: 'user',
+                tags: ['grapha','homepage']
+            };
+            log(msg);
+        });       
 
 
         // ***** pairings_group *************
