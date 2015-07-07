@@ -254,6 +254,7 @@
 }
 .lu-tooltip table {
     width: 100%;
+    max-width: 300px;
     border-collapse: collapse;
 }
 .lu-tooltip tbody th{
