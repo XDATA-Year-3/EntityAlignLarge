@@ -433,6 +433,45 @@ function publishPairLists() {
     console.log('publishing')
 }
 
+// open the user homepages by clicking buttons on the UI.  This checks which way the association is going and opens 
+// the appropriate homepage.  The test had to examine 
+function openHompageGraph1() {
+   var graphPathname = d3.select("#graph1-selector").node();
+   var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+   handleName = document.getElementById('ga-name').value
+   console.log('slice:',selectedDataset)
+    if (selectedDataset == 'Twitter') {
+        //console.log('opening twitter')
+        logOpenTwitterWindow()
+        window.open('http://www.twitter.com/'+handleName)
+   } else {
+        //console.log('opening instagram')
+        logOpenInstagramWindow()
+        window.open('http://www.instagram.com/'+handleName)
+        //var selectedDataset = getDatasetName(graphPathname);
+   }
+}
+
+
+function openHompageGraph2() {
+   var graphB = getDatasetName(d3.select("#graph2-selector").text());
+   //console.log('homepage datatype:',graphB)
+   handleName = document.getElementById('gb-name').value
+   //console.log('handle was:',handleName)
+   // *** Kludge,  why does this come back with the dataset name instead of Twitter or instagram? This test
+   // will function only if the collection names starts with 'twitter_'
+   //console.log('slice:',graphB.slice(0,7))
+   if (graphB.slice(0,7) == 'twitter') {
+        //console.log('opening twitter')
+        logOpenTwitterWindow()
+        window.open('http://www.twitter.com/'+handleName)
+   } else {
+        //console.log('opening instagram')
+        logOpenInstagramWindow()
+        window.open('http://www.instagram.com/'+handleName)
+        //var selectedDataset = getDatasetName(graphPathname);
+   }
+}
 
 function firstTimeInitialize() {
     "use strict";
@@ -480,6 +519,10 @@ function firstTimeInitialize() {
             .on("click", ExploreLocalGraphAregion);
         d3.select("#accept-button")
             .on("click", acceptListedPairing);
+        d3.select('#graph1-homepage')
+            .on("click",openHompageGraph1)
+        d3.select('#graph2-homepage')
+            .on("click",openHompageGraph2)
         d3.select("#show-matches-toggle")
             .attr("disabled", true)
             .on("click",  function () { entityAlign.showMatchesEnabled = !entityAlign.showMatchesEnabled; 
