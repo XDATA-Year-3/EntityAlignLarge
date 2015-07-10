@@ -4,6 +4,14 @@ import heapq
 import json
 from pymongo import MongoClient
 import sys
+import time
+
+
+def display_time(s):
+    m, s = divmod(s, 60)
+    h, m = divmod(m, 60)
+
+    return "%02d:%02d:%02d" % (h, m, s)
 
 
 def ingest_matches(f):
@@ -182,85 +190,140 @@ def main():
 
     # Compute cross-data metrics, and maintain heaps of their values.
     metrics = {}
-    area_heap = []
-    freq_heap = []
-    lev_heap = []
-    substring_heap = []
-    for i, (twit, inst) in enumerate(matches):
-        metric = metrics[json.dumps([twit, inst])] = {"id": json.dumps([twit, inst])}
+    topk_ti = {}
+    start = time.time()
+    for i, twit in enumerate(twitter_names):
+        area_heap = []
+        freq_heap = []
+        lev_heap = []
+        substring_heap = []
 
-        tdata = twitter_data[twit]
-        idata = instagram_data[inst]
+        for j, inst in enumerate(instagram_names):
+            metric = metrics[json.dumps([twit, inst])] = {"id": json.dumps([twit, inst])}
 
-        # Geographical overlap.
-        tlats, tlons = tdata["geobb"]
-        ilats, ilons = idata["geobb"]
+            tdata = twitter_data[twit]
+            idata = instagram_data[inst]
 
-        first, second = (tlats, ilats) if tlats[0] < ilats[0] else (ilats, tlats)
+            # Geographical overlap.
+            tlats, tlons = tdata["geobb"]
+            ilats, ilons = idata["geobb"]
 
-        if first[1] < second[0]:
-            height = 0.0
-        else:
-            height = min(first[1], second[1]) - second[0]
+            first, second = (tlats, ilats) if tlats[0] < ilats[0] else (ilats, tlats)
 
-        first, second = (tlons, ilons) if tlons[0] < ilons[0] else (ilons, tlons)
+            if first[1] < second[0]:
+                height = 0.0
+            else:
+                height = min(first[1], second[1]) - second[0]
 
-        if first[1] < second[0]:
-            width = 0.0
-        else:
-            width = min(first[1], second[1]) - second[0]
+            first, second = (tlons, ilons) if tlons[0] < ilons[0] else (ilons, tlons)
 
-        try:
-            metric["area"] = (width * height) / ((tlons[1] - tlons[0]) * (tlons[1] - tlons[0]) + (tlons[1] - tlons[0]) * (tlons[1] - tlons[0]))
-        except ZeroDivisionError:
-            metric["area"] = 0.0
+            if first[1] < second[0]:
+                width = 0.0
+            else:
+                width = min(first[1], second[1]) - second[0]
 
-        # Posting frequency overlap.
-        thist = tdata["msghist"]
-        ihist = idata["msghist"]
+            try:
+                metric["area"] = 2.0 * (width * height) / ((tlons[1] - tlons[0]) * (tlats[1] - tlats[0]) + (ilons[1] - ilons[0]) * (ilats[1] - ilats[0]))
+            except ZeroDivisionError:
+                metric["area"] = 0.0
 
-        a, b = (thist, ihist) if len(thist.keys()) < len(ihist.keys()) else (ihist, thist)
+            # Posting frequency overlap.
+            thist = tdata["msghist"]
+            ihist = idata["msghist"]
 
-        score = 0.0
-        for date in a:
-            if date in b:
-                score += a[date]*b[date]
+            a, b = (thist, ihist) if len(thist.keys()) < len(ihist.keys()) else (ihist, thist)
 
-        metric["freq"] = score
+            score = 0.0
+            for date in a:
+                if date in b:
+                    score += a[date]*b[date]
 
-        # Levenshtein distance between usernames.
-        metric["lev"] = (len(twit) + len(inst) - levenshtein(twit, inst)) / float(len(twit) + len(inst))
+            metric["freq"] = score
 
-        # Substring match between usernames.
-        metric["substring"] = 2.0 * len(longest_common_substring(twit, inst)) / (len(twit) + len(inst))
+            # Levenshtein distance between usernames.
+            metric["lev"] = (len(twit) + len(inst) - levenshtein(twit, inst)) / float(len(twit) + len(inst))
 
-        # Add values to the heaps.
-        heapq.heappush(area_heap, (metric["area"], metric))
-        heapq.heappush(freq_heap, (metric["freq"], metric))
-        heapq.heappush(lev_heap, (metric["lev"], metric))
-        heapq.heappush(substring_heap, (metric["substring"], metric))
+            # Substring match between usernames.
+            metric["substring"] = 2.0 * len(longest_common_substring(twit, inst)) / (len(twit) + len(inst))
 
-        if i % 100 == 0:
-            print >>sys.stderr, "\rCross-data metrics: %d/%d (%.1f%%)" % (i, len(matches), 100.*i/len(matches)),
-            sys.stderr.flush()
+            # Add values to the heaps.
+            heapq.heappush(area_heap, (metric["area"], metric))
+            heapq.heappush(freq_heap, (metric["freq"], metric))
+            heapq.heappush(lev_heap, (metric["lev"], metric))
+            heapq.heappush(substring_heap, (metric["substring"], metric))
+
+            if j % 500 == 0:
+                now = time.time()
+                n_t = len(twitter_names)
+                n_i = len(instagram_names)
+                cur = i*n_i + j
+                total = n_t*n_i
+                print >>sys.stderr, "\rCross-data metrics (elapsed - %s, remaining - %s): %d/%d (twitter) %d/%d (instagram) (%.2f%%)" % (display_time(now - start), display_time((now - start) / max(cur,1) * total - (now - start)), i, n_t, j, n_i, 100.*cur/total),
+                sys.stderr.flush()
+
+        # Collect the top-k from each heap into a single list.
+        for heap in [area_heap, freq_heap, lev_heap, substring_heap]:
+            for entry in heapq.nlargest(20, heap):
+                topk_ti[entry[1]["id"]] = entry[1]
     print >>sys.stderr, ""
 
-    # Collect the top-k from each heap into a single list.
-    topk = {}
-    for heap in [area_heap, freq_heap, lev_heap, substring_heap]:
-        for entry in heapq.nlargest(20, heap):
-            topk[entry[1]["id"]] = entry[1]
+    # Run the instagram-twitter metric top-k.
+    #
+    # This should go much faster because we cached all the (symmetric) metrics
+    # already.
+    topk_it = {}
+    for i, inst in enumerate(instagram_names):
+        area_heap = []
+        freq_heap = []
+        lev_heap = []
+        substring_heap = []
+
+        for j, twit in enumerate(twitter_names):
+            metric = metrics[json.dumps([twit, inst])]
+
+            # Add values to the heaps.
+            heapq.heappush(area_heap, (metric["area"], metric))
+            heapq.heappush(freq_heap, (metric["freq"], metric))
+            heapq.heappush(lev_heap, (metric["lev"], metric))
+            heapq.heappush(substring_heap, (metric["substring"], metric))
+
+            if j % 500 == 0:
+                now = time.time()
+                n_t = len(twitter_names)
+                n_i = len(instagram_names)
+                cur = i*n_t + j
+                total = n_t*n_i
+                print >>sys.stderr, "\rCross-data metrics (elapsed - %s, remaining - %s): %d/%d (instagram) %d/%d (twitter) (%.2f%%)" % (display_time(now - start), display_time((now - start) / max(cur,1) * total - (now - start)), i, n_i, j, n_t, 100.*cur/total),
+                print >>sys.stderr, "\rCross-data metrics: %d/%d (instagram) %d/%d (twitter) (%.2f%%)" % (i, len(twitter_names), j, len(instagram_names), 100.*(i*len(instagram_names) + j)/(len(twitter_names)*len(instagram_names))),
+                sys.stderr.flush()
+
+        # Collect the top-k from each heap into a single list.
+        for heap in [area_heap, freq_heap, lev_heap, substring_heap]:
+            for entry in heapq.nlargest(20, heap):
+                topk_it[entry[1]["id"]] = entry[1]
+    print >>sys.stderr, ""
 
     # Dump out a json record of these entries.
-    print "["
-    for i, v in enumerate(topk.values()):
-        names = json.loads(v["id"])
-        v["twitter"] = names[0]
-        v["instagram"] = names[1]
-        del v["id"]
+    with open("topk_twitter_instagram.etl.json", "w") as f:
+        print >>f, "["
+        for i, v in enumerate(topk_ti.values()):
+            names = json.loads(v["id"])
+            v["twitter"] = names[0]
+            v["instagram"] = names[1]
+            del v["id"]
 
-        print "%s%s" % ("," if i > 0 else "", json.dumps(v, separators=(",",":")))
-    print "]"
+            print >>f, "%s%s" % ("," if i > 0 else "", json.dumps(v, separators=(",",":")))
+        print >>f, "]"
+
+    with open("topk_instagram_twitter.etl.json", "w") as f:
+        print >>f, "["
+        for i, (k, v) in enumerate(topk_it.iteritems()):
+            names = json.loads(k)
+            v["twitter"] = names[0]
+            v["instagram"] = names[1]
+
+            print >>f, "%s%s" % ("," if i > 0 else "", json.dumps(v, separators=(",",":")))
+        print >>f, "]"
 
 
 if __name__ == "__main__":
