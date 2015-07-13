@@ -49,15 +49,17 @@ def run(host=None, db=None, coll=None, center=None, radius=None, deleted=json.du
             # frontier.
             query = {"$and": [{"type": "link"},
                               {"$or": [{"data.source": id},
-                                       {"data.target": id}]}]}
+                                       {"data.source": str(int(id))},
+                                       {"data.target": id},
+                                       {"data.target": str(int(id))}]}]}
 
             links = graph.find(query)
 
             # Collect the neighbors of the node, and add them to the new
             # frontier if appropriate.
             for link in links:
-                source = link["data"]["source"] == id
-                neighbor_id = source and link["data"]["target"] or link["data"]["source"]
+                source = link["data"]["source"] in [id, str(int(id))]
+                neighbor_id = int(source and link["data"]["target"] or link["data"]["source"])
                 query_clauses = [{"type": "node"},
                                  {"data.id": neighbor_id}]
                 if not deleted:

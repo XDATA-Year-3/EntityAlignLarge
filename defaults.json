@@ -1,8 +1,8 @@
 {
     "mongoHost"     : "localhost",
-    "graphsDatabase": "year3_challenge2_v5",
-    "twitter"       : "twitter_mentions_october",
-    "instagram"     : "instagram_mentions_october",
+    "graphsDatabase": "year3_challenge2_v6",
+    "twitter"       : "twitter",
+    "instagram"     : "instagram",
     "loggingUrl"    : "http://172.16.1.100",
     "toolVersion"   : "1.0.0",
     "sendLogs"      : false

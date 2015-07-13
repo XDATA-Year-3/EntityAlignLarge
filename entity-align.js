@@ -345,7 +345,9 @@ function   initGraph1WithClique()
             }
         });
 
-    graph1.adapter.findNode({name: centralHandle})
+    console.log("selectedDataset", selectedDataset);
+
+    graph1.adapter.findNode({username: centralHandle})
             .then(function (center) {
                 console.log('center:',center)
                 if (center) {
