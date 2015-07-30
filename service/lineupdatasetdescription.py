@@ -26,21 +26,19 @@ def run(displaymode):
         response['separator'] = '\t'
         response['url'] = 'service/lineupdataset'
         response['columns'] = [{'column': translate['entity'], 'type': 'string'},
-                               {'column': translate['apriori'],'type':'number', 'domain':[0,1]},
+                               {'column': translate['selfreport'],'type':'number', 'domain':[0,1]},
                                {'column': 'LSGM','type':'number', 'domain':[0,1]},
+                               {'column': translate['freq'],'type':'number', 'domain':[0,1]},
+                               {'column': translate['area'],'type':'number', 'domain':[0,1]},
                                {'column': translate['lev'],'type':'number', 'domain':[0,1]},
-                               {'column': translate['substring'],'type':'number', 'domain':[0,1]},
-                               {'column': translate['1hop'],'type':'number', 'domain':[0,1]},
-                               {'column': translate['2hop'],'type':'number', 'domain':[0,1]},
-                               {'column': translate['2spectral'], 'type': 'number', 'domain': [0,1]}]
+                               {'column': translate['substring'],'type':'number', 'domain':[0,1]}]
         response['layout'] = {'primary': [{'column': translate['entity'], 'width':100},
-                                          {"type": "stacked", "label": "Combined", "children": [{'column': translate['apriori'],'width':150},
+                                          {"type": "stacked", "label": "Combined", "children": [{'column': translate['selfreport'],'width':150},
                                                                                                 {'column': 'LSGM','width':50},
+                                                                                                {'column': translate['freq'],'width':50},
+                                                                                                {'column': translate['area'],'width':50},
                                                                                                 {'column': translate['lev'],'width':50},
-                                                                                                {'column': translate['substring'],'width':50},
-                                                                                                {'column': translate['1hop'],'width':50},
-                                                                                                {'column': translate['2hop'],'width':50},
-                                                                                                {'column': translate['2spectral'], 'width': 50}]}]}
+                                                                                                {'column': translate['substring'],'width':50}]}]}
 
     #tangelo.log(str(response))
     return json.dumps(response)
