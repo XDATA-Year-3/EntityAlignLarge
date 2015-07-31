@@ -138,9 +138,9 @@ function loggedDragVisitToEntry(d) {
 }
 
 function getDatasetName(label) {
-    if (label === "Twitter") {
+    if (label === "twitter_isil_36hours") {
         return entityAlign.twitter;
-    } else if (label === "Instagram") {
+    } else if (label === "twitter_isil_36hours") {
         return entityAlign.instagram;
     }
 }
@@ -150,7 +150,8 @@ function updateGraph1() {
     graph1opt = graph1opt.options[graph1opt.selectedIndex].text;
 
     d3.select("#graph2-selector")
-        .text(graph1opt === "Twitter" ? "Instagram" : "Twitter");
+        .text(graph1opt === "Twitter" ? "twitter_isil_36hours" : "twitter_isil_36hours");
+//        .text(graph1opt === "Twitter" ? "Instagram" : "Twitter");
 
     //updateGraph1_d3()
     //initGraph1FromDatastore()
@@ -347,7 +348,7 @@ function   initGraph1WithClique()
 
     console.log("selectedDataset", selectedDataset);
 
-    graph1.adapter.findNode({username: centralHandle})
+    graph1.adapter.findNode({name: centralHandle})
             .then(function (center) {
                 console.log('center:',center)
                 if (center) {
@@ -442,7 +443,7 @@ function openHompageGraph1() {
    var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
    handleName = document.getElementById('ga-name').value
    console.log('slice:',selectedDataset)
-    if (selectedDataset == 'Twitter') {
+    if (selectedDataset == 'twitter_isil_36hours') {
         //console.log('opening twitter')
         logOpenTwitterWindow()
         window.open('http://www.twitter.com/'+handleName)

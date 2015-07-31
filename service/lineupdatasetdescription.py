@@ -6,6 +6,7 @@ from lineupdataset import translate
 
 
 
+
 def run(displaymode):
     # Create an empty response object.
     response = {}
@@ -26,19 +27,18 @@ def run(displaymode):
         response['separator'] = '\t'
         response['url'] = 'service/lineupdataset'
         response['columns'] = [{'column': translate['entity'], 'type': 'string'},
-                               {'column': translate['selfreport'],'type':'number', 'domain':[0,1]},
-                               {'column': 'LSGM','type':'number', 'domain':[0,1]},
-                               {'column': translate['freq'],'type':'number', 'domain':[0,1]},
-                               {'column': translate['area'],'type':'number', 'domain':[0,1]},
+                               {'column': 'lsgm','type':'number', 'domain':[0,1]},
                                {'column': translate['lev'],'type':'number', 'domain':[0,1]},
-                               {'column': translate['substring'],'type':'number', 'domain':[0,1]}]
+                               {'column': translate['substring'],'type':'number', 'domain':[0,1]},
+                               {'column': '1hop','type':'number', 'domain':[0,1]},
+                               {'column': '2hop','type':'number', 'domain':[0,1]}]
         response['layout'] = {'primary': [{'column': translate['entity'], 'width':100},
-                                          {"type": "stacked", "label": "Combined", "children": [{'column': translate['selfreport'],'width':150},
-                                                                                                {'column': 'LSGM','width':50},
-                                                                                                {'column': translate['freq'],'width':50},
-                                                                                                {'column': translate['area'],'width':50},
-                                                                                                {'column': translate['lev'],'width':50},
-                                                                                                {'column': translate['substring'],'width':50}]}]}
+                                          {"type": "stacked", "label": "Combined", "children": [
+                                                                                                {'column': 'lsgm','width':150},
+                                                                                                {'column': translate['lev'],'width':120},
+                                                                                                {'column': translate['substring'],'width':120},
+                                                                                                {'column': '1hop','width':80},
+                                                                                                {'column': '2hop','width':80}]}]}
 
     #tangelo.log(str(response))
     return json.dumps(response)

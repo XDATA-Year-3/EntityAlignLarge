@@ -2,12 +2,14 @@ import json
 from pymongo import MongoClient
 
 
-translate = {"selfreport": "Self reported match",
+translate = {"apriori": "Self reported match",
              "entity": "Username",
+             "lsgm":"lsgm",
              "lev": "Username similarity",
              "substring": "Username substring match",
-             "freq": "Similarity of messaging times and frequency",
-             "area": "Geographical similarity in messaging locations"}
+             "2hop": "2-hop neighborhood size similarity",
+             "1hop": "1-hop neighborhood size similarity",
+             "2spectral": "2-hop neighborhood structural similarity"}
 
 def run(host,database,graphA,graphB,handle,displaymode):
     # Create an empty response object.

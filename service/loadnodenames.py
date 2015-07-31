@@ -16,11 +16,11 @@ def run(host,database,graphname):
     client = MongoClient(host, 27017)
     db = client[database]
     # get a list of all collections (excluding system collections)
-    namehint_coll_name = 'topk_'+graphname+("_instagram" if graphname == "twitter" else "_twitter")
+    namehint_coll_name = 'topk_names_'+graphname
     print 'looking in collection',namehint_coll_name
     collection = db[namehint_coll_name]
 
-    namelist = [x["ga"] for x in collection.find({"selfreport": 1})]
+    namelist = [x["name"] for x in collection.find({})]
      
     # loop through the records in the network and take the appropriate action for each type. Suppress
     # the ID field because it doesn't serialize in JSON.  If the node is named, return the name,  else return
