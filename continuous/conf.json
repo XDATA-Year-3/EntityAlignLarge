@@ -1,0 +1,30 @@
+{
+  "db": {
+    "entity": {
+      "dbUri": "mongodb://10.0.2.2:27017/entity",
+      "collection": "entity"
+    },
+    "link": {
+      "dbUri": "mongodb://10.0.2.2:27017/entity",
+      "collection": "link"
+    },
+    "metrics": {
+      "dbUri": "mongodb://10.0.2.2:27017/entity",
+      "collection": "metrics"
+    },
+    "topk": {
+      "dbUri": "mongodb://10.0.2.2:27017/entity",
+      "collection": "topk"
+    }
+  },
+  "topk": {
+    "k": 10,
+    "extra": 0
+  },
+  "metrics": {
+    "1hop": true,
+    "2hop": true,
+    "substring": true,
+    "levenshtein": true
+  }
+}
