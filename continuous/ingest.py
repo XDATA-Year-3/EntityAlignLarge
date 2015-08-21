@@ -33,6 +33,32 @@ Timers = {'lastreport': time.time()}
 
 # -------- General Functions --------
 
+def bufferedQuery(buffer, key, coll, query, fields=None, maxBuffer=2000000):
+    """
+    Buffer some queries we expect to be repeated.  When using a buffered query,
+    the results are a list instead of a cursor.
+
+    :param buffer: a dictionary to store the buffered parameters and results.
+    :param key: the key to use for the query buffering.
+    :param coll: the collection to query.
+    :param query: the query.
+    :param fields: the fields to return from the query.
+    :param maxBuffer: max count to buffer.
+    :returns: either a cursor or a list.
+    """
+    if (key in buffer and coll == buffer[key]['coll'] and
+            query == buffer[key]['query'] and
+            fields == buffer[key]['fields'] and buffer[key]['last']):
+        return buffer[key]['last']
+    cursor = coll.find(query, fields, timeout=False)
+    if cursor.count() <= maxBuffer:
+        cursor = [row for row in cursor]
+        buffer[key] = {
+            'coll': coll, 'query': query, 'fields': fields, 'last': cursor
+        }
+    return cursor
+
+
 def castObjectId(id):
     """
     Make sure an obejct is an ObjectId or None.
@@ -85,6 +111,7 @@ def calculateMetrics(state, entities=None):
         cursor.limit(state['args']['limit'])
     count = numCalc = 0
     starttime = lastreport = time.time()
+    queryBuffer = {}
     for entity in cursor:
         for met in metric.LoadedMetrics:
             metClass = metric.LoadedMetrics[met]
@@ -101,7 +128,7 @@ def calculateMetrics(state, entities=None):
             if oldMetric and oldMetric['date_updated'] >= date:
                 continue
             calculateOneMetric(entityColl, linkColl, metColl, metClass, entity,
-                               oldMetric, state)
+                               oldMetric, state, starttime, queryBuffer)
             numCalc += 1
         count += 1
         if state['args']['verbose'] >= 1:
@@ -113,7 +140,7 @@ def calculateMetrics(state, entities=None):
 
 
 def calculateOneMetric(entityColl, linkColl, metColl, metClass, entity,
-                       metricDoc, state):
+                       metricDoc, state, updateTime, queryBuffer=None):
     """
     Calculate the value of a single metric for a single entity.
 
@@ -126,6 +153,9 @@ def calculateOneMetric(entityColl, linkColl, metColl, metClass, entity,
                       record.  May be None to force a completely fresh
                       computation.
     :param state: the state dictionary with the config values.
+    :param updateTime: the time to mark the metric as updated.
+    :param queryBuffer: if set, a buffer that can be used to skip some repeated
+                        queries.
     """
     entityId = castObjectId(entity)
     if metricDoc is None:
@@ -144,12 +174,14 @@ def calculateOneMetric(entityColl, linkColl, metColl, metClass, entity,
     }
     # The time has to be before we do the computation, as data could be added
     # during the comptation.
-    metricDoc['date_updated'] = time.time()
+    metricDoc['date_updated'] = updateTime or time.time()
     refresh = (metClass.saveWork and work == {})
     if metClass.onEntities:
         query = ({} if not metClass.onEntitiesOnlyNew or refresh else
                  {'date_updated': {'$gte': metricDoc['date_updated']}})
-        for gb in entityColl.find(query, timeout=False):
+        fields = getattr(metClass, 'entityFields', None)
+        for gb in bufferedQuery(queryBuffer, metClass.name, entityColl, query,
+                                fields):
             if castObjectId(gb) != entityId:
                 metClass.calcEntity(entity, gb, **kwargs)
     if metClass.onLinks:

@@ -41,6 +41,12 @@ class MetricSubstring(metric.Metric):
     def __init__(self, **kwargs):
         super(MetricSubstring, self).__init__(**kwargs)
         self.onEntities = True
+        self.entityFields = {
+            'name': True,
+            'service': True,
+            'msgs.service': True,
+            'msgs.subset': True
+        }
         self.saveWork = True
 
     def calc(self, ga, work, **kwargs):

@@ -57,6 +57,12 @@ class MetricLevenshtein(metric.Metric):
     def __init__(self, **kwargs):
         super(MetricLevenshtein, self).__init__(**kwargs)
         self.onEntities = True
+        self.entityFields = {
+            'name': True,
+            'service': True,
+            'msgs.service': True,
+            'msgs.subset': True
+        }
         self.saveWork = True
 
     def calc(self, ga, work, **kwargs):

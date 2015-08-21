@@ -34,6 +34,10 @@ class Metric(object):
         # This also determines if a metric should be recomputed if any entity
         # was updated, even if we aren't using the entities.
         self.onEntitiesOnlyNew = True
+        # If self.entityFields is specified, only those fields are retreived
+        # when visiting entities.  This can be used to reduce data transfer
+        # from the database.
+        # self.entityFields = {'name': True}
         # If saveWork is True, the work record is saved along with the value of
         # the metric
         self.saveWork = False
