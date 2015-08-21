@@ -77,7 +77,12 @@ def calculateMetrics(state, entities=None):
     latestLink = 0 if not latestLink else latestLink['date_updated']
     idQuery = {} if entities is None else {'_id': {'$in': entities}}
     cursor = entityColl.find(idQuery, timeout=False).sort(
-        [('_id', pymongo.ASCENDING)])
+        [('_id', pymongo.ASCENDING if not state['args'].get('recent', False)
+          else pymongo.DESCENDING)])
+    if state['args'].get('offset'):
+        cursor.skip(state['args']['offset'])
+    if state['args'].get('limit'):
+        cursor.limit(state['args']['limit'])
     count = numCalc = 0
     starttime = lastreport = time.time()
     for entity in cursor:
@@ -1007,10 +1012,19 @@ if __name__ == '__main__':
         'contain one record per line.  Those records with _source keys are '
         'ingested.', action=AppendRegionAction, dest='inst')
     parser.add_argument(
+        '--limit', '-l', help='Limit the number of entities for metrics '
+        'calculations.', type=int)
+    parser.add_argument(
         '--metric', '-m', help='Explicitly choose which metrics are '
         'calculated.  Multiple metrics may be specified.  Multiple processes '
         'can be run in parallel with different metrics to increase overall '
         'processing speed.', action='append')
+    parser.add_argument(
+        '--offset', '-o', help='Offset within entities for metrics '
+        'calculations.', type=int)
+    parser.add_argument(
+        '--recent', help='Calculate metrics for the most recently added '
+        'entities first.', action='store_true')
     parser.add_argument(
         '--region', '-r', help='Subsequent input files will use this as '
         'their region or subset.  Set to blank to revert to parsing regions '
