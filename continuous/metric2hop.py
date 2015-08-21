@@ -25,7 +25,7 @@ class Metric2hop(metric.Metric):
             return {'2hop': 0, 'lte2hop': 0}
         neighbors = set()
         for gb in entityColl.find({'_id': {'$in': list(neighbors)}},
-                                  {'neighbors': True}):
+                                  {'neighbors': True}, timeout=False):
             neighbors.update(gb.get('neighbors', []))
         neighbors.discard(ga['_id'])
         result = {'2hop': len(neighbors)}

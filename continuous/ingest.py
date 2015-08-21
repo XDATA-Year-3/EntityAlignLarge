@@ -66,17 +66,18 @@ def calculateMetrics(state, entities=None):
     metColl = getDb('metrics', state)
     entityColl = getDb('entity', state)
     linkColl = getDb('link', state)
-    latestEntity = entityColl.find().sort([
+    latestEntity = entityColl.find(timeout=False).sort([
         ('date_updated', pymongo.DESCENDING)]).limit(-1).next()
     if not latestEntity:
         # If there are no entities, we have nothing to do
         return
     latestEntity = latestEntity['date_updated']
-    latestLink = linkColl.find().sort([
+    latestLink = linkColl.find(timeout=False).sort([
         ('date_updated', pymongo.DESCENDING)]).limit(-1).next()
     latestLink = 0 if not latestLink else latestLink['date_updated']
     idQuery = {} if entities is None else {'_id': {'$in': entities}}
-    cursor = entityColl.find(idQuery).sort([('_id', pymongo.ASCENDING)])
+    cursor = entityColl.find(idQuery, timeout=False).sort(
+        [('_id', pymongo.ASCENDING)])
     count = numCalc = 0
     starttime = lastreport = time.time()
     for entity in cursor:
@@ -90,7 +91,7 @@ def calculateMetrics(state, entities=None):
             oldMetric = metColl.find_one({
                 'entity': castObjectId(entity),
                 'metric': met
-            })
+            }, timeout=False)
             # Already up to date
             if oldMetric and oldMetric['date_updated'] >= date:
                 continue
@@ -143,15 +144,15 @@ def calculateOneMetric(entityColl, linkColl, metColl, metClass, entity,
     if metClass.onEntities:
         query = ({} if not metClass.onEntitiesOnlyNew or refresh else
                  {'date_updated': {'$gte': metricDoc['date_updated']}})
-        for gb in entityColl.find(query):
+        for gb in entityColl.find(query, timeout=False):
             if castObjectId(gb) != entityId:
                 metClass.calcEntity(entity, gb, **kwargs)
     if metClass.onLinks:
         query = ({} if not metClass.onLinksOnlyNew or refresh else
                  {'date_updated': {'$gte': metricDoc['date_updated']}})
         query['ga'] = entityId
-        for link in linkColl.find(query):
-            gb = entityColl.find_one(castObjectId(link['gb']))
+        for link in linkColl.find(query, timeout=False):
+            gb = entityColl.find_one(castObjectId(link['gb']), timeout=False)
             metClass.calcLink(entity, gb, link, **kwargs)
     value = metClass.calc(entity, **kwargs)
     if metClass.saveWork:
@@ -363,6 +364,9 @@ def getDb(dbName, state):
             [('gb', pymongo.ASCENDING)],
             [('date_updated', pymongo.ASCENDING)],
         ],
+        'metrics': [
+            [('entity', pymongo.ASCENDING)],
+        ],
     }
     for index in indices.get(dbName, []):
         coll.create_index(index)
@@ -498,7 +502,7 @@ def ingestMessage(state, msg):
     if entityColl.find_one({'msgs': {'$elemMatch': {
             'service': msg['service'], 'msg_id': msg['msg_id'],
             'subset': msg['subset'],
-            }}}, {'_id': True}, limit=1):
+            }}}, {'_id': True}, limit=1, timeout=False):
         return False
     entity, changed = getEntityByName(state, {
         'service': msg['service'],
@@ -671,8 +675,8 @@ def mergeEntities(state, mainId, secondId):
     secondId = castObjectId(secondId)
     if state['args']['verbose'] >= 2:
         print 'merge:', mainId, secondId
-    main = entityColl.find_one({'_id': mainId})
-    second = entityColl.find_one({'_id': secondId})
+    main = entityColl.find_one({'_id': mainId}, timeout=False)
+    second = entityColl.find_one({'_id': secondId}, timeout=False)
     main['msgs'].extend(second['msgs'])
     main['date_updated'] = time.time()
     if secondId in main['neighbors']:
@@ -687,10 +691,10 @@ def mergeEntities(state, mainId, secondId):
         multi=True)
     # update links
     linkColl = getDb('link', state)
-    for link in linkColl.find({'ga': secondId}):
+    for link in linkColl.find({'ga': secondId}, timeout=False):
         addLink(linkColl, mainId, link['gb'], link['linktype'], link['weight'])
     linkColl.remove({'ga': secondId})
-    for link in linkColl.find({'gb': secondId}):
+    for link in linkColl.find({'gb': secondId}, timeout=False):
         addLink(linkColl, link['ga'], mainId, link['linktype'], link['weight'])
     linkColl.remove({'gb': secondId})
     # Don't allow self link
@@ -711,7 +715,7 @@ def checkForDuplicateNames(state):
     """
     entityColl = getDb('entity', state)
     names = {}
-    for entity in entityColl.find({}):
+    for entity in entityColl.find({}, timeout=False):
         service = entity['service']
         if service not in names:
             names[service] = {}
