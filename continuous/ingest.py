@@ -183,7 +183,7 @@ def calculateOneMetric(entityColl, linkColl, metColl, metClass, entity,
         res = bufferedQuery(queryBuffer, metClass.name, entityColl, query,
                             fields)
         if ((isinstance(res, list) and len(res)) or
-                (not ininstance(res, list) and not res.count())):
+                (not isinstance(res, list) and not res.count())):
             metClass.calcEntityPrep(entity, **kwargs)
             for gb in res:
                 if castObjectId(gb) != entityId:
