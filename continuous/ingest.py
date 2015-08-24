@@ -68,13 +68,13 @@ def castObjectId(id):
     :returns: an ObjectId or None.
     """
     if isinstance(id, dict):
-        id = id['_id']
+        id = id.get('_id')
     if id is None or type(id) is ObjectId:
         return id
     return ObjectId(id)
 
 
-def calculateMetrics(state, entities=None):
+def calculateMetrics(state, entities=None, nonDbEntities=None):
     """
     Calculate metrics for dirty entities.
 
@@ -102,9 +102,14 @@ def calculateMetrics(state, entities=None):
         ('date_updated', pymongo.DESCENDING)]).limit(-1).next()
     latestLink = 0 if not latestLink else latestLink['date_updated']
     idQuery = {} if entities is None else {'_id': {'$in': entities}}
-    cursor = entityColl.find(idQuery, timeout=False).sort(
-        [('_id', pymongo.ASCENDING if not state['args'].get('recent', False)
-          else pymongo.DESCENDING)])
+    if nonDbEntities is not None:
+        cursor = nonDbEntities
+        numEntities = len(nonDbEntities)
+    else:
+        cursor = entityColl.find(idQuery, timeout=False).sort(
+            [('_id', pymongo.ASCENDING if not
+              state['args'].get('recent', False) else pymongo.DESCENDING)])
+        numEntities = cursor.count()
     if state['args'].get('offset'):
         cursor.skip(state['args']['offset'])
     if state['args'].get('limit'):
@@ -115,26 +120,34 @@ def calculateMetrics(state, entities=None):
     for entity in cursor:
         for met in metric.LoadedMetrics:
             metClass = metric.LoadedMetrics[met]
-            date = entity['date_updated']
-            if metClass.onEntities or not metClass.onEntitiesOnlyNew:
-                date = max(date, latestEntity)
-            if metClass.onLinks or not metClass.onLinksOnlyNew:
-                date = max(date, latestLink)
-            oldMetric = metColl.find_one({
-                'entity': castObjectId(entity),
-                'metric': metClass.name
-            }, timeout=False)
-            # Already up to date
-            if oldMetric and oldMetric['date_updated'] >= date:
-                continue
-            calculateOneMetric(entityColl, linkColl, metColl, metClass, entity,
-                               oldMetric, state, starttime, queryBuffer)
+            if nonDbEntities is None:
+                date = entity['date_updated']
+                if metClass.onEntities or not metClass.onEntitiesOnlyNew:
+                    date = max(date, latestEntity)
+                if metClass.onLinks or not metClass.onLinksOnlyNew:
+                    date = max(date, latestLink)
+                oldMetric = metColl.find_one({
+                    'entity': castObjectId(entity),
+                    'metric': metClass.name
+                }, timeout=False)
+                # Already up to date
+                if oldMetric and oldMetric['date_updated'] >= date:
+                    continue
+            else:
+                oldMetric = None
+            metricDoc = calculateOneMetric(
+                entityColl, linkColl, metColl, metClass, entity, oldMetric,
+                state, starttime, queryBuffer)
+            if nonDbEntities is not None:
+                if not 'metrics' in entity:
+                    entity['metrics'] = {}
+                entity['metrics'][metClass.name] = metricDoc
             numCalc += 1
         count += 1
         if state['args']['verbose'] >= 1:
             curtime = time.time()
             if curtime - lastreport > 10.0 / state['args']['verbose']:
-                print '%d %d %d %5.3f' % (count, numCalc, cursor.count(),
+                print '%d %d %d %5.3f' % (count, numCalc, numEntities,
                                           curtime - starttime)
                 lastreport = curtime
 
@@ -202,7 +215,9 @@ def calculateOneMetric(entityColl, linkColl, metColl, metClass, entity,
     if metClass.saveWork:
         metricDoc['work'] = work
     metricDoc['value'] = value
-    metColl.save(metricDoc)
+    if entityId is not None:
+        metColl.save(metricDoc)
+    return metricDoc
 
 
 def convertInstagramESToMsg(inst, subset='unknown'):
