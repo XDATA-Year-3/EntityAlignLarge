@@ -1,25 +1,21 @@
 {
   "db": {
     "entity": {
-      "dbUri": "mongodb://10.0.2.2:27017/entity",
+      "dbUri": "mongodb://127.0.0.1:27017/syria",
       "collection": "entity"
     },
     "link": {
-      "dbUri": "mongodb://10.0.2.2:27017/entity",
+      "dbUri": "mongodb://127.0.0.1:27017/syria",
       "collection": "link"
     },
     "metrics": {
-      "dbUri": "mongodb://10.0.2.2:27017/entity",
+      "dbUri": "mongodb://127.0.0.1:27017/syria",
       "collection": "metrics"
-    },
-    "topk": {
-      "dbUri": "mongodb://10.0.2.2:27017/entity",
-      "collection": "topk"
     }
   },
   "topk": {
-    "k": 10,
-    "extra": 0
+    "k": 25,
+    "extra": 25
   },
   "metrics": {
     "1hop": true,

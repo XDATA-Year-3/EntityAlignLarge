@@ -59,6 +59,7 @@ class MetricLevenshtein(metric.Metric):
         self.onEntities = True
         self.entityFields = {
             'name': True,
+            'fullname': True,
             'service': True,
             'msgs.service': True,
             'msgs.subset': True
@@ -72,8 +73,12 @@ class MetricLevenshtein(metric.Metric):
         :param ga: the entity for which we are computing the metric.
         :returns: the top-k table of relations.
         """
-        metric.topKSetsToLists(work)
-        return work['topk']
+        res = {}
+        for key in ('name', 'fullname', 'name_fullname'):
+            metric.topKSetsToLists(work[key])
+            if 'topk' in work[key]:
+                res[key] = work[key]['topk']
+        return res
 
     def calcEntity(self, ga, gb, work={}, state={}, **kwargs):
         """
@@ -88,13 +93,46 @@ class MetricLevenshtein(metric.Metric):
         """
         # We actually calculate the BEST levenshtein similarity between any
         # name of ga with any name of gb and use that.
-        sim = 0
+        simName = simFull = simBoth = 0
         for gaName in ga['name']:
             for gbName in gb['name']:
-                sim = max(sim, levenshteinSimilarity(gaName, gbName))
-        if sim:
-            metric.trackTopK(work, sim, gb['_id'], metric.topKCategories(gb),
-                             state)
+                # Note: both gaName and gbName are lowercase.  We may wish to
+                # also find the substring match between fullnames.
+                simName = max(simName, levenshteinSimilarity(gaName, gbName))
+            for gbName in gb['fullname']:
+                simBoth = max(simBoth, levenshteinSimilarity(gaName,
+                                                           gbName.lower()))
+        for gaName in ga['fullname']:
+            for gbName in gb['fullname']:
+                # Note: both gaName and gbName are lowercase.  We may wish to
+                # also find the levenshtein match between fullnames.
+                simFull = max(simName, levenshteinSimilarity(
+                    gaName.lower(), gbName.lower()))
+            for gbName in gb['name']:
+                simBoth = max(simBoth, levenshteinSimilarity(gaName.lower(),
+                                                           gbName))
+        simBoth = max(simBoth, simName, simFull)
+        if simName:
+            metric.trackTopK(work['name'], simName, gb['_id'],
+                             metric.topKCategories(gb), state)
+        if simFull:
+            metric.trackTopK(work['fullname'], simFull, gb['_id'],
+                             metric.topKCategories(gb), state)
+        if simBoth:
+            metric.trackTopK(work['name_fullname'], simBoth, gb['_id'],
+                             metric.topKCategories(gb), state)
+
+    def calcEntityPrep(self, ga, work={}, **kwargs):
+        """
+        This is called before calcEntity is called on each second entity.
+
+        :param ga: the entity for which we are computing the metric.
+        :param work: an object for working on the metric.  Results should be
+                     stored here.
+        """
+        for key in ('name', 'fullname', 'name_fullname'):
+            if not key in work:
+                work[key] = {}
 
 
 metric.loadMetric(MetricLevenshtein)

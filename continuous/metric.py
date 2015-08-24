@@ -64,6 +64,17 @@ class Metric(object):
         """
         return
 
+    def calcEntityPrep(self, ga, work={}, **kwargs):
+        """
+        Subclass this to handle partial calculations based on a second entity.
+        This is called before calcEntity is called on each second entity.
+
+        :param ga: the entity for which we are computing the metric.
+        :param work: an object for working on the metric.  Results should be
+                     stored here.
+        """
+        return
+
     def calcLink(self, ga, gb, link, work={}, **kwargs):
         """
         Subclass this to handle partial calculations based on a link.
@@ -71,6 +82,17 @@ class Metric(object):
         :param ga: the entity for which we are computing the metric.
         :param gb: the secondary entity.
         :param link: the link between the two entities.
+        :param work: an object for working on the metric.  Results should be
+                     stored here.
+        """
+        return
+
+    def calcLinkPrep(self, ga, work={}, **kwargs):
+        """
+        Subclass this to handle partial calculations based on a link.
+        This is called before calcLink is called on each link.
+
+        :param ga: the entity for which we are computing the metric.
         :param work: an object for working on the metric.  Results should be
                      stored here.
         """

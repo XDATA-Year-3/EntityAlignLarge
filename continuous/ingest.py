@@ -122,7 +122,7 @@ def calculateMetrics(state, entities=None):
                 date = max(date, latestLink)
             oldMetric = metColl.find_one({
                 'entity': castObjectId(entity),
-                'metric': met
+                'metric': metClass.name
             }, timeout=False)
             # Already up to date
             if oldMetric and oldMetric['date_updated'] >= date:
@@ -180,17 +180,24 @@ def calculateOneMetric(entityColl, linkColl, metColl, metClass, entity,
         query = ({} if not metClass.onEntitiesOnlyNew or refresh else
                  {'date_updated': {'$gte': metricDoc['date_updated']}})
         fields = getattr(metClass, 'entityFields', None)
-        for gb in bufferedQuery(queryBuffer, metClass.name, entityColl, query,
-                                fields):
-            if castObjectId(gb) != entityId:
-                metClass.calcEntity(entity, gb, **kwargs)
+        res = bufferedQuery(queryBuffer, metClass.name, entityColl, query,
+                            fields)
+        if ((isinstance(res, list) and len(res)) or
+                (not ininstance(res, list) and not res.count())):
+            metClass.calcEntityPrep(entity, **kwargs)
+            for gb in res:
+                if castObjectId(gb) != entityId:
+                    metClass.calcEntity(entity, gb, **kwargs)
     if metClass.onLinks:
         query = ({} if not metClass.onLinksOnlyNew or refresh else
                  {'date_updated': {'$gte': metricDoc['date_updated']}})
         query['ga'] = entityId
-        for link in linkColl.find(query, timeout=False):
-            gb = entityColl.find_one(castObjectId(link['gb']), timeout=False)
-            metClass.calcLink(entity, gb, link, **kwargs)
+        res = linkColl.find(query, timeout=False)
+        if res.count():
+            for link in res:
+                gb = entityColl.find_one(castObjectId(link['gb']),
+                                         timeout=False)
+                metClass.calcLink(entity, gb, link, **kwargs)
     value = metClass.calc(entity, **kwargs)
     if metClass.saveWork:
         metricDoc['work'] = work
@@ -338,7 +345,7 @@ def convertTwitterJSONToMsg(tw):
     }
     msg['url'] = 'http://twitter.com/%s/statuses/%s' % (
         msg['user_id'], msg['msg_id'])
-    if ('coordinates' in tw and 'coordinates' in tw['coordinates'] and
+    if (tw.get('coordinates') and 'coordinates' in tw['coordinates'] and
             len(tw['coordinates']['coordinates']) >= 2):
         msg['latitude'] = tw['coordinates']['coordinates'][1]
         msg['longitude'] = tw['coordinates']['coordinates'][0]
@@ -634,7 +641,9 @@ def ingestMessageEdges(state, entity, msg):
                 })
                 # If we added this link as a neighbor, then we know the edges
                 # are new edges and not increased weights to existing edges.
-                if updateResult['nModified']:
+                # Using nModified or n allows use of pymongo 2 or pymongo 3
+                # (which is independent of the version of Mongo).
+                if updateResult.get('nModified', updateResult.get('n')):
                     isNew = True
             # We are currently bidirectional on everything
             addLink(linkColl, entityId, linkId, linktype, isNew=isNew,
@@ -899,6 +908,26 @@ def openFile(filename):
     return open(filename, 'rb')
 
 
+def resetMetrics(state):
+    """
+    Mark metrics as dirty or delete known values.
+
+    :param state: the state dictionary with the config values.
+    """
+    metricDict = state['config'].get('metrics', {})
+    if state['args']['metric']:
+        metricDict = dict.fromkeys(state['args']['metric'])
+    for met in metricDict:
+        metric.loadMetric(met, metricDict[met])
+    metColl = getDb('metrics', state)
+    for met in metric.LoadedMetrics:
+        metClass = metric.LoadedMetrics[met]
+        if state['args'].get('clear'):
+            metColl.remove({'metric': metClass.name})
+        elif state['args'].get('recalc'):
+            metColl.update({'metric': metClass.name}, {'date_updated': 0})
+
+
 def showEntityStatistics(entityColl):
     """
     Report on distributions and statistics of the entity collection.
@@ -946,7 +975,7 @@ def showProgress(linesProcessed, state, filename):
         return
     if 'starttime' not in state:
         state['starttime'] = time.time()
-    if (state['args']['verbose'] >= 2 and
+    if (state['args']['verbose'] >= 1 and
             filename != state.get('lastFilename', None)):
         print filename
         state['lastFilename'] = filename
@@ -1033,9 +1062,12 @@ if __name__ == '__main__':
         '--calculate', '--calc', '-c', help='Calculate metrics.',
         action='store_true', dest='calc')
     parser.add_argument(
-        '--config', '--conf', help='The path to the config file')
-    parser.add_argument(
         '--checknames', help='Check for duplicate names.', action='store_true')
+    parser.add_argument(
+        '--clear', '--clear-metrics', help='Clear metrics so that they must '
+        'be recalculated completely.', action='store_true')
+    parser.add_argument(
+        '--config', '--conf', help='The path to the config file')
     parser.add_argument(
         '--instagram', '-i', '--inst',
         help='Ingest one or more files that contain Instagram messages in the '
@@ -1054,6 +1086,11 @@ if __name__ == '__main__':
     parser.add_argument(
         '--offset', '-o', help='Offset within entities for metrics '
         'calculations.', type=int)
+    parser.add_argument(
+        '--recalculate', '--recalc', help='Mark metrics as dirty so that they '
+        'are all updated.  This is less aggresive than clearing, as they are '
+        'not deleted and may reuse partial work.', action='store_true',
+        dest='recalc')
     parser.add_argument(
         '--recent', help='Calculate metrics for the most recently added '
         'entities first.', action='store_true')
@@ -1085,6 +1122,13 @@ if __name__ == '__main__':
             for filename in sorted(glob.iglob(os.path.expanduser(filespec))):
                 ingestTwitterFile(filename, state, region)
     if args.get('calc', False):
+        if args.get('clear') or args.get('recalc'):
+            resetMetrics(state)
         calculateMetrics(state)
     if state['args']['verbose'] >= 1:
         pprint.pprint(state)
+# TODO:
+# Ingest zip files
+# ingest json from zip files
+# Ingest elasticsearch instagram data from xdata
+# Run metrics against entities not in the database
