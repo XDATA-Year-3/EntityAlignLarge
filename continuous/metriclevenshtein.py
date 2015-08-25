@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+try:
+    import Levenshtein
+except Exception:
+    Levenshtein = None
 import metric
 
 
@@ -48,7 +52,14 @@ def levenshteinSimilarity(s1, s2):
     :return: the normalized result.  1 is a perfect match.
     """
     totalLen = float(len(s1) + len(s2))
-    return (totalLen - levenshtein(s1, s2)) / totalLen
+    # The C-module version of Levenshtein is vastly faster
+    if Levenshtein is None:
+        return (totalLen - levenshtein(s1, s2)) / totalLen
+    if isinstance(s1, str):
+        s1 = s1.decode('utf8')
+    if isinstance(s2, str):
+        s2 = s2.decode('utf8')
+    return (totalLen - Levenshtein.distance(s1, s2)) / totalLen
 
 
 class MetricLevenshtein(metric.Metric):
@@ -106,7 +117,7 @@ class MetricLevenshtein(metric.Metric):
             for gbName in gb['fullname']:
                 # Note: both gaName and gbName are lowercase.  We may wish to
                 # also find the levenshtein match between fullnames.
-                simFull = max(simName, levenshteinSimilarity(
+                simFull = max(simFull, levenshteinSimilarity(
                     gaName.lower(), gbName.lower()))
             for gbName in gb['name']:
                 simBoth = max(simBoth, levenshteinSimilarity(gaName.lower(),

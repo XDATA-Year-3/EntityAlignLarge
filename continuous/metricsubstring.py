@@ -90,7 +90,7 @@ class MetricSubstring(metric.Metric):
             for gbName in gb['fullname']:
                 # Note: both gaName and gbName are lowercase.  We may wish to
                 # also find the substring match between fullnames.
-                simFull = max(simName, substringSimilarity(
+                simFull = max(simFull, substringSimilarity(
                     gaName.lower(), gbName.lower()))
             for gbName in gb['name']:
                 simBoth = max(simBoth, substringSimilarity(gaName.lower(),

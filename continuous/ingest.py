@@ -74,13 +74,18 @@ def castObjectId(id):
     return ObjectId(id)
 
 
-def calculateMetrics(state, entities=None, nonDbEntities=None):
+def calculateMetrics(state, entities=None, nonDbEntities=None, callback=None):
     """
     Calculate metrics for dirty entities.
 
     :param state: the state dictionary with the config values.
     :param entities: a list of entities to calculate the metrics for.  If None,
                      calculate the metrics for all entities.
+    :param nonDbEntities: a list of entity-like records that didn't come from
+                          our database.  If this is not None, the entities are
+                          not used.
+    :param callback: a function to call after calculating a metric.
+                     callback(state, entity, metClass, metric) is called.
     """
     metricDict = state['config'].get('metrics', {})
     if state['args']['metric']:
@@ -143,6 +148,8 @@ def calculateMetrics(state, entities=None, nonDbEntities=None):
                     entity['metrics'] = {}
                 entity['metrics'][metClass.name] = metricDoc
             numCalc += 1
+            if callback:
+                callback(state, entity, metClass, metricDoc)
         count += 1
         if state['args']['verbose'] >= 1:
             curtime = time.time()
@@ -347,6 +354,8 @@ def convertTwitterJSONToMsg(tw):
     :param tw: the twitter record.
     :returns: a message record or None for failed.
     """
+    if tw.get('user') is None:
+        return
     msg = {
         'service':       'twitter',
         'subset':        'unknown',
@@ -587,8 +596,6 @@ def ingestMessage(state, msg):
             'service': msg['service'],
             'subset': [msg['subset']],
             'msg_id': msg['msg_id'],
-            'latitude': msg.get('latitude', None),
-            'longitude': msg.get('longitude', None),
             'date': msg['msg_date']
         }
         for key in ('latitude', 'longitude', 'source'):
