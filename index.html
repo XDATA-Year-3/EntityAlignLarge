@@ -128,7 +128,7 @@
 <!-- for the bootstrap table in the pairings popover -->
 <link rel="stylesheet" href="bootstrap-table.css">
 
-<title>Large Network Alignment</title>
+<title>Document Ranking</title>
 
 <body class=fuelux>
 <div id=info-panel class="modal fade draper" data-wf="1"  data-description="info panel">
@@ -139,10 +139,7 @@
             </div>
 
             <div class=modal-body>
-                <p>Examine and Align Entities Across two networks</p>
-
-               <p>This application allows exploration and alignment edits between two large networks.  The 
-               networks are  assumed too large to be directly rendered, so only k-hop subgraphs are ever rendered. </p>
+                <p>Rank and examine documents associated with different entities.</p>
             </div>
 
             <div class=modal-footer>
@@ -162,67 +159,30 @@
             <div class=modal-body>
                 <p>To use:
                     <ol>
-                        <li>Load a dataset by using the menu in the upper left
-                            corner.  The other dataset will also be loaded in the
-                            right-hand pane.
+                        <li>Select an entity to examine on the left.  Known documents with rankings are shown in a sortable list.  If you select a document, a document summary and link are shown on the right.
 
-                        <li>Begin typing a username in the search box.  The
+                        <li>Begin typing a user GUID, name, or email name in the search box.  The
                             autocomplete feature will show you some suggested names
                             you may be looking for.
 
-                        <li>Select the username you want, and click "Explore Local Network".
-
-                        <li>Examine the network in the left-hand pane.
+                        <li>Select the username you want, and click "Explore Documents".
 
                         <li>Manipulate the columns in the center, sorting by
                             various metrics, until you see the listings you
                             want.
 
-                        <li>Click on a name in the central listing.
+                        <li>Click on a document the central listing.
 
-                        <li>Examine the network in the right-hand pane.
+                        <li>Examine the document in the right-hand pane.
 
-                        <li>If you would like to save pairing between usernames,
-                            click "Accept This Pairing".
-
-                        <li>Click on "Review Pairings" in the navbar at the top to
-                            see the list of pairings you have saved thus far.
                     </ol>
                </p>
 
-               <p>The available metrics are:
+               <p>The available document metrics are:
                    <ul>
-                       <li><strong>Self reported match.</strong> Indicates whether
-                           the users in the left- and right-hand panes are known to
-                           be the same user via a message duplication from one
-                           account to the other.
+                       <li><strong>Levenshtein name match</strong> The person's full name matches a social network full name.  They may or may not be the same person.
 
-                       <li><strong>LSGM.</strong> LSGM (large seeded graph
-                           matching) is a measure of structural similarity
-                           between two networks, focused on a particular central
-                           node.
-
-                       <li><strong>Username similarity.</strong> Measures the
-                           similarity between usernames by counting the number
-                           of additions, deletions, and changes to individual
-                           letters are needed to transform one name into the
-                           other.
-
-                       <li><strong>Username substring match.</strong> Measures
-                           the similarity between usernames by calculating the
-                           largest substring common to both.
-
-                       <li><strong>1-hop neighborhood size similarity.</strong>
-                           Measures how similar the sizes are of the 1-hop
-                           networks surrounding the two nodes.
-
-                       <li><strong>2-hop neighborhood sizes similarity.</strong>
-                           Just like the 1-hop measure above, but includes a
-                           second hop going out from the central node.
-
-                       <li><strong>2-hop neighborhood structural similarity.</strong>
-                           Compares two 2-hop networks, taking into account not
-                           just size but also connectivity.
+                       <li><strong>Levenshtein user name match</strong> The person's email user name matches a social network user name.  They may or may not be the same person.
                    </ul>
                </p>
 
@@ -244,24 +204,6 @@
 
             <div class=modal-footer>
                 <a class="btn btn-default" data-dismiss=modal>OK</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id='video-panel' class="modal fade draper" data-wf="1"  data-description="intro video">
-    <div class=modal-dialog>
-        <div class=modal-content>
-            <div class=modal-header>
-                <h3>Intro Video</h3>
-            </div>
-
-            <div class=modal-body>
-                <iframe width="560" height="315" src="https://www.youtube.com/embed/vZK7qFRMC-Q" frameborder="0" allowfullscreen></iframe>
-            </div>
-
-            <div class=modal-footer>
-                <a class="btn btn-default" data-dismiss=modal>Close Window</a>
             </div>
         </div>
     </div>
@@ -292,14 +234,13 @@
 
 <div class="navbar navbar-default navbar-fixed-top" >
     <div class=navbar-header>
-        <a class=navbar-brand href=/examples>Resonant - Large Network Alignment</a>
+        <a class=navbar-brand href=/examples>Resonant - Document Ranking</a>
     </div>
 
     <ul class="nav navbar-nav">
         <li><a style=cursor:pointer data-toggle=modal data-target=#info-panel><span class="glyphicon glyphicon-info-sign"></span> Info</a>
         <li><a style=cursor:pointer data-toggle=modal data-target=#help-panel><span class="glyphicon glyphicon-question-sign"></span> Help</a>
-        <li><a style=cursor:pointer data-toggle=modal data-target=#video-panel><span class="glyphicon glyphicon-facetime-video"></span> Intro Video</a>
-        <li><a style=cursor:pointer data-toggle=modal data-target=#seed-panel><span class="caret"></span>Review Pairings</a>
+        <li style="display: none"><a style=cursor:pointer data-toggle=modal data-target=#seed-panel><span class="caret"></span>Review Pairings</a>
     </ul>
 </div>
 
@@ -320,9 +261,11 @@
         <text  id="ga-nodeCount" style="margin-left:20px">0 </text>
         <text  style="margin-left:20px">nodes loaded</text>
         <p></p>
+        <!--
         <text  id="ga-linkCount" style="margin-left:20px">0 </text>
         <text  style="margin-left:20px">links loaded</text>
         <p></p>
+        -->
         <!--
         <text  id="ga-matchCount" style="margin-left:20px">0 </text>
         <text  style="margin-left:20px">matched nodes</text>    
@@ -330,8 +273,11 @@
         -->
         <input id='ga-name' style='margin-left:20px' disabled="disabled"> Enter an entity name</input> 
         <p></p>
+        <a id='examine-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Examine Documents</a>
+        <!--
         <a id='onehop-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Explore local network</a>
         <a id='graph1-homepage' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Visit User Homepage</a>
+        -->
         <p></p>
         <div >
           <svg id='graph1' style="height:300; margin-top:20px; margin-left:20px" ></svg>
@@ -377,8 +323,10 @@
     </div>
   </div>
 </div>
+<!-- 
 <script src="js/userale.js"></script>
 <script src="logging.js"></script>
+-->
 <!-- Driver script for this app -->
 <script src=entity-align.js></script>
 </body>

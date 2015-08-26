@@ -9,7 +9,7 @@ translate = {"selfreport": "Self reported match",
              "freq": "Similarity of messaging times and frequency",
              "area": "Geographical similarity in messaging locations"}
 
-def run(host,database,graphA,graphB,handle,displaymode):
+def run(host, database, graphA, graphB, handle, displaymode):
     # Create an empty response object.
     response = {}
 
@@ -17,8 +17,8 @@ def run(host,database,graphA,graphB,handle,displaymode):
    # that match the naming profile for tables.  This is matching to see if the collection name
    # begins with "seeds_" or not, since this routine can return the matching graphs (that don't start
     # with 'seeds_') or the matching seeds.
-    
-    # build topk collection name from 
+
+    # build topk collection name from
     topk_collection_name = 'topk_'+graphA+'_'+graphB
     #topk_collection_name = 'topk_twitter_geosample_mentions_v2_october_combined_instagram_mentions_nodelink_october'
     print 'looking for topk in collection', topk_collection_name

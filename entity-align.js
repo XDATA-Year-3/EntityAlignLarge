@@ -18,9 +18,9 @@ entityAlign.host = null;
 entityAlign.ac = null;
 entityAlign.textmode = false;
 
-// logging is handled largely in 
+// logging is handled largely in
 
-function logSystemActivity(group, element,activityEnum, action, tags) {
+function logSystemActivity(group, element, activityEnum, action, tags) {
     group = typeof group !== 'undefined' ? group : 'system_group';
     activityEnum = typeof activityEnum !== 'undefined' ? activityEnum : 'show';
     action = typeof action !== 'undefined' ? action : 'SHOW';
@@ -34,7 +34,9 @@ function logSystemActivity(group, element,activityEnum, action, tags) {
         source: 'system',
         tags: tags
     };
-    log(msg);
+    if (typeof log === 'function') {
+        log(msg);
+    }
 }
 
 entityAlign.dayColor = d3.scale.category10();
@@ -56,15 +58,15 @@ entityAlign.graphB_dataset = null
 entityAlign.graphAnodeNames = null
 entityAlign.graphBnodeNames = null
 
-// a backup copy of the files as read from the datastore is kept to send to the SGM algortihm.  The regular .graphA and .graphB entries 
+// a backup copy of the files as read from the datastore is kept to send to the SGM algortihm.  The regular .graphA and .graphB entries
 // are operated-on by D3, so the datastructures don't work passed back to networkX directly anymore.  So a backup is kepts and this pristine
 // copy is used to initialize the SGM algorithm executed as a tangelo service.
 
 entityAlign.SavedGraphA = null
 entityAlign.SavedGraphB = null
 
-// there is a global array corresponding to the current matches known between the two loaded graphs.  The matches are an array of JSON objects, each with a 
-// "ga" and "gb" attribute, whose corresponding values are integers that match the node IDs. 
+// there is a global array corresponding to the current matches known between the two loaded graphs.  The matches are an array of JSON objects, each with a
+// "ga" and "gb" attribute, whose corresponding values are integers that match the node IDs.
 entityAlign.currentMatches = []
 entityAlign.pairings = []
 
@@ -129,7 +131,7 @@ function displayDate(d) {
 function loggedVisitToEntry(d) {
         //console.log("mouseover of entry for ",d.user)
         //entityAlign.ac.logUserActivity("hover over entity: "+d.tweet, "hover", entityAlign.ac.WF_EXPLORE);
-     
+
 }
 
 function loggedDragVisitToEntry(d) {
@@ -143,11 +145,12 @@ function getDatasetName(label) {
     } else if (label === "Instagram") {
         return entityAlign.instagram;
     }
+    return label;
 }
 
 function updateGraph1() {
-    var graph1opt = d3.select("#graph1-selector").node();
-    graph1opt = graph1opt.options[graph1opt.selectedIndex].text;
+    var graph1opt = ($("#graph1-selector").val() ||
+                     $("#graph1-selector option:selected").text());
 
     d3.select("#graph2-selector")
         .text(graph1opt === "Twitter" ? "Instagram" : "Twitter");
@@ -170,7 +173,7 @@ function updateGraph1() {
 function updateGraph2() {
     //initGraph2FromDatastore()
     // this rendering call below is the old style rendering, which doesn't update.  comment this out in favor of using
-     //updateGraph2_d3_afterLoad() 
+     //updateGraph2_d3_afterLoad()
     //updateGraph2_d3()
     loadNodeNames("B")
     initGraphStats("B")
@@ -191,12 +194,11 @@ function nodeKeyFunction(d) {
 
 
 // The InitGraph functions are called the first time a graph is loaded from the graph datastore.  The ajax call to load from the store
-// is included here.  Globals variables are filled with the graph nodes and links.  No rendering is done in this method.  A method is 
+// is included here.  Globals variables are filled with the graph nodes and links.  No rendering is done in this method.  A method is
 // written for graph1 and graph2.  The only difference between the graph1 and graph2 methods is that they fill different global variables.
 
-function   initGraphStats(graphIndexString)
-{
- 
+function initGraphStats(graphIndexString) {
+
   "use strict";
     var graphelement = (graphIndexString == 'A') ? '#graph1' : '#graph2'
      logSystemActivity('graph_'+graphIndexString+'_group',graphelement,'inspect','OPEN');
@@ -204,72 +206,71 @@ function   initGraphStats(graphIndexString)
 
     // Get the name of the graph dataset to render
     if (graphIndexString == "A") {
-        var graphPathname = d3.select("#graph1-selector").node();
-        var selectedDataset = getDatasetName(graphPathname.options[graphPathname.selectedIndex].text);
+        var graphPathname = $("#graph1-selector").val();
+        var selectedDataset = getDatasetName(graphPathname);
         // save the current dataset name for the graph
         entityAlign.graphA_dataset = selectedDataset
     } else {
         var graphPathname = d3.select("#graph2-selector").text();
         var selectedDataset = getDatasetName(graphPathname);
         // save the current dataset name for the graph
-        entityAlign.graphB_dataset = selectedDataset        
+        entityAlign.graphB_dataset = selectedDataset
     }
-     var logText = "dataset " + graphIndexString + " select: start="+graphPathname;
-     //logSystemActivity('Kitware entityAlign - '+logText);
+    var logText = "dataset " + graphIndexString + " select: start=" + graphPathname;
+    //logSystemActivity('Kitware entityAlign - '+logText);
 
     $.ajax({
         // generalized collection definition
-        url: "service/loadgraphsummary/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset,
+        url: "service/loadgraphsummary/" + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + encodeURIComponent(selectedDataset),
         data: data,
         dataType: "json",
         success: function (response) {
 
-            if (response.error ) {
+            if (response.error) {
                 console.log("error: " + response.error);
                 return;
             }
-            console.log('data returned:',response.result)
+            console.log('data returned:', response.result)
             if (graphIndexString == 'A') {
                 d3.select("#ga-nodeCount").text(response.result.nodes.toString());
-                d3.select("#ga-linkCount").text(response.result.links.toString());
+                //d3.select("#ga-linkCount").text(response.result.links.toString());
             } else {
                 d3.select("#gb-nodeCount").text(response.result.nodes.toString());
-                d3.select("#gb-linkCount").text(response.result.links.toString());            }
+                d3.select("#gb-linkCount").text(response.result.links.toString());
+            }
         }
 
     });
 }
 
-// ----- start of autocomplete for users 
+// ----- start of autocomplete for users
 
 // do a non-blocking call to a python service that returns all the names in the graph.  Assign this to a global variable
 function loadNodeNames(graphIndexString)
 {
-    var selectedDataset;
-
-  // Get the name of the graph dataset to render
+    // Get the name of the graph dataset to render
     if (graphIndexString == "A") {
-        var graphPathname = d3.select("#graph1-selector").node();
-        selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+        var graphPathname = $("#graph1-selector").val();
+        var selectedDataset = getDatasetName(graphPathname);
     } else {
-        selectedDataset = d3.select("#graph2-selector").text();
+        var selectedDataset = d3.select("#graph2-selector").text();
     }
 
     selectedDataset = getDatasetName(selectedDataset);
 
-    // non-blocking call to initialize this 
+    // non-blocking call to initialize this
     var data
     $.ajax({
-        url: "service/loadnodenames/" + entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + selectedDataset,
+        url: "service/loadnodenames/" + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + encodeURIComponent(selectedDataset),
         data: data,
         dataType: "json",
         success: function (response) {
 
-            if (response.error ) {
+            if (response.error) {
                 console.log("error: " + response.error);
                 return;
             }
-            console.log('data returned:',response.result)
+            console.log('data returned:', response.result)
             if (graphIndexString == 'A') {
                 // copy the result into the array and enable name selection from the input field
                 entityAlign.graphAnodeNames = response.result.nodes
@@ -277,14 +278,13 @@ function loadNodeNames(graphIndexString)
                 inputfield.attr("disabled", null);
                 updateUserList(response.result.nodes)
             } else {
-                 entityAlign.graphBnodeNames = response.result.nodes
+                entityAlign.graphBnodeNames = response.result.nodes
             }
         }
     });
 }
 
 $('#ga-name').autocomplete().keyup(function (evt) {
-    console.log(evt)
     // respond to enter by starting a query
     if (evt.which === 13) {
         updateUserList(entityAlign.graphAnodeNames);
@@ -303,20 +303,20 @@ function updateUserList(namelist) {
 
     // Update the user filter selection box
     // .slice(0, 10)
-    $('#ga-name').autocomplete({ source: namelist});
+    $('#ga-name').autocomplete({source: namelist, delay: 300, minLength: 5});
 }
 
-// ------ end of autocomplete users 
+// ------ end of autocomplete users
 
 
 // The InitGraph functions are called the first time a graph is loaded from the graph datastore.  The ajax call to load from the store
-// is included here.  Globals variables are filled with the graph nodes and links.  No rendering is done in this method.  A method is 
+// is included here.  Globals variables are filled with the graph nodes and links.  No rendering is done in this method.  A method is
 // written for graph1 and graph2.  The only difference between the graph1 and graph2 methods is that they fill different global variables.
 
 
 function   initGraph1WithClique()
 {
- 
+
   "use strict";
      //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
      logSystemActivity('graph_A_group','#graph1','EXAMINE','SHOW',['clique','neightborhood']);
@@ -377,7 +377,7 @@ function   initGraph1WithClique()
 
 function   initGraph2WithClique()
 {
- 
+
   "use strict";
       logSystemActivity('graph_B_group','#graph2','EXAMINE','SHOW',['clique','neightborhood']);
     var data,
@@ -435,8 +435,8 @@ function publishPairLists() {
     console.log('publishing')
 }
 
-// open the user homepages by clicking buttons on the UI.  This checks which way the association is going and opens 
-// the appropriate homepage.  The test had to examine 
+// open the user homepages by clicking buttons on the UI.  This checks which way the association is going and opens
+// the appropriate homepage.  The test had to examine
 function openHompageGraph1() {
    var graphPathname = d3.select("#graph1-selector").node();
    var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
@@ -484,29 +484,25 @@ function firstTimeInitialize() {
     d3.json("defaults.json", function (err, defaults) {
         defaults = defaults || {};
 
-        // read default data collection names from config file
-        entityAlign.host = defaults.mongoHost || "localhost";
-        entityAlign.graphsDatabase = defaults.graphsDatabase || "year3_graphs"
-        console.log('set graphs database: ',entityAlign.graphsDatabase)
+        for (var key in defaults) {
+            entityAlign[key] = defaults[key];
+        }
 
-        entityAlign.twitter = defaults.twitter;
-        entityAlign.instagram = defaults.instagram;
-
-        fillSeedList('#seed-selector')
+        fillDatasetList('#graph1-selector')
+        // fillSeedList('#seed-selector')
 
         width = $(window).width();
         height = $(window).height();
 
         // set up the keystroke and mouse logger
-        initializeLoggingFramework(defaults);
-
+        //initializeLoggingFramework(defaults);
 
         color = d3.scale.category20();
         //color = entityAlignDistanceFunction;
 
         fillLineUpSelector()
         // set a watcher on the dataset selector so datasets are filled in
-        // automatically when the user selects it via UI selector elements. 
+        // automatically when the user selects it via UI selector elements.
 
         d3.select("#graph1-selector")
             .on("change", function () {
@@ -517,21 +513,25 @@ function firstTimeInitialize() {
             .on("change", handleLineUpSelectorChange);
         d3.select('#show-pairings')
             .on("click", showPairings);
-        d3.select("#onehop-button")
+        d3.select("#examine-button")
             .on("click", ExploreLocalGraphAregion);
         d3.select("#accept-button")
             .on("click", acceptListedPairing);
         d3.select('#graph1-homepage')
-            .on("click",openHompageGraph1)
+            .on("click", openHompageGraph1)
         d3.select('#graph2-homepage')
-            .on("click",openHompageGraph2)
+            .on("click", openHompageGraph2)
         d3.select("#show-matches-toggle")
             .attr("disabled", true)
-            .on("click",  function () { entityAlign.showMatchesEnabled = !entityAlign.showMatchesEnabled; 
-                                        conole.log(entityAlign.showMatchesEnabled);
-                                       });
-
-        // block the contextmenu from coming up (often attached to right clicks). Since many 
+            .on("click",  function () {
+                entityAlign.showMatchesEnabled = !entityAlign.showMatchesEnabled;
+                conole.log(entityAlign.showMatchesEnabled);
+            });
+        /* Process these functions after a short delay. */
+        window.setTimeout(function () {
+            updateGraph1();
+        }, 1000);
+        // block the contextmenu from coming up (often attached to right clicks). Since many
         // of the right clicks will be on the graph, this has to be at the document level so newly
         // added graph nodes are all covered by this handler.
 
@@ -569,24 +569,35 @@ function firstTimeInitialize() {
 
 window.onload = function ()  {
 
-        firstTimeInitialize();    // Fill out the dataset selectors with graph datasets that we can choose from 
-       
+        firstTimeInitialize();    // Fill out the dataset selectors with graph datasets that we can choose from
+
 };
 
 
-// use a python service to search the datastore and return a list of available networks to pick from.  This fills a GUI selector, so the user
-// can see what datasets are available.
-
-function fillDatassetList(element) {
-  d3.select(element).selectAll("a").remove();
-        d3.json("service/listdatasets/"+ entityAlign.host + "/" + entityAlign.graphsDatabase, function (error, entities) {
-            console.log(entities,"\n");
-            // save in a temporary list so we can refer back during a click event
-            d3.select(element).selectAll("option")
-            .data(entities.result)
-            .enter().append("option")
-            .text(function (d) { return d; });
-        });
+/* Use a python service to search the datastore and return a list of
+ * available networks to pick from.  This fills a GUI selector, so the user
+ * can see what datasets are available.
+ */
+function fillDatasetList(element) {
+    d3.select(element).selectAll("a").remove();
+    d3.json("service/listdatasets/" + entityAlign.host + "/" + entityAlign.graphsDatabase, function (error, entities) {
+        $('option', element).remove();
+        for (var i = 0; i < entities.result.length; i += 1) {
+            var record = entities.result[i];
+            var opt = $('<option/>').text(record.name).val(record.value);
+            $(element).append(opt);
+            if (!record.value) {
+                opt.prop('disabled', true);
+                opt.val('');
+            }
+        }
+        if ($(element).val() === '') {
+            $(element).val($('option', element).eq(0).val());
+        }
+        if ($(element).val() === '') {
+            $(element).val($('option', element).eq(1).val());
+        }
+    });
 }
 
 // use a python service to search the datastore and return a list of available seed arrays to pick from.  This fills a GUI selector, so the user
@@ -595,7 +606,7 @@ function fillDatassetList(element) {
 function fillSeedList(element) {
   d3.select(element).selectAll("a").remove();
         d3.json("service/listseeds/"+ entityAlign.host + "/" + entityAlign.graphsDatabase, function (error, entities) {
-            console.log(entities,"\n");
+            console.log(entities);
             // save in a temporary list so we can refer back during a click event
             d3.select(element).selectAll("option")
             .data(entities.result)
@@ -607,39 +618,45 @@ function fillSeedList(element) {
 
 
 
-function InitializeLineUpAroundEntity(handle)
-{
-    logSetupLineUp()
+function InitializeLineUpAroundEntity(handle) {
+    //logSetupLineUp()
     //InitializeLineUpJS();
-     var graphPathname = d3.select("#graph1-selector").node();
-        var graphA = getDatasetName(graphPathname.options[graphPathname.selectedIndex].text);
-     var graphB = getDatasetName(d3.select("#graph2-selector").text());
+    var graphPathname = $("#graph1-selector").val();
+    var graphA = getDatasetName(graphPathname);
+    var graphB = getDatasetName(d3.select("#graph2-selector").text());
 
     //var displaymodeselector = d3.select("#lineup-selector").node();
-     //   var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
+    //var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
 
     // setup the machinery to allow the interface to be used to introspect inside a single dataset or compare between the datasets
-    // a displaymode selector (currently disabled) can be set to determine which mode the UI shuld be in.  
+    // a displaymode selector (currently disabled) can be set to determine which mode the UI shuld be in.
 
-    var displaymode = 'compare networks'
-    d3.json('service/lineupdatasetdescription/'+displaymode,  function (err, desc) {
-        console.log('description:',desc)
+    //var displaymode = 'compare networks'
+    var displaymode = 'document rankings'
+    d3.json('service/lineupdatasetdescription/' + displaymode + '/' + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + encodeURIComponent(graphA) + '/' + encodeURIComponent(handle),  function (err, desc) {
+        console.log('description:', desc)
+        console.log(displaymode)
         if (displaymode == 'compare networks') {
-            console.log('comparing networks')
-            d3.json('service/lineupdataset/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+graphB+'/'+handle+'/'+displaymode,  function (err, dataset) {
-                console.log('lineup loading description:',desc)
-                console.log('lineup loading dataset for handle:',handle,dataset.result)
+            d3.json('service/lineupdataset/' + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + graphA + '/' + graphB + '/' + handle + '/' + displaymode, function (err, dataset) {
+                console.log('lineup loading description:', desc)
+                console.log('lineup loading dataset for handle:', handle, dataset.result)
                 loadDataImpl(name, desc, dataset.result);
                 lineup.sortBy("Combined");
-                });
+            });
+        } else if (displaymode == 'document rankings') {
+            d3.json('service/lineupdocrankings/' + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + encodeURIComponent(graphA) + '/' + encodeURIComponent(handle) + '/' + displaymode, function (err, dataset) {
+                console.log('lineup loading description:', desc)
+                console.log('lineup loading dataset for handle:', handle, dataset.result)
+                loadDataImpl(name, desc, dataset.result);
+                lineup.sortBy("Combined");
+            });
         } else {
-            console.log('local network')
-            d3.json("service/loadkhop/"+ entityAlign.host + "/"+ entityAlign.graphsDatabase + "/" + graphA+ "/" + handle, function (err, response) {
+            d3.json("service/loadkhop/" + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + graphA + "/" + handle, function (err, response) {
                 var encodedEntityList = JSON.stringify(response.nodes)
-                d3.json('service/lineupdataset_neighborhood/'+ entityAlign.host + "/" + entityAlign.graphsDatabase + "/" +graphA+'/'+handle+'/'+encodedEntityList+'/'+displaymode,  function (err, dataset) {
-                    console.log('lineup loading description:',desc)
-                    console.log('lineup loading dataset for handle:',handle,dataset.result)
-                    loadDataImpl(name, desc, dataset.result);
+                d3.json('service/lineupdataset_neighborhood/' + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + graphA + '/' + handle + '/' + encodedEntityList + '/' + displaymode, function (err, dataset) {
+                        console.log('lineup loading description:', desc)
+                        console.log('lineup loading dataset for handle:', handle, dataset.result)
+                        loadDataImpl(name, desc, dataset.result);
                     });
             });
         }
@@ -647,13 +664,15 @@ function InitializeLineUpAroundEntity(handle)
 }
 
 
-
 function ExploreLocalGraphAregion() {
     var centralHandle  = document.getElementById('ga-name').value;
     //console.log('doing one hop around',centralHandle)
     //initGraph1FromDatastore();
-    initGraph1WithClique()
-    InitializeLineUpAroundEntity(centralHandle); 
+    //initGraph1WithClique()
+    if (centralHandle.indexOf(' - ') >= 0) {
+        centralHandle = centralHandle.substr(0, centralHandle.indexOf(' - '));
+    }
+    InitializeLineUpAroundEntity(centralHandle);
 
     // clear possible leftover state from a previous search
     document.getElementById('gb-name').value = '';
@@ -685,14 +704,14 @@ function handleLineUpSelectorChange() {
     }
 }
 
-// this function is called on initialization and it just fills a selector with the three options of 
+// this function is called on initialization and it just fills a selector with the three options of
 // comparing datasets or focusing on the left or right one
 
 // *** disable the lineup options until they work by having only one entry in the selector
 
 function fillLineUpSelector() {
     d3.select('#lineup-selector').selectAll("option")
-            .data(['compare networks','left network only','right network only'])
+            .data(['compare networks','left network only','right network only','document rankings'])
             .text(function (d) { return d; });
 }
 
@@ -712,7 +731,7 @@ function acceptListedPairing() {
 
     // store an entry only if the array doesn't already have the entry
     // tried $.inArray()  and .indexOf() unsuccessfully
-    
+
     var found = false
     for (var pair in entityAlign.pairings) {
         if ((pair['twitter'] == handleA) && (pair['instagram'] == handleB)) {

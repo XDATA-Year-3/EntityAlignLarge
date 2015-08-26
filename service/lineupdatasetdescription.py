@@ -5,40 +5,81 @@ tangelo.paths(".")
 from lineupdataset import translate
 
 
-
-def run(displaymode):
+def run(displaymode, *args, **kwargs):
     # Create an empty response object.
     response = {}
 
-
-    if (displaymode == 'left network only') or (displaymode == 'right network only'):
-        print "displaying left or right"
+    if displaymode in ('left network only', 'right network only'):
+        print 'displaying', displaymode
         # return fixed result to compare two datasets
         response['primaryKey'] = 'entity'
         response['separator'] = '\t'
         response['url'] = 'service/lineupdataset'
-        response['columns'] = [ {'column': 'entity', 'type': 'string'}, {'column': '1hop','type':'number', 'domain':[0,1]}, {'column': '2hop','type':'number', 'domain':[0,1]}]
-        response['layout'] = {'primary': [   {'column': 'entity', 'width':130},  {'column': '1hop','width':100}, {'column': '2hop','width':100}, {"type": "stacked","label": "Combined", "children": [{'column': '1hop','width':75}, {'column': '2hop','width':75}]}]}
-    else:
+        response['columns'] = [
+            {'column': 'entity', 'type': 'string'},
+            {'column': '1hop', 'type': 'number', 'domain': [0, 1]},
+            {'column': '2hop', 'type': 'number', 'domain': [0, 1]},
+        ]
+        response['layout'] = {'primary': [
+            {'column': 'entity', 'width': 130},
+            {'column': '1hop', 'width': 100},
+            {'column': '2hop', 'width': 100},
+            {"type": "stacked", "label": "Combined", "children": [
+                {'column': '1hop', 'width': 75},
+                {'column': '2hop', 'width': 75}
+            ]}
+        ]}
+    elif displaymode == 'compare networks':
         # return fixed result to compare two datasets
         print 'displaying centered'
         response['primaryKey'] = 'entity'
         response['separator'] = '\t'
         response['url'] = 'service/lineupdataset'
-        response['columns'] = [{'column': translate['entity'], 'type': 'string'},
-                               {'column': translate['selfreport'],'type':'number', 'domain':[0,1]},
-                               {'column': 'LSGM','type':'number', 'domain':[0,1]},
-                               {'column': translate['freq'],'type':'number', 'domain':[0,1]},
-                               {'column': translate['area'],'type':'number', 'domain':[0,1]},
-                               {'column': translate['lev'],'type':'number', 'domain':[0,1]},
-                               {'column': translate['substring'],'type':'number', 'domain':[0,1]}]
-        response['layout'] = {'primary': [{'column': translate['entity'], 'width':100},
-                                          {"type": "stacked", "label": "Combined", "children": [{'column': translate['selfreport'],'width':150},
-                                                                                                {'column': 'LSGM','width':50},
-                                                                                                {'column': translate['freq'],'width':50},
-                                                                                                {'column': translate['area'],'width':50},
-                                                                                                {'column': translate['lev'],'width':50},
-                                                                                                {'column': translate['substring'],'width':50}]}]}
+        response['columns'] = [
+            {'column': translate['entity'], 'type': 'string'},
+            {'column': translate['selfreport'], 'type': 'number',
+             'domain': [0, 1]},
+            {'column': 'LSGM', 'type': 'number', 'domain': [0, 1]},
+            {'column': translate['freq'], 'type': 'number', 'domain': [0, 1]},
+            {'column': translate['area'], 'type': 'number', 'domain': [0, 1]},
+            {'column': translate['lev'], 'type': 'number', 'domain': [0, 1]},
+            {'column': translate['substring'], 'type': 'number',
+             'domain': [0, 1]}
+        ]
+        response['layout'] = {'primary': [
+            {'column': translate['entity'], 'width': 100},
+            {"type": "stacked", "label": "Combined", "children": [
+                {'column': translate['selfreport'], 'width': 150},
+                {'column': 'LSGM', 'width': 50},
+                {'column': translate['freq'], 'width': 50},
+                {'column': translate['area'], 'width': 50},
+                {'column': translate['lev'], 'width': 50},
+                {'column': translate['substring'], 'width': 50}
+            ]}
+        ]}
+    else:
+        import lineupdocrankings
 
-    #tangelo.log(str(response))
+        print 'document rankings'
+        response['primaryKey'] = 'document'
+        response['separator'] = '\t'
+        response['url'] = 'service/lineupdataset'
+        response['columns'] = col = [
+            {'column': lineupdocrankings.translate['document'],
+             'type': 'string'},
+        ]
+        laycol = []
+        response['layout'] = {'primary': [
+            {'column': lineupdocrankings.translate['document'], 'width': 100},
+            {"type": "stacked", "label": "Combined", "children": laycol}
+        ]}
+        host, database, graphA, handle = tuple((list(args) + [None] * 4)[:4])
+        records = lineupdocrankings.getRankingsForHandle(graphA, handle, True)
+        for record in records:
+            col.append({
+                'column': record['name'], 'type': 'number', 'domain': [0, 1]})
+            laycol.append({'column': record['name'], 'width': 50})
+        # ##DWM::
+
+    # tangelo.log(str(response))
     return json.dumps(response)
