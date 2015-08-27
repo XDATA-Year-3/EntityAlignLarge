@@ -10,7 +10,7 @@ def run(host, database, graphname):
 
     if host == 'elasticsearch':
         collection = urllib.unquote(graphname)
-        es = elasticsearch.Elasticsearch(collection)
+        es = elasticsearch.Elasticsearch(collection, timeout=300)
         res = es.search(body=json.dumps({
             '_source': {'include': [
                 'PersonGUID', 'Identity.Name.FullName',

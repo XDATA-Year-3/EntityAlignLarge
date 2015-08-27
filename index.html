@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset=utf-8>
-
+<head>
 
 <!-- <script src=https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false></script> -->
 <!-- <script src=cache/jquery-1.9.1.min.js></script> -->
@@ -20,7 +20,6 @@
 
 <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
 <link rel="stylesheet" href="cache2/bootstrap.min.css">
-<link rel="stylesheet" href="index.css">
 
 
 <script src="cache/clique.js"></script>  
@@ -41,6 +40,9 @@
 <!-- <script src="cache2/bootstrap.min.js"></script> -->
 
 <link href=//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css rel=stylesheet>
+
+<script src="cache/jsoneditor.min.js"></script>
+<link rel="stylesheet" href="cache/jsoneditor.min.css">
 
 <!--  lineup inclusions -->
 
@@ -65,71 +67,12 @@
 <!-- Latest compiled and minified Bootstrap Table JavaScript for the pairings list -->
 <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/bootstrap-table.min.js"></script>
 
-
-<style>
-    html, body {
-        height: 100%;
-        background-color: lightgray;
-    }
-
-    body {
-        padding-top: 50px;
-    }
-
-    #control-panel {
-        background-color: lightgray;
-    }
-
-    #controls {
-      background-color: ghostwhite;
-      height: 100%;
-      overflow: scroll;
-    }
-
-    .container-fluid {
-      height: 100%;
-    }
-
-    .row {
-        height: 100%;
-    }
-
-    select.form-control {
-      background-color: white;
-      padding-left: 10px;
-      padding-right: 10px;
-    }
-
-    p {
-        color: gray;
-    }
-
-    h3 {
-        color: gray;
-    }
-    #map img {
-        max-width: none;
-    }
-
-
-    .link {
-      stroke: #999;
-      stroke-opacity: .6;
-    }
-
-</style>
-
-<!-- definition for scrollable list of active entities -->
-<style>
-  nav ol{height:300px; width:200px;}
-  nav ol{overflow:hidden; overflow-y:scroll;}
-</style>
-
 <!-- for the bootstrap table in the pairings popover -->
 <link rel="stylesheet" href="bootstrap-table.css">
 
 <title>Document Ranking</title>
-
+<link rel="stylesheet" href="index.css">
+</head>
 <body class=fuelux>
 <div id=info-panel class="modal fade draper" data-wf="1"  data-description="info panel">
     <div class=modal-dialog>
@@ -279,6 +222,8 @@
         <a id='graph1-homepage' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Visit User Homepage</a>
         -->
         <p></p>
+        <div id="graph1-json-info">
+        </div>
         <div >
           <svg id='graph1' style="height:300; margin-top:20px; margin-left:20px" ></svg>
         </div>
@@ -302,24 +247,14 @@
   <!-- right panel for graph 2 -->
 
      <div class=col-md-3>
-        <h4 id='graph2-selector' class="form-control" style="font-size: 24px; margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px; width: calc(100% - 30px);" ></h4>
-        <p id='gb-summary'></p>
-        <text  id="gb-nodeCount" style="margin-left:20px">0 </text>
-        <text  style="margin-left:20px">nodes loaded</text>
-        <p></p>
-        <text  id="gb-linkCount" style="margin-left:20px">0 </text>
-        <text  style="margin-left:20px">links loaded</text>
-        <p></p>
-        <!--
-        <text  id="gb-matchCount" style="margin-left:20px">0 </text>
-        <text  style="margin-left:20px">matched nodes</text>
-        <p></p>
-        -->
-        <input id='gb-name' style='margin-left:20px' readonly> Displayed Entity</input>
-           <a id='accept-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Accept This Pairing</a>
-           <a id='graph2-homepage' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Visit User Homepage</a>
-           <svg id='graph2' style="height:300; margin-top:20px; margin-left:20px" ></svg>
-        <div id='info2' style='margin-top:20px'></div>
+        <h4 id='graph2-selector' class="form-control" style="font-size: 24px; margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px; width: calc(100% - 30px);display:none;" >Document</h4>
+        <h4 id='graph2-selector-fixed' class="form-control" style="font-size: 24px; margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px; width: calc(100% - 30px);" >Document</h4>
+        <div id='document'>
+            <div id='document-type'>Type: <span></span></div>
+            <div id='document-id'>ID: <span></span></div>
+            <div id='document-link'>Link: <span></span></div>
+            <div id='document-json-info'>
+            </div>
     </div>
   </div>
 </div>

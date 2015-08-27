@@ -3,7 +3,8 @@ import json
 import urllib
 
 
-translate = {"document": "document"}
+translate = {'doc_type': 'Document Type', 'doc_id': 'Document ID',
+             'document': 'Document', 'desc': 'Description'}
 
 
 def getRankingsForHandle(dbname, handle, limited=False):
@@ -18,7 +19,7 @@ def getRankingsForHandle(dbname, handle, limited=False):
     :returns: records found.
     """
     collection = urllib.unquote(dbname).rsplit('/', 1)[0] + '/ranking'
-    es = elasticsearch.Elasticsearch(collection)
+    es = elasticsearch.Elasticsearch(collection, timeout=300)
     query = {
         '_source': {'include': [
             'documentId', 'documentSource', 'documentLink', 'name', 'info',
@@ -55,7 +56,17 @@ def run(host, database, graphA, handle, displaymode):
         docid = (record.get('documentSource') + ':' +
                  record.get('documentId', ''))
         if docid not in docids:
-            docids[docid] = {'info': record.get('info'), 'document': docid}
+            docids[docid] = doc = {
+                'info': record.get('info'),
+                'document': docid,
+                'doc_type': record.get('documentSource', ''),
+                'doc_id': record.get('documentId', ''),
+                'desc': docid,
+            }
+            if record.get('info') and record.get('documentSource') == 'twitter':
+                doc['desc'] = record['info'].get('name', [])[0]
+                if len(record['info'].get('fullname', [])):
+                    doc['desc'] += ' - ' + record['info']['fullname'][0]
         docids[docid][metric] = score
     response['result'] = docids.values()
 

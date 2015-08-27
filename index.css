@@ -1,1 +1,58 @@
 .virtual-link{cursor:pointer}.full-width{width:100%}.space-right{margin-right:5px}
+#graph1-json-info {
+    height: 600px;
+}
+html, body {
+    height: 100%;
+    background-color: lightgray;
+}
+
+body {
+    padding-top: 50px;
+}
+
+#control-panel {
+    background-color: lightgray;
+}
+
+#controls {
+  background-color: ghostwhite;
+  height: 100%;
+  overflow: scroll;
+}
+
+.container-fluid {
+  height: 100%;
+}
+
+.row {
+    height: 100%;
+}
+
+select.form-control {
+  background-color: white;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+p {
+    color: gray;
+}
+
+h3 {
+    color: gray;
+}
+#map img {
+    max-width: none;
+}
+
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+#controls {
+    overflow-y: hidden;
+}
+nav ol{height:300px; width:200px;}
+nav ol{overflow:hidden; overflow-y:scroll;}

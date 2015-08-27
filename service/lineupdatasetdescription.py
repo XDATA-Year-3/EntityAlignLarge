@@ -64,13 +64,29 @@ def run(displaymode, *args, **kwargs):
         response['primaryKey'] = 'document'
         response['separator'] = '\t'
         response['url'] = 'service/lineupdataset'
-        response['columns'] = col = [
-            {'column': lineupdocrankings.translate['document'],
-             'type': 'string'},
-        ]
+        response['columns'] = col = [{
+            'column': 'document',
+            'label': lineupdocrankings.translate['document'],
+            'type': 'string',
+        }, {
+            'column': 'doc_type',
+            'label': lineupdocrankings.translate['doc_type'],
+            'type': 'string',
+        }, {
+            'column': 'doc_id',
+            'label': lineupdocrankings.translate['doc_id'],
+            'type': 'string',
+        }, {
+            'column': 'desc',
+            'label': lineupdocrankings.translate['desc'],
+            'type': 'string',
+        }]
         laycol = []
         response['layout'] = {'primary': [
-            {'column': lineupdocrankings.translate['document'], 'width': 100},
+            # {'column': 'document', 'width': 100},
+            {'column': 'doc_type', 'width': 60},
+            {'column': 'doc_id', 'width': 100},
+            {'column': 'desc', 'width': 140},
             {"type": "stacked", "label": "Combined", "children": laycol}
         ]}
         host, database, graphA, handle = tuple((list(args) + [None] * 4)[:4])
@@ -78,8 +94,7 @@ def run(displaymode, *args, **kwargs):
         for record in records:
             col.append({
                 'column': record['name'], 'type': 'number', 'domain': [0, 1]})
-            laycol.append({'column': record['name'], 'width': 50})
-        # ##DWM::
+            laycol.append({'column': record['name'], 'width': 100})
 
     # tangelo.log(str(response))
     return json.dumps(response)

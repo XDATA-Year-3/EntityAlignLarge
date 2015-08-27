@@ -161,12 +161,11 @@ function updateGraph1() {
     initGraphStats("A")
     // clear out the person name element
     document.getElementById('ga-name').value = '';
-    document.getElementById('gb-name').value = '';
+    EmptyGraphBArea();
     $('#graph1').empty();
     $('#info1').empty();
     // below is too powerful, it clears the LineUp area, but LU doesn't work anymore
     //$('#lugui-wrapper').empty()
-
 }
 
 
@@ -646,7 +645,7 @@ function InitializeLineUpAroundEntity(handle) {
         } else if (displaymode == 'document rankings') {
             d3.json('service/lineupdocrankings/' + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + encodeURIComponent(graphA) + '/' + encodeURIComponent(handle) + '/' + displaymode, function (err, dataset) {
                 console.log('lineup loading description:', desc)
-                console.log('lineup loading dataset for handle:', handle, dataset.result)
+                //console.log('lineup loading dataset for handle:', handle, dataset.result)
                 loadDataImpl(name, desc, dataset.result);
                 lineup.sortBy("Combined");
             });
@@ -673,14 +672,32 @@ function ExploreLocalGraphAregion() {
         centralHandle = centralHandle.substr(0, centralHandle.indexOf(' - '));
     }
     InitializeLineUpAroundEntity(centralHandle);
+    GetEntityJSON(centralHandle);
 
-    // clear possible leftover state from a previous search
-    document.getElementById('gb-name').value = '';
-    $('#graph2').empty();
-    $('#info2').empty();
+    EmptyGraphBArea();
 }
 
+function EmptyGraphBArea() {
+    // clear possible leftover state from a previous search
+    //document.getElementById('gb-name').value = '';
+    $('#graph2').empty();
+    $('#info2').empty();
+    //DWM::
+}
 
+function GetEntityJSON(handle) {
+    var graphPathname = $("#graph1-selector").val();
+    var graphA = getDatasetName(graphPathname);
+    d3.json('service/loadentityrecord/' + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + encodeURIComponent(graphA) + '/' + encodeURIComponent(handle), function (err, res) {
+        $('#graph1-json-info').empty();
+        var editor = new JSONEditor($('#graph1-json-info')[0],
+                                    {'mode': 'text'}, res.result);
+        if (editor.expandAll) {
+            editor.expandAll();
+        }
+        $('#graph1-json-info textarea').prop('readonly', true);
+    });
+}
 
 function ExploreLocalGraphBregion(handle) {
     // set the UI to show who we are exploring around in graphB
