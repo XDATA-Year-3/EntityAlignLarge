@@ -8,8 +8,8 @@ def run(host, database, graphA, handle):
     collection = urllib.unquote(graphA)
     es = elasticsearch.Elasticsearch(collection, timeout=300)
     query = {
-        'query': {'function_score': {'filter': {'bool': {'must': [
-            {'term': {'PersonGUID': handle}},
+        'query': {'function_score': {'query': {'bool': {'must': [
+            {'match': {'PersonGUID': handle}},
         ]}}}},
     }
     res = es.search(body=json.dumps(query))

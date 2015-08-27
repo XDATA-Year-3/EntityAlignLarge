@@ -61,12 +61,11 @@ def run(displaymode, *args, **kwargs):
         import lineupdocrankings
 
         print 'document rankings'
-        response['primaryKey'] = 'document'
+        response['primaryKey'] = 'dochash'
         response['separator'] = '\t'
         response['url'] = 'service/lineupdataset'
         response['columns'] = col = [{
-            'column': 'document',
-            'label': lineupdocrankings.translate['document'],
+            'column': 'dochash',
             'type': 'string',
         }, {
             'column': 'doc_type',
@@ -83,18 +82,21 @@ def run(displaymode, *args, **kwargs):
         }]
         laycol = []
         response['layout'] = {'primary': [
-            # {'column': 'document', 'width': 100},
             {'column': 'doc_type', 'width': 60},
-            {'column': 'doc_id', 'width': 100},
+            {'column': 'doc_id', 'width': 60},
             {'column': 'desc', 'width': 140},
             {"type": "stacked", "label": "Combined", "children": laycol}
         ]}
         host, database, graphA, handle = tuple((list(args) + [None] * 4)[:4])
         records = lineupdocrankings.getRankingsForHandle(graphA, handle, True)
+        metrics = {}
         for record in records:
+            for metric in record['metrics']:
+                metrics[metric] = True
+        for metric in sorted(metrics):
             col.append({
-                'column': record['name'], 'type': 'number', 'domain': [0, 1]})
-            laycol.append({'column': record['name'], 'width': 100})
+                'column': metric, 'type': 'number', 'domain': [0, 1]})
+            laycol.append({'column': metric, 'width': 450./len(metrics)})
 
     # tangelo.log(str(response))
     return json.dumps(response)
