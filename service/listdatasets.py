@@ -1,4 +1,17 @@
 import json
+import os
+
+
+def getDefaultConfig():
+    """
+    Fetch the defaults.json file.
+
+    :returns: the parsed file.
+    """
+    scriptPath = os.path.dirname(os.path.realpath(__file__))
+    config = json.loads(open(os.path.join(
+        scriptPath, '..', 'defaults.json')).read())
+    return config
 
 
 def run(host, database):
@@ -6,10 +19,11 @@ def run(host, database):
     response = {}
     collectionNames = [{'name': 'Select a dataset', 'value': ''}]
 
+    config = getDefaultConfig()
     # Manually hard-code the entity dataset list.
     collectionNames.append({
         'name': 'People List',
-        'value': '10.0.2.2:9200/test1/entity'
+        'value': config['entities']
     })
 
     # Pack the results into the response object, and return it.

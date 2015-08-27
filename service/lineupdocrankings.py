@@ -1,8 +1,11 @@
 import elasticsearch
 import json
+import tangelo
 import urllib
 import urllib3
 
+tangelo.paths(".")
+from listdatasets import getDefaultConfig
 
 urllib3.disable_warnings()
 
@@ -53,9 +56,8 @@ def getRankingsForHandle(dbname, handle, limited=False):
             found[record['name']] = True
 
     # Combine with IST data
-    es = elasticsearch.Elasticsearch(
-        'https://memex:3vYAZ8bSztbxmznvhD4C@els.istresearch.com:49200/'
-        'jason_visa/', timeout=300)
+    es = elasticsearch.Elasticsearch(getDefaultConfig()['istRankings'],
+                                     timeout=300)
     query = {
         'size': 25000,  # use a number for debug
         'query': {'function_score': {
