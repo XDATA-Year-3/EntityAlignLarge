@@ -9,7 +9,7 @@ def run(host, database, graphname):
     response = {}
 
     if host == 'elasticsearch':
-        collection = urllib.unquote(graphname)
+        collection = urllib.unquote(graphname).replace('!', '/')
         es = elasticsearch.Elasticsearch(collection, timeout=300)
         res = es.count(body=json.dumps({
             'query': {'function_score': {'filter': {'bool': {'must': [

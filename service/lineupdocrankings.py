@@ -26,7 +26,8 @@ def getRankingsForHandle(dbname, handle, limited=False):
     :returns: records found.
     """
     results = []
-    collection = urllib.unquote(dbname).rsplit('/', 1)[0] + '/ranking'
+    collection = urllib.unquote(dbname).replace('!', '/').rsplit(
+        '/', 1)[0] + '/ranking'
     es = elasticsearch.Elasticsearch(collection, timeout=300)
     query = {
         '_source': {'include': [

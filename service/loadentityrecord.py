@@ -5,7 +5,7 @@ import urllib
 
 def run(host, database, graphA, handle):
 
-    collection = urllib.unquote(graphA)
+    collection = urllib.unquote(graphA).replace('!', '/')
     es = elasticsearch.Elasticsearch(collection, timeout=300)
     query = {
         'query': {'function_score': {'query': {'bool': {'must': [
