@@ -258,18 +258,11 @@ function loadNodeNames(graphIndexString)
     selectedDataset = getDatasetName(selectedDataset);
 
     // non-blocking call to initialize this
-    var data
     $.ajax({
         url: "service/loadnodenames/" + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + encodeURIComponent(selectedDataset),
-        data: data,
         dataType: "json",
         success: function (response) {
-
-            if (response.error) {
-                console.log("error: " + response.error);
-                return;
-            }
-            console.log('data returned:', response.result)
+            console.log('data returned:', response.result);
             if (graphIndexString == 'A') {
                 // copy the result into the array and enable name selection from the input field
                 entityAlign.graphAnodeNames = response.result.nodes
@@ -302,7 +295,12 @@ function updateUserList(namelist) {
 
     // Update the user filter selection box
     // .slice(0, 10)
-    $('#ga-name').autocomplete({source: namelist, delay: 300, minLength: 0});
+    $('#ga-name').autocomplete({
+        source: namelist,
+        delay: 300,
+        minLength: 0,
+        change: updatePersonList
+    });
 }
 
 // ------ end of autocomplete users
@@ -517,9 +515,9 @@ function firstTimeInitialize() {
         d3.select("#accept-button")
             .on("click", acceptListedPairing);
         d3.select('#graph1-homepage')
-            .on("click", openHompageGraph1)
+            .on("click", openHompageGraph1);
         d3.select('#graph2-homepage')
-            .on("click", openHompageGraph2)
+            .on("click", openHompageGraph2);
         d3.select("#show-matches-toggle")
             .attr("disabled", true)
             .on("click",  function () {
@@ -664,7 +662,8 @@ function InitializeLineUpAroundEntity(handle) {
 
 
 function ExploreLocalGraphAregion() {
-    var centralHandle  = document.getElementById('ga-name').value;
+    //var centralHandle  = document.getElementById('ga-name').value;
+    var centralHandle  = $('#person-list select').val();
     //console.log('doing one hop around',centralHandle)
     //initGraph1FromDatastore();
     //initGraph1WithClique()
@@ -675,6 +674,38 @@ function ExploreLocalGraphAregion() {
     GetEntityJSON(centralHandle);
 
     EmptyGraphBArea();
+}
+
+/* Get the current setting of the cases control and populate the person list
+ * based on it. */
+function updatePersonList() {
+    var casename = $('#ga-name').val();
+    if ($('#person-list').attr('case') === casename) {
+        return;
+    }
+    $('#person-list').attr('case', casename);
+    var graphPathname = $("#graph1-selector").val();
+    var selectedDataset = getDatasetName(graphPathname);
+    $.ajax({
+        url: "service/getcasenames/" + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + encodeURIComponent(selectedDataset) + "/" + casename,
+        dataType: "json",
+        success: function (response) {
+            var res = response.result;
+            var elem = $('#person-list .person-list');
+            elem.empty();
+            for (var i = 0; i < res.order.length; i += 1) {
+                var guid = res.order[i];
+                var text = res.guids[guid];
+                if (text.indexOf(' - ') >= 0) {
+                    text = text.substr(text.indexOf(' - ') + 3);
+                }
+                elem.append($('<option>').attr({
+                    value: guid,
+                    title: text
+                }).text(text));
+            }
+        }
+    });
 }
 
 function EmptyGraphBArea() {
