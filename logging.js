@@ -129,7 +129,7 @@ function logSelectLineUpEntry() {
                 source: 'system',
                 tags: ['lineup']
             };
-            log(msg);        
+            log(msg);
 }
 
 function initializeLoggingFramework(defaults) {
@@ -159,12 +159,12 @@ function initializeLoggingFramework(defaults) {
             tags: [],
             meta: {}
         };
-      
-      // instantiate a logging client and set the server location     
+
+      // instantiate a logging client and set the server location
      var ale2 = new userale(
             {
             loggingUrl: defaults.loggingUrl,
-            toolName: 'resonant-entity-alignment',
+            toolName: 'resonant-document-ranking',
             toolVersion: defaults.toolVersion,
             elementGroups: [
                 'graph_A_group',
@@ -175,7 +175,7 @@ function initializeLoggingFramework(defaults) {
                 'system_group'
             ],
             workerUrl: 'cache/userale-worker.js',
-            debug: true,
+            debug: false,
             sendLogs: defaults.sendLogs
         });
      console.log('logger instantiated');
@@ -342,7 +342,7 @@ function initializeLoggingFramework(defaults) {
                 tags: ['grapha','homepage']
             };
             log(msg);
-        });       
+        });
 
     // **** graph B group ***************
 
@@ -461,7 +461,7 @@ $('#graph2-homepage')
                 tags: ['grapha','homepage']
             };
             log(msg);
-        });       
+        });
 
 
         // ***** pairings_group *************

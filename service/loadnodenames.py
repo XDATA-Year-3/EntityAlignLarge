@@ -1,7 +1,9 @@
-import elasticsearch
 import json
 import pymongo
-import urllib
+import tangelo
+
+tangelo.paths(".")
+import elasticsearchutils
 
 
 def run(host, database, graphname):
@@ -9,32 +11,8 @@ def run(host, database, graphname):
     response = {}
 
     if host == 'elasticsearch':
-        collection = urllib.unquote(graphname).replace('!', '/')
-        es = elasticsearch.Elasticsearch(collection, timeout=300)
-        res = es.search(body=json.dumps({
-            '_source': {'include': [
-                'PersonGUID', 'Identity.Name.FullName',
-                'Identity.Email.OriginalEmail',
-            ]},
-            'size': 25000,  # use a number for debug
-            'query': {'function_score': {'filter': {'bool': {'must': [
-                {'exists': {'field': 'PersonGUID'}}
-            ]}}}},
-            'sort': {'PersonGUID': 'asc'},
-        }))
-        namelist = []
-        for hit in res['hits']['hits']:
-            record = hit['_source']
-            name = [record['PersonGUID']]
-            ident = record['Identity'][0]
-            for fullname in ident['Name']:
-                name.append(fullname.get('FullName'))
-            if 'Email' in ident:
-                for email in ident['Email']:
-                    name.append(email.get('OriginalEmail'))
-            namelist.append(' - '.join([
-                subname for subname in name if subname]))
-        response['result'] = {'nodes': namelist}
+        cases = elasticsearchutils.getCases(graphname)
+        response['result'] = {'nodes': sorted(cases.keys())}
     else:
         # this method traverses the documents in the selected graph collection
         # and builds a JSON object that represents a list of all nodes in the

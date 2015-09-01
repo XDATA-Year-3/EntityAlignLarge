@@ -1,17 +1,8 @@
 import json
-import os
+import tangelo
 
-
-def getDefaultConfig():
-    """
-    Fetch the defaults.json file.
-
-    :returns: the parsed file.
-    """
-    scriptPath = os.path.dirname(os.path.realpath(__file__))
-    config = json.loads(open(os.path.join(
-        scriptPath, '..', 'defaults.json')).read())
-    return config
+tangelo.paths(".")
+import utils
 
 
 def run(host, database):
@@ -19,10 +10,10 @@ def run(host, database):
     response = {}
     collectionNames = [{'name': 'Select a dataset', 'value': ''}]
 
-    config = getDefaultConfig()
+    config = utils.getDefaultConfig()
     # Manually hard-code the entity dataset list.
     collectionNames.append({
-        'name': 'People List',
+        'name': 'Cases List',
         'value': config['entities']
     })
 

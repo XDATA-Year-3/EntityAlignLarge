@@ -58,7 +58,7 @@ def run(displaymode, *args, **kwargs):
             ]}
         ]}
     else:
-        import lineupdocrankings
+        import elasticsearchutils
 
         print 'document rankings'
         response['primaryKey'] = 'dochash'
@@ -69,15 +69,15 @@ def run(displaymode, *args, **kwargs):
             'type': 'string',
         }, {
             'column': 'doc_type',
-            'label': lineupdocrankings.translate['doc_type'],
+            'label': elasticsearchutils.ColumnLabels['doc_type'],
             'type': 'string',
         }, {
             'column': 'doc_id',
-            'label': lineupdocrankings.translate['doc_id'],
+            'label': elasticsearchutils.ColumnLabels['doc_id'],
             'type': 'string',
         }, {
             'column': 'desc',
-            'label': lineupdocrankings.translate['desc'],
+            'label': elasticsearchutils.ColumnLabels['desc'],
             'type': 'string',
         }]
         laycol = []
@@ -88,14 +88,13 @@ def run(displaymode, *args, **kwargs):
             {"type": "stacked", "label": "Combined", "children": laycol}
         ]}
         host, database, graphA, handle = tuple((list(args) + [None] * 4)[:4])
-        records = lineupdocrankings.getRankingsForHandle(graphA, handle, True)
-        metrics = {}
-        for record in records:
-            for metric in record['metrics']:
-                metrics[metric] = True
+        metrics = elasticsearchutils.getMetricList(graphA, handle)
         for metric in sorted(metrics):
             col.append({
-                'column': metric, 'type': 'number', 'domain': [0, 1]})
+                'column': metric,
+                'type': 'number',
+                'domain': metrics[metric].get('domain', [0, 1]),
+            })
             laycol.append({'column': metric, 'width': 450./len(metrics)})
 
     # tangelo.log(str(response))

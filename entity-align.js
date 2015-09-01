@@ -302,7 +302,7 @@ function updateUserList(namelist) {
 
     // Update the user filter selection box
     // .slice(0, 10)
-    $('#ga-name').autocomplete({source: namelist, delay: 300, minLength: 5});
+    $('#ga-name').autocomplete({source: namelist, delay: 300, minLength: 0});
 }
 
 // ------ end of autocomplete users
@@ -494,7 +494,7 @@ function firstTimeInitialize() {
         height = $(window).height();
 
         // set up the keystroke and mouse logger
-        //initializeLoggingFramework(defaults);
+        initializeLoggingFramework(defaults);
 
         color = d3.scale.category20();
         //color = entityAlignDistanceFunction;
@@ -618,7 +618,7 @@ function fillSeedList(element) {
 
 
 function InitializeLineUpAroundEntity(handle) {
-    //logSetupLineUp()
+    logSetupLineUp()
     //InitializeLineUpJS();
     var graphPathname = $("#graph1-selector").val();
     var graphA = getDatasetName(graphPathname);
@@ -702,8 +702,11 @@ function GetEntityJSON(handle) {
 function ExploreLocalGraphBregion(handle) {
     // set the UI to show who we are exploring around in graphB
     logSelectLineUpEntry()
+    /*
     document.getElementById('gb-name').value = handle;
     initGraph2WithClique()
+    */
+    console.log('explore B'); //DWM::
 }
 
 // this function resets lineup to the appropriate view whenever the focus selector is changed

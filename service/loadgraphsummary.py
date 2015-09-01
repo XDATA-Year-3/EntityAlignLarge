@@ -1,7 +1,9 @@
-import elasticsearch
 import json
 import pymongo
-import urllib
+import tangelo
+
+tangelo.paths(".")
+import elasticsearchutils
 
 
 def run(host, database, graphname):
@@ -9,14 +11,8 @@ def run(host, database, graphname):
     response = {}
 
     if host == 'elasticsearch':
-        collection = urllib.unquote(graphname).replace('!', '/')
-        es = elasticsearch.Elasticsearch(collection, timeout=300)
-        res = es.count(body=json.dumps({
-            'query': {'function_score': {'filter': {'bool': {'must': [
-                {'exists': {'field': 'PersonGUID'}}
-            ]}}}}
-        }))
-        response['result'] = {'nodes': res['count']}
+        cases = elasticsearchutils.getCases(graphname)
+        response['result'] = {'nodes': len(cases)}
     else:
         # this method traverses the documents in the selected graph collection
         # and builds a JSON object that represents the graph to the
