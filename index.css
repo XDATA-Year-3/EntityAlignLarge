@@ -1,14 +1,11 @@
 .virtual-link{cursor:pointer}.full-width{width:100%}.space-right{margin-right:5px}
-#graph1-json-info {
-    height: 600px;
-}
 html, body {
     height: 100%;
     background-color: lightgray;
 }
 
 body {
-    padding-top: 50px;
+    padding-top: 64px;
 }
 
 #control-panel {
@@ -63,4 +60,36 @@ nav ol{overflow:hidden; overflow-y:scroll;}
 }
 #person-list select {
     width: 100%;
+}
+#person-list select option {
+    color: black;
+}
+#person-list select option.no-documents {
+    color: #88C;
+}
+#graph1-header {
+    margin-top: 10px;
+}
+#graph1-selector {
+    margin-left: 20px;
+    margin-bottom: 20px;
+    width: calc(100% - 30px);
+    display: none;
+}
+#ga-summary,#graph1-container,#info1 {
+    display: none;
+}
+#graph1-json-info {
+    height: 600px;
+    overflow-y: auto;
+    background: white;
+}
+#graph1-json-info td {
+    padding: 0 0.4em;
+    line-height: 1.5;
+    font-size: 13px;
+}
+.ui-autocomplete.ui-menu .ui-menu-item a {
+  padding: 0px 0.4em;
+  font-size: 14px;
 }

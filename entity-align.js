@@ -299,6 +299,9 @@ function updateUserList(namelist) {
         source: namelist,
         delay: 300,
         minLength: 0,
+        select: function () {
+            window.setTimeout(updatePersonList, 1);
+        },
         change: updatePersonList
     });
 }
@@ -311,12 +314,10 @@ function updateUserList(namelist) {
 // written for graph1 and graph2.  The only difference between the graph1 and graph2 methods is that they fill different global variables.
 
 
-function   initGraph1WithClique()
-{
-
-  "use strict";
-     //entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-     logSystemActivity('graph_A_group','#graph1','EXAMINE','SHOW',['clique','neightborhood']);
+function initGraph1WithClique() {
+    'use strict';
+    //entityAlign.ac.logUserActivity('Update Rendering.', 'render', entityAlign.ac.WF_SEARCH);
+    logSystemActivity('graph_A_group', '#graph1', 'EXAMINE', 'SHOW', ['clique', 'neightborhood']);
     var data,
         graphData,
         graph1,
@@ -680,6 +681,7 @@ function ExploreLocalGraphAregion() {
  * based on it. */
 function updatePersonList() {
     var casename = $('#ga-name').val();
+    console.log('--', casename, $('#person-list').attr('case')); //DWM::
     if ($('#person-list').attr('case') === casename) {
         return;
     }
@@ -690,19 +692,26 @@ function updatePersonList() {
         url: "service/getcasenames/" + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + encodeURIComponent(selectedDataset) + "/" + casename,
         dataType: "json",
         success: function (response) {
-            var res = response.result;
-            var elem = $('#person-list .person-list');
+            var elem = $('#person-list select');
             elem.empty();
+            var res = response.result;
+            if (!res || !res.order) {
+                return;
+            }
             for (var i = 0; i < res.order.length; i += 1) {
                 var guid = res.order[i];
                 var text = res.guids[guid];
                 if (text.indexOf(' - ') >= 0) {
                     text = text.substr(text.indexOf(' - ') + 3);
                 }
-                elem.append($('<option>').attr({
+                var opt = $('<option>').attr({
                     value: guid,
                     title: text
-                }).text(text));
+                }).text(text)
+                if (!res.used[guid]) {
+                    opt.addClass('no-documents');
+                }
+                elem.append(opt);
             }
         }
     });
@@ -721,12 +730,15 @@ function GetEntityJSON(handle) {
     var graphA = getDatasetName(graphPathname);
     d3.json('service/loadentityrecord/' + entityAlign.host + "/" + entityAlign.graphsDatabase + "/" + encodeURIComponent(graphA) + '/' + encodeURIComponent(handle), function (err, res) {
         $('#graph1-json-info').empty();
+        /*
         var editor = new JSONEditor($('#graph1-json-info')[0],
                                     {'mode': 'text'}, res.result);
         if (editor.expandAll) {
             editor.expandAll();
         }
         $('#graph1-json-info textarea').prop('readonly', true);
+        */
+        entityAlign.jsonToTable('#graph1-json-info', res.result);
     });
 }
 

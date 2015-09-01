@@ -195,7 +195,8 @@
 
    <!-- left panel for graph 1 -->
     <div class=col-md-3>
-        <select id='graph1-selector' class='form-control' style="margin-left: 20px; margin-top: 20px; margin-bottom: 20px; width: calc(100% - 30px);" >
+        <div id="graph1-header"></div>
+        <select id="graph1-selector" class="form-control">
             <option selected disabled hidden value=''>Select a dataset</option>
             <option>Twitter</option>
             <option>Instagram</option>
@@ -203,7 +204,7 @@
         <p id='ga-summary'></p>
         
         <text id="ga-nodeCount" style="margin-left:20px">-- </text>
-        <text style="margin-left:20px">Cases Listed</text>
+        <text style="margin-left:20px">Cases with Documents</text>
         <p></p>
         <!--
         <text  id="ga-linkCount" style="margin-left:20px">0 </text>
@@ -231,11 +232,10 @@
         <p></p>
         <div id="graph1-json-info">
         </div>
-        <div >
+        <div id="graph1-container">
           <svg id='graph1' style="height:300; margin-top:20px; margin-left:20px" ></svg>
         </div>
         <div id='info1' style='margin-top:20px'></div> 
-
     </div>
 
    <!-- center panel for showing the ranking results -->
@@ -267,6 +267,7 @@
 </div>
 <script src="js/userale.js"></script>
 <script src="logging.js"></script>
+<script src="jsonToTable.js"></script>
 <!-- Driver script for this app -->
 <script src=entity-align.js></script>
 </body>
