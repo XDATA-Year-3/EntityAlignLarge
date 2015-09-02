@@ -548,10 +548,7 @@ var LineUp;
       click: function (row) {
         var $row = d3.select(this),
             selected = that.storage.isSelected(row);
-        // *** here is where we added an event call when the user selects a row
-        console.log('event from line 551', row)
-        ExploreLocalGraphBregion(row['entity'])
-        
+
         if (that.config.interaction.multiselect(d3.event)) {
           var allselected = that.storage.selectedRows();
           if (selected) {

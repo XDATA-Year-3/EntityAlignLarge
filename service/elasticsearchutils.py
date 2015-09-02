@@ -11,8 +11,32 @@ import utils
 urllib3.disable_warnings()
 
 
-ColumnLabels = {'doc_type': 'Document Type', 'doc_id': 'Document ID',
-                'document': 'Document', 'desc': 'Description'}
+ColumnLabels = {
+    'doc_type': 'Document Type',
+    'doc_id': 'Document ID',
+    'document': 'Document',
+    'desc': 'Description',
+
+    'type': 'Type',
+    'description': 'Description',
+    'enabled': 'Possible',
+    'confidence': 'Confidence',
+}
+ColumnDomains = {
+    'confidence': [0, 100],
+}
+ColumnTypes = {
+    'confidence': 'number',
+}
+ColumnWidths = {
+    'description': 140,
+}
+MetricLabels = {
+    'name-substring': 'User or email name substring match',
+    'fullname-substring': 'Full name substring match',
+    'allname-substring': 'Best substring match between all user names and '
+                         'full names',
+}
 
 CachedResults = {}
 
@@ -107,6 +131,89 @@ def getCases(dbname, allowBuffered=True):
     return cases
 
 
+def getEntitiesForGuid(dbname, guid):
+    """
+    Get a list of entities that might be the same as the specified guid.  Each
+    entity has some standardized information, as well as metrics for how well
+    they match the guid.
+
+    :param dbname: name of the database.  This is URI encoded and contains an
+                   appropriate document type.
+    :param guid: the PersonGuid to match.
+    :returns: a list of entities.
+    """
+    entities = {}
+    # currently, we aren't getting information from this database
+    dbname = urllib.unquote(dbname).replace('!', '/')
+    # We are using this one
+    dbkey = 'istRankings'
+    es = elasticsearch.Elasticsearch(utils.getDefaultConfig()[dbkey],
+                                     timeout=300)
+    # We get all relevant documents, and extract unique users from that.
+    query = {
+        '_source': {'include': [
+            'doc_type', 'document.user', 'document._source.actor',
+            'document.username',
+        ]},
+        'size': 25000,
+        'query': {'function_score': {
+            'filter': {'bool': {'must': [
+                {'exists': {'field': 'metrics'}}
+            ]}},
+            'query': {'bool': {'must': [
+                {'match': {'visa_guid': guid}},
+            ]}},
+        }},
+    }
+    res = es.search(body=json.dumps(query))
+    tweetTypes = ('tweet', 'Tweet', 'QCR_holdings', 'QCR_Holding')
+    for hit in res['hits']['hits']:
+        record = hit['_source']
+        entity = {}
+        docType = record.get('doc_type', hit.get('_type'))
+        if docType in tweetTypes:
+            entity['type'] = 'twitter_user'
+            user = record['document']['user']
+            if docType.startswith('QCR'):  # ##DWM:: hack - remove
+                user['screen_name'], user['name'] = user['name'], user['screen_name']
+            entity['user_id'] = user['screen_name']
+            entity['id'] = entity['type'] + ':' + entity['user_id']
+            entity['query'] = [
+                {'bool': {'should': [
+                    {'match': {'doc_type': tweetType}}
+                    for tweetType in tweetTypes
+                ]}},
+                {'match': {'document.user.screen_name': user['screen_name']}},
+            ]
+            entity['description'] = '@' + user['screen_name']
+            entity['name'] = user['screen_name']
+            fullname = user.get('name')
+            if not fullname and 'actor' in record['document'].get(
+                    '_source', {}):
+                fullname = record['document']['_source']['actor'].get(
+                    'displayName')
+            if fullname:
+                entity['description'] += ' (%s)' % fullname
+                entity['fullname'] = fullname
+        elif docType == 'Child_Exploitation':
+            entity['type'] = 'web_user'
+            entity['user_id'] = record['document']['username']
+            entity['id'] = entity['type'] + ':' + entity['user_id']
+            entity['query'] = [
+                {'match': {'doc_type': record.get('doc_type')}},
+                {'match': {'document.username': entity['user_id']}},
+            ]
+            entity['description'] = record['document']['username']
+            entity['name'] = record['document']['username']
+        elif docType == 'HG_Profiler':
+            pass
+        # Copy user metrics here, plus any other data we want to show
+        if not entity.get('id'):
+            continue
+        entities[entity['id']] = entity
+    return entities.values()
+
+
 def getMetricList(dbname, handle):
     """
     Get a list of used metrics based on a database and handle.
@@ -133,7 +240,6 @@ def getMetricList(dbname, handle):
                                                      timeout=300)
                     lastdbkey = dbkey
                 if dbkey == 'istRankings':
-                    import pprint
                     query = copy.deepcopy(queryinfo[dbkey])
                     if '_source' in query:
                         del query['_source']
@@ -141,7 +247,6 @@ def getMetricList(dbname, handle):
                         'maxmetric': {'max': {'field': metric}},
                         'minmetric': {'min': {'field': metric}}
                     }})
-                    pprint.pprint(query)
                     res = es.search(body=json.dumps(query))
                     if res['aggregations']['minmetric']['value'] is not None:
                         metDict['domain'] = [
@@ -178,7 +283,7 @@ def getRankingsForHandle(dbname, handle, limited=False, queryinfo={}):
             'documentId', 'documentSource', 'documentLink', 'name', 'info',
             'score'
         ]},
-        'size': 25000,  # use a number for debug
+        'size': 25000,
         'query': {'function_score': {'query': {'bool': {'must': [
             {'match': {'entityId': handle}},
         ]}}}},
@@ -207,7 +312,7 @@ def getRankingsForHandle(dbname, handle, limited=False, queryinfo={}):
     es = elasticsearch.Elasticsearch(utils.getDefaultConfig()[dbkey],
                                      timeout=300)
     query = {
-        'size': 25000,  # use a number for debug
+        'size': 25000,
         'query': {'function_score': {
             'filter': {'bool': {'must': [
                 {'exists': {'field': 'metrics'}}
@@ -264,3 +369,71 @@ def getUsedPersonGuids(allowBuffered=True):
         guids[bucket['key']] = True
     cacheResults(dbkey, 'usedGuids', guids)
     return guids
+
+
+def lineupFromMetrics(response, docs, firstColumns, lastColumns=[]):
+    """
+    Add information for lineup into a response document.
+
+    :param response: the dictionary to add lineup data into.  Modified.
+    :param docs: a list of documents that contain metrics.
+    :param firstColumns: a list of column ids to include at the beginning of
+                         the line up.  The first value is used as the unique
+                         row id, not as a column.  Required.
+    :param lastColumns: a list of column ids to include at the end of the line
+                        up.  Optional.
+    """
+    response['primaryKey'] = firstColumns[0]
+    response['separator'] = '\t'
+    response['columns'] = col = []
+    laycol = []
+    primecol = []
+    response['layout'] = {'primary': primecol}
+    for key in firstColumns + lastColumns:
+        colData = {
+            'column': key,
+            'type': ColumnTypes.get(key, 'string'),
+        }
+        colData['label'] = ColumnLabels.get(key)
+        colData['domain'] = ColumnDomains.get(key)
+        col.append(colData)
+        if len(col) > 1:
+            primecol.append({
+                'column': key,
+                'width': ColumnWidths.get(key, 60)
+            })
+        if len(col) == len(firstColumns):
+            primecol.append(
+                {"type": "stacked", "label": "Combined", "children": laycol})
+    metrics = {}
+    for doc in docs:
+        for metric in doc['metrics']:
+            if metric not in metrics:
+                metrics[metric] = [
+                    doc['metrics'][metric], doc['metrics'][metric]]
+            metrics[metric][0] = min(metrics[metric][0],
+                                     doc['metrics'][metric])
+            metrics[metric][1] = max(metrics[metric][1],
+                                     doc['metrics'][metric])
+            # Flatten key structure
+            doc[metric] = doc['metrics'][metric]
+    for metric in metrics.keys():
+        domain = metrics[metric]
+        if domain[0] >= 0 and domain[1] > 0:
+            domain[0] = 0
+            if domain[1] < 1:
+                domain[1] = 1
+        elif domain[0] < 0 and domain[1] < 0:
+            domain[1] = 0
+        if domain[0] == domain[1]:
+            del metrics[metric]
+    for metric in sorted(metrics.keys()):
+        domain = metrics[metric]
+        col.append({
+            'column': metric,
+            'type': 'number',
+            'domain': domain,
+        })
+        if MetricLabels.get(metric):
+            col[-1]['label'] = MetricLabels[metric]
+        laycol.append({'column': metric, 'width': 350./len(metrics)})

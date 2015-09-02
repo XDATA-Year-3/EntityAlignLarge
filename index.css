@@ -5,7 +5,7 @@ html, body {
 }
 
 body {
-    padding-top: 64px;
+    padding-top: 49px;
 }
 
 #control-panel {
@@ -100,4 +100,26 @@ nav ol{overflow:hidden; overflow-y:scroll;}
 }
 #examine-button {
     margin-left: 20px;
+}
+#graph2-selector-fixed {
+    font-size: 24px;
+    margin-left: 20px; 
+    margin-top: 10px;
+    margin-bottom: 20px;
+    margin-right: 40px; 
+    width: calc(100% - 30px);
+}
+#lugui-wrapper {
+    top: 0;
+    height: 100%;
+}
+#controls {
+    padding: 0;
+}
+#match-confidence-ctl {
+    width: 100px;
+    margin: 0 15px;
+}
+#match-gap {
+    height: 10px;
 }
