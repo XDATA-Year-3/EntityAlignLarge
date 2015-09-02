@@ -1,0 +1,10 @@
+{
+    "host"          : "elasticsearch",
+    "graphsDatabase": "test1!entity",
+    "entities"      : "10.0.2.2:9200!test1!entity",
+    "metrics"       : "10.0.2.2:9200!test1!metrics",
+    "rankings"      : "10.0.2.2:9200!test1!rankings",
+    "loggingUrl"    : "http://172.16.1.100",
+    "toolVersion"   : "1.0.0",
+    "sendLogs"      : false
+}

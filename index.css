@@ -90,6 +90,14 @@ nav ol{overflow:hidden; overflow-y:scroll;}
     font-size: 13px;
 }
 .ui-autocomplete.ui-menu .ui-menu-item a {
-  padding: 0px 0.4em;
-  font-size: 14px;
+    padding: 0px 0.4em;
+    font-size: 14px;
+}
+.person-list-header {
+    color: black;
+    font-weight: bold;
+    margin: 10px 0 5px 0;
+}
+#examine-button {
+    margin-left: 20px;
 }

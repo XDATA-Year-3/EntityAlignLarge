@@ -739,6 +739,10 @@ function GetEntityJSON(handle) {
         $('#graph1-json-info textarea').prop('readonly', true);
         */
         entityAlign.jsonToTable('#graph1-json-info', res.result);
+        h = $('#graph1-header').closest('.container-fluid').innerHeight();
+        h -= $('#graph1-json-info').position().top;
+        h -= 5;
+        $('#graph1-json-info').height(h + 'px');
     });
 }
 
