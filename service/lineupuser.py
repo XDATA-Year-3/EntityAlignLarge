@@ -12,7 +12,7 @@ except Exception:
     Levenshtein = None
 
 
-def calculateMetrics(graphA, guid, entities):
+def calculateMetrics(graphA, guid, entities, knownMetrics={}):
     """
     Get the main entity and calculate some simple metrics.  This should be
     replaced by pre-computed data.
@@ -41,6 +41,9 @@ def calculateMetrics(graphA, guid, entities):
                           if email.get('Username')])
     allnames = names + fullnames
     for entity in entities:
+        if entity['id'].lower() in knownMetrics:
+            entity['metrics'] = knownMetrics[entity['id'].lower()]
+            continue
         entity['metrics'] = {}
         if entity.get('name') and len(names):
             entity['metrics']['name-substring'] = max([
@@ -64,6 +67,7 @@ def calculateMetrics(graphA, guid, entities):
         if len(enames) and len(allnames):
             entity['metrics']['allname-substring'] = 0
             entity['metrics']['allname-levenshtein'] = 0
+            entity['metrics']['jaro-winkler'] = 0
             for ename in enames:
                 entity['metrics']['allname-substring'] = max(
                     entity['metrics']['allname-substring'], max([
@@ -73,6 +77,12 @@ def calculateMetrics(graphA, guid, entities):
                     entity['metrics']['allname-levenshtein'], max([
                         levenshteinSimilarity(ename.lower(), name.lower())
                         for name in allnames]))
+                if Levenshtein:
+                    entity['metrics']['jaro-winkler'] = max(
+                        entity['metrics']['jaro-winkler'], max([
+                            Levenshtein.jaro_winkler(
+                                ename.lower(), name.lower())
+                            for name in allnames]))
 
 
 # This is a straightforward implementation of a well-known algorithm, and thus
@@ -163,9 +173,10 @@ def run(host, database, graphA, guid, *args, **kwargs):
     response = {}
 
     entities = elasticsearchutils.getEntitiesForGuid(graphA, guid)
+    entityMetrics = elasticsearchutils.getEntityMetricsForGuid(guid)
 
     # We have to compute metrics ourselves until we get better data
-    calculateMetrics(graphA, guid, entities)
+    calculateMetrics(graphA, guid, entities, entityMetrics)
 
     response['result'] = entities
     # For our results, generate the lineup columns

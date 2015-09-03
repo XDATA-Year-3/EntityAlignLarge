@@ -32,12 +32,6 @@ ColumnTypes = {
 ColumnWidths = {
     'description': 140,
 }
-MetricLabels = {
-    'name-substring': 'User or email name substring match',
-    'fullname-substring': 'Full name substring match',
-    'allname-substring': 'Best substring match between all user names and '
-                         'full names',
-}
 
 CachedResults = {}
 
@@ -250,6 +244,46 @@ def getEntitiesForGuid(dbname, guid):
             continue
         entities[entity['id']] = entity
     return entities.values()
+
+
+def getEntityMetricsForGuid(guid):
+    """
+    Get a list of entities that might be the same as the specified guid, each
+    with associated metrics.
+
+    :param guid: the PersonGuid to match.
+    :returns: a dictionary of entities with metrics.
+    """
+    entities = {}
+    # We are using this one
+    dbkey = 'nameRankings'
+    es = elasticsearch.Elasticsearch(utils.getDefaultConfig()[dbkey],
+                                     timeout=300)
+    # We get all relevant documents, and extract unique users from that.
+    query = {
+        'size': 25000,
+        'query': {'function_score': {
+            'filter': {'bool': {'must': [
+                {'exists': {'field': 'matches'}}
+            ]}},
+            'query': {'bool': {'must': [
+                {'match': {'PersonGUID': guid}},
+            ]}},
+        }},
+    }
+    res = es.search(body=json.dumps(query))
+    entities = {}
+    for hit in res['hits']['hits']:
+        record = hit['_source']
+        for match in record.get('matches', []):
+            if 'metrics' not in match:
+                continue
+            id = record.get('entity_type') + ':' + match.get('screenname')
+            id = id.lower()
+            if id not in entities:
+                entities[id] = {}
+            entities[id].update(match['metrics'])
+    return entities
 
 
 def getMetricDomains(docs):
@@ -523,6 +557,7 @@ def lineupFromMetrics(response, docs, firstColumns, lastColumns=[],
     :param includeZeroMetrics: if True, include metrics for which all values
                                are exactly zero.
     """
+    settings = utils.getNamedConfig('metrics.json')
     response['primaryKey'] = firstColumns[0]
     response['columns'] = col = []
     laycol = []
@@ -556,12 +591,17 @@ def lineupFromMetrics(response, docs, firstColumns, lastColumns=[],
         if (domain[0] == domain[1] and (
                 domain[0] != 0 or not includeZeroMetrics)):
             del metrics[metric]
+            continue
+        if settings.get(metric, {}).get('hide'):
+            del metrics[metric]
+            continue
     for metric in sorted(metrics.keys()):
         col.append({
             'column': metric,
             'type': 'number',
             'domain': metrics[metric],
         })
-        if MetricLabels.get(metric):
-            col[-1]['label'] = MetricLabels[metric]
+        if metric in settings:
+            for key in settings[metric]:
+                col[-1][key] = settings[metric][key]
         laycol.append({'column': metric, 'width': 350./len(metrics)})

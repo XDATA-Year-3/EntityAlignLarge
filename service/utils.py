@@ -2,7 +2,7 @@ import json
 import os
 
 # Used for caching the config values
-DefaultConfigObj = None
+CachedConfig = {}
 
 
 def getDefaultConfig():
@@ -11,10 +11,20 @@ def getDefaultConfig():
 
     :returns: the parsed file.
     """
-    global DefaultConfigObj
+    return getNamedConfig('defaults.json')
 
-    if not DefaultConfigObj:
+
+def getNamedConfig(name):
+    """
+    Fetch a json config file, caching it if possible.
+
+    :returns: the parsed file.
+    """
+    if name not in CachedConfig:
         scriptPath = os.path.dirname(os.path.realpath(__file__))
-        DefaultConfigObj = json.loads(open(os.path.join(
-            scriptPath, '..', 'defaults.json')).read())
-    return DefaultConfigObj
+        filename = os.path.join(scriptPath, '..', name)
+        if os.path.exists(filename):
+            CachedConfig[name] = json.loads(open(filename).read())
+        else:
+            CachedConfig[name] = {}
+    return CachedConfig[name]

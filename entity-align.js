@@ -226,7 +226,7 @@ function updatePersonList() {
     $('#document-panel').css('display', 'none');
     $('#match-controls').css('display', 'block');
     $('#match-panel').css('display', 'block');
-    //DWM:: clear person list, lineup, match data
+    //DWM:: clear person details, lineup, match data
     $('#person-list').attr('case', casename);
     var graphPathname = $('#graph1-selector').val();
     var selectedDataset = getDatasetName(graphPathname);
@@ -876,7 +876,12 @@ function updateDocumentLineup() {
     d3.json('service/lineupuserdoc/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + encodeURIComponent(graphA) + '/' + encodeURIComponent(actionState.guid) + '/' + encodeURIComponent(row.id), function (err, response) {
         actionState.data.doclineup = response;
         var dataset = response.result, desc = response;
-        //DWM:: populate derog on the dataset
+        for (var i = 0; i < dataset.length; i += 1) {
+            var row = dataset[i];
+            if (actionState.documents[row.id]) {
+                row.derog = actionState.documents[row.id].derog ? 'yes' : 'no';
+            }
+        }
         lineup2 = createLineup(
             '#lugui2-wrapper', 'second', desc, dataset, lineup2);
         lineup2.sortBy('Combined');

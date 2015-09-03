@@ -1,0 +1,28 @@
+{
+    "allname-levenshtein": {
+        "label": "Levenshtein",
+        "description": "Levenshtein string distance",
+        "domain": [0, 1]
+    },
+    "allname-substring": {
+        "label": "Substring",
+        "description": "Substring match ratio"
+    },
+    "fullname-substring": {
+        "hide": true
+    },
+    "fullname-levenshtein": {
+        "hide": true
+    },
+    "name-substring": {
+        "hide": true
+    },
+    "name-levenshtein": {
+        "hide": true
+    },
+    "jaro-winkler": {
+        "label": "Jaro Winkler",
+        "description": "Jaro Winkler string distance",
+        "domain": [0, 1]
+    }
+}
