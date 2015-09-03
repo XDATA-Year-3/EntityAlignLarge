@@ -20,10 +20,11 @@ def run(host, database, graphA, guid, entityId, *args, **kwargs):
     # Massage the data to a simpler form, add a description, etc.
     for record in records:
         record['description'] = record.get('document', {}).get(
-            'text', 'Unknown')
+            'text', 'No description')
+        record['id'] = record.get('doc_type', '') + ':' + record['doc_guid']
     response['result'] = records
     elasticsearchutils.lineupFromMetrics(
-        response, records, ['doc_guid', 'doc_type', 'description'],
+        response, records, ['id', 'doc_type', 'description'],
         ['derog'], True)
 
     # Return the response object.

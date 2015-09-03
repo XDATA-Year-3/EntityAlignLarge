@@ -315,7 +315,6 @@ function emptyGraphBArea() {
     //document.getElementById('gb-name').value = '';
     $('#graph2').empty();
     $('#info2').empty();
-    //DWM::
 }
 
 function updateGraph1() {
@@ -546,7 +545,8 @@ function selectUserFromLineup(row) {
         $('#match #match-type span').text(match.type || 'Unknown');
         $('#match #match-id span').text(match.user_id || 'Unknown');
         $('#match #match-description span').text(match.description || '');
-        var link, id = row.id;
+        var id = row.id;
+        var link;
         if (match.type === 'twitter_user') {
             link = 'http://twitter.com/' + match.user_id;
         }
@@ -557,17 +557,60 @@ function selectUserFromLineup(row) {
         }
         actionState.currentMatch = id;
         actionState.data.lineuprow = row;
+        actionState.data.lineupmatch = match;
         if (!actionState.matches[id]) {
             actionState.matches[id] = {
                 'check': null,
                 'confidence': 50
             };
         }
-        $('#match-enabled').prop('checked', actionState.matches[id].check);
         $('#match-enabled').prop(
+            'checked', actionState.matches[id].check).prop(
             'indeterminate', actionState.matches[id].check === null);
         $('#match-confidence').bootstrapSlider(
             'setValue', actionState.matches[id].confidence);
+    });
+}
+
+/* Select a row in lineup.
+ *
+ * @param row: the row of data we passed to lineup.
+ */
+function selectDocumentFromLineup(row) {
+    logSelectLineUpEntry();
+
+    if (!row || !row.id) {
+        return;
+    }
+    var graphPathname = $('#graph1-selector').val();
+    var graphA = getDatasetName(graphPathname);
+    var entityRow = actionState.data.matchedRows[actionState.currentRow];
+    d3.json('service/getdocument/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + encodeURIComponent(graphA) + '/' + encodeURIComponent(actionState.guid) + '/' + encodeURIComponent(entityRow.id) + '/' + encodeURIComponent(row.id), function (err, response) {
+        var doc = response.result || row;
+        $('#document-type span').text(doc.doc_type || 'Unknown');
+        $('#document-id span').text(doc.doc_guid || 'Unknown');
+        $('#document-description span').text(row.description || '');
+        var id = row.id;
+        var link;
+        if (doc.doc_type === 'QCR_holdings') {
+            link = doc.document._source.link;
+        }
+        $('#document-link span').empty();
+        if (link) {
+            $('#document-link span').append($('<a/>').attr(
+                'href', link).text(link));
+        }
+        actionState.currentDocument = id;
+        actionState.data.lineupdocrow = row;
+        actionState.data.lineupdoc = doc;
+        if (!actionState.documents[id]) {
+            actionState.documents[id] = {
+                'derog': null
+            };
+        }
+        $('#document-derog').prop(
+            'checked', actionState.documents[id].derog).prop(
+            'indeterminate', actionState.documents[id].derog === null);
     });
 }
 
@@ -618,6 +661,7 @@ function initializeLineUpAroundEntity(handle) {
     if (displaymode === 'document rankings') {
         d3.json('service/lineupuser/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + encodeURIComponent(graphA) + '/' + encodeURIComponent(handle), function (err, response) {
             var dataset = response.result, desc = response;
+            //DWM:: populate enabled and confidence on the dataset
             actionState.data.lineup = response;
             actionState.matches = {};
             loadDataImpl('main', desc, dataset);
@@ -707,6 +751,19 @@ function updateMatchOptions() {
     actionState.data.lineuprow.confidence = (
         enabledText !== '' ? matchState.confidence : undefined);
     lineup.updateBody();
+}
+
+/* Get the current document options and store them for the current document.
+ */
+function updateDocumentOptions() {
+    var enabledText = '';
+    var documentState = actionState.documents[actionState.currentDocument];
+    if (!$('#document-derog').prop('indeterminate')) {
+        documentState.derog = $('#document-derog').is(':checked');
+        enabledText = documentState.derog ? 'yes' : 'no';
+    }
+    actionState.data.lineupdocrow.derog = enabledText;
+    lineup2.updateBody();
 }
 
 /* Use a python service to search the datastore and return a list of
@@ -818,14 +875,14 @@ function updateDocumentLineup() {
     var graphA = getDatasetName(graphPathname);
     d3.json('service/lineupuserdoc/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + encodeURIComponent(graphA) + '/' + encodeURIComponent(actionState.guid) + '/' + encodeURIComponent(row.id), function (err, response) {
         actionState.data.doclineup = response;
-        console.log(response);
         var dataset = response.result, desc = response;
+        //DWM:: populate derog on the dataset
         lineup2 = createLineup(
             '#lugui2-wrapper', 'second', desc, dataset, lineup2);
         lineup2.sortBy('Combined');
-        lineup2.on('selected', selectUserFromLineup);
+        lineup2.on('selected', selectDocumentFromLineup);
     });
-    //DWM::
+    //DWM:: clear document panel
 }
 
 /* Review the next possible match of documents in the list.
@@ -861,6 +918,7 @@ function reviewDocuments() {
     }
     actionState.data.matchedRows = docs;
     actionState.currentRow = 0;
+    actionState.documents = {};
     $('#match-controls').css('display', 'none');
     $('#match-panel').css('display', 'none');
     $('#document-controls').css('display', 'block');
@@ -939,6 +997,7 @@ function firstTimeInitialize() {
         $('#match-confidence').bootstrapSlider();
         $('#match-confidence').on('change', updateMatchOptions);
         $('#match-enabled').on('change', updateMatchOptions);
+        $('#document-derog').on('change', updateDocumentOptions);
         /* Process these functions after a short delay. */
         window.setTimeout(function () {
             updateGraph1();

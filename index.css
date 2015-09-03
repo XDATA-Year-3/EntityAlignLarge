@@ -133,7 +133,7 @@ nav ol{overflow:hidden; overflow-y:scroll;}
     width: 100px;
     margin: 0 15px;
 }
-#match-gap {
+.match-gap {
     height: 10px;
 }
 #review-button {

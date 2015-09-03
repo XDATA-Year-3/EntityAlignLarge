@@ -132,6 +132,45 @@ def getCases(dbname, allowBuffered=True):
     return cases
 
 
+def getDocument(doc_guid=None, queries=None, filters=None):
+    """
+    Get a document by doc_guid or by particular queries.
+
+    :param doc_guid: the doc_guid, if known.
+    :param queries: a list of additional query specifications to add to the
+                    elasticseach query.
+    :param filters: a list of additional filter specifications to add to the
+                    elasticseach query.
+    :returns: the document found.
+    """
+    dbkey = 'istRankings'
+    es = elasticsearch.Elasticsearch(utils.getDefaultConfig()[dbkey],
+                                     timeout=300)
+    queryList = []
+    filterList = []
+    if doc_guid is not None:
+        queryList.append({'match': {'doc_guid': doc_guid}})
+    if queries is not None and len(queries):
+        queryList.append(queries)
+    if filters is not None and len(filters):
+        filterList.append(filters)
+    query = {
+        'size': 1,
+        'query': {'function_score': {
+        }},
+    }
+    if len(filterList):
+        query['query']['function_score']['filter'] = {
+            'bool': {'must': filterList}}
+    if len(queryList):
+        query['query']['function_score']['query'] = {
+            'bool': {'must': queryList}}
+    res = es.search(body=json.dumps(query))
+    for hit in res['hits']['hits']:
+        return hit['_source']
+    return None
+
+
 def getEntitiesForGuid(dbname, guid):
     """
     Get a list of entities that might be the same as the specified guid.  Each
@@ -347,6 +386,14 @@ def getRankingsForGUID(handle, limited=False, queryinfo={}, queries=None,
             used = True
         if used and (not limited or newVal):
             record['db_key'] = dbkey
+            record['query'] = [
+                {'match': {'doc_type': record['doc_type']}},
+                {'match': {'doc_guid': record['doc_guid']}},
+            ]
+            record['description'] = record.get('document', {}).get(
+                'text', 'No description')
+            record['id'] = record.get(
+                'doc_type', '') + ':' + record['doc_guid']
             results.append(record)
     return results
 
@@ -498,8 +545,6 @@ def lineupFromMetrics(response, docs, firstColumns, lastColumns=[],
             primecol.append(
                 {"type": "stacked", "label": "Combined", "children": laycol})
     metrics = getMetricDomains(docs)
-    import pprint
-    pprint.pprint(metrics)  # ##DWM::
     for metric in metrics.keys():
         domain = metrics[metric]
         if domain[0] >= 0 and domain[1] >= 0:
@@ -511,7 +556,6 @@ def lineupFromMetrics(response, docs, firstColumns, lastColumns=[],
         if (domain[0] == domain[1] and (
                 domain[0] != 0 or not includeZeroMetrics)):
             del metrics[metric]
-    pprint.pprint(metrics)  # ##DWM::
     for metric in sorted(metrics.keys()):
         col.append({
             'column': metric,
