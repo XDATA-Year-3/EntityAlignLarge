@@ -54,5 +54,11 @@
     "spinseeker_prop_positive_clm": {
         "label": "Spin Proportion Positive",
         "description": "Proportion of tweets classified by our algorithms as ISIL-like."
+    },
+    "known_isil_accounts_followed": {
+        "label": "Known ISIL Accounts Followed"
+    },
+    "suspected_isil_accounts_followed": {
+        "label": "Suspected ISIL Accounts Followed"
     }
 }

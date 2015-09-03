@@ -887,6 +887,27 @@ function updateDocumentLineup() {
     $('#doc-match-confidence').text(row.match.confidence || 0);
     var graphPathname = $('#graph1-selector').val();
     var graphA = getDatasetName(graphPathname);
+    $('#doc-user-metrics').empty();
+    //DWM:: clear user derog
+    d3.json('service/getuserrankings/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + encodeURIComponent(graphA) + '/' + encodeURIComponent(actionState.guid) + '/' + encodeURIComponent(row.id), function (err, response) {
+        var list = response.layout.primary[0].children,
+            col = response.columns;
+        for (var i = 0; i < list.length; i += 1) {
+            var key = list[i].column;
+            for (var c = 0; c < col.length; c += 1) {
+                if (col[c].column === key) {
+                    var info = col[c], name = info.label || key;
+                    var val = response.result[0][key];
+                    if (val !== undefined && info !== undefined) {
+                        var elem = $('<span class="user-metric"><span class="user-metric-label"></span><span class="user-metric-value"></span></span>');
+                        $('.user-metric-label', elem).text(name);
+                        $('.user-metric-value', elem).text(val);
+                        $('#doc-user-metrics').append(elem);
+                    }
+                }
+            }
+        }
+    });
     d3.json('service/lineupuserdoc/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + encodeURIComponent(graphA) + '/' + encodeURIComponent(actionState.guid) + '/' + encodeURIComponent(row.id), function (err, response) {
         actionState.data.doclineup = response;
         var dataset = response.result, desc = response;

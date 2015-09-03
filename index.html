@@ -254,11 +254,17 @@
             </div>
         </div>
         <div id="document-controls">
-            <div id="doc-match-summary">
-                <span>Potential Match:</span>
-                <span id="doc-match-desc"></span>
-                <span>Confidence:</span>
-                <span id="doc-match-confidence"></span>
+            <div id="doc-match-header">
+                <div id="doc-match-summary">
+                    <span>Potential Match:</span>
+                    <span id="doc-match-desc"></span>
+                    <span>Confidence:</span>
+                    <span id="doc-match-confidence"></span>
+                </div>
+                <div id="doc-match-rankings">
+                    <label><input id="doc-user-derog" type="checkbox"> Derogatory User</label>
+                    <span id="doc-user-metrics"></span>
+                </div>
             </div>
             <div id="lugui2-container">
                 <div id="lugui2-wrapper"></div>
@@ -290,7 +296,7 @@
         </div>
         <div id="document-panel">
             <h4 id="document-title">Document</h4>
-            <label><input id="document-derog" type="checkbox"> Derogatory</label>
+            <label><input id="document-derog" type="checkbox"> Derogatory Document</label>
             <p class="match-gap"></p>
             <div id="document-type">Type: <span></span></div>
             <div id="document-id">ID: <span></span></div>

@@ -377,8 +377,8 @@ def getMetricList(dbname, handle):
 def getRankingsForGUID(handle, limited=False, queryinfo={}, queries=None,
                        filters=None):
     """
-    Get all rankings associated with a specific handle, or one of each ranking
-    type.
+    Get all document rankings associated with a specific handle, or one of each
+    ranking type.
 
     :param handle: the userID for the rankings.
     :param limited: if True, get one of each distinct ranking type.
@@ -392,7 +392,7 @@ def getRankingsForGUID(handle, limited=False, queryinfo={}, queries=None,
     """
     results = []
     found = {}
-    # Only user IST data
+    # Only use IST data
     dbkey = 'istRankings'
     es = elasticsearch.Elasticsearch(utils.getDefaultConfig()[dbkey],
                                      timeout=300)
@@ -546,6 +546,37 @@ def getUsedPersonGuids(allowBuffered=True):
         guids[bucket['key']] = True
     cacheResults(dbkey, 'usedGuids', guids)
     return guids
+
+
+def getUserRankingsForGUID(handle, limited=False, queries=None, filters=None):
+    """
+    Get all user rankings associated with a specific handle.
+
+    :param handle: the userID for the rankings.
+    :param queries: a list of additional query specifications to add to the
+                    elasticseach query.
+    :param filters: a list of additional filter specifications to add to the
+                    elasticseach query.
+    :returns: records found.
+    """
+    dbkey = 'userRankings'
+    es = elasticsearch.Elasticsearch(utils.getDefaultConfig()[dbkey],
+                                     timeout=300)
+    queryList = [{'match': {'PersonGUID': handle}}]
+    filterList = [{'exists': {'field': 'metrics'}}]
+    if queries is not None and len(queries):
+        queryList.append(queries)
+    if filters is not None and len(filters):
+        filterList.append(filters)
+    query = {
+        'size': 25000,
+        'query': {'function_score': {
+            'filter': {'bool': {'must': filterList}},
+            'query': {'bool': {'must': queryList}},
+        }},
+    }
+    res = es.search(body=json.dumps(query))
+    return [record['_source'] for record in res['hits']['hits']]
 
 
 def lineupFromMetrics(response, docs, firstColumns, lastColumns=[],
