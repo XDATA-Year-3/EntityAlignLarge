@@ -21,6 +21,7 @@ ColumnLabels = {
     'description': 'Description',
     'enabled': 'Possible',
     'confidence': 'Confidence',
+    'derog': 'Derogatory'
 }
 ColumnDomains = {
     'confidence': [0, 100],
@@ -174,8 +175,6 @@ def getEntitiesForGuid(dbname, guid):
         if docType in tweetTypes:
             entity['type'] = 'twitter_user'
             user = record['document']['user']
-            if docType.startswith('QCR'):  # ##DWM:: hack - remove
-                user['screen_name'], user['name'] = user['name'], user['screen_name']
             entity['user_id'] = user['screen_name']
             entity['id'] = entity['type'] + ':' + entity['user_id']
             entity['query'] = [
@@ -214,6 +213,36 @@ def getEntitiesForGuid(dbname, guid):
     return entities.values()
 
 
+def getMetricDomains(docs):
+    """
+    Based on a set of documents that contain a metrics key, determine the
+    domain of unique metrics.
+
+    :param docs: a list of document objects.
+    :returns: a dictionary of metric domains.
+    """
+    metrics = {}
+    for doc in docs:
+        for metric in doc['metrics'].keys():
+            if not isinstance(doc['metrics'][metric], (int, float)):
+                try:
+                    doc['metrics'][metric] = float(
+                        doc['metrics'][metric])
+                except ValueError:
+                    del doc['metrics'][metric]
+                    continue
+            if metric not in metrics:
+                metrics[metric] = [
+                    doc['metrics'][metric], doc['metrics'][metric]]
+            metrics[metric][0] = min(metrics[metric][0],
+                                     doc['metrics'][metric])
+            metrics[metric][1] = max(metrics[metric][1],
+                                     doc['metrics'][metric])
+            # Flatten key structure
+            doc[metric] = doc['metrics'][metric]
+    return metrics
+
+
 def getMetricList(dbname, handle):
     """
     Get a list of used metrics based on a database and handle.
@@ -231,8 +260,14 @@ def getMetricList(dbname, handle):
     records = getRankingsForHandle(dbname, handle, True, queryinfo)
     metrics = {}
     for record in records:
-        for metric in record['metrics']:
-            metDict = {'domain': [0, 1]}
+        for metric in record['metrics'].keys():
+            if not isinstance(record['metrics'][metric], (int, float)):
+                try:
+                    record['metrics'][metric] = float(
+                        record['metrics'][metric])
+                except ValueError:
+                    del record['metrics'][metric]
+            metDict = metric.get(metric, {'domain': [0, 1]})
             if record.get('db_key') in config:
                 dbkey = record['db_key']
                 if dbkey != lastdbkey:
@@ -260,6 +295,62 @@ def getMetricList(dbname, handle):
     return metrics
 
 
+def getRankingsForGUID(handle, limited=False, queryinfo={}, queries=None,
+                       filters=None):
+    """
+    Get all rankings associated with a specific handle, or one of each ranking
+    type.
+
+    :param handle: the userID for the rankings.
+    :param limited: if True, get one of each distinct ranking type.
+    :param queryinfo: a dictionary to store query information for different
+                      data sources.
+    :param queries: a list of additional query specifications to add to the
+                    elasticseach query.
+    :param filters: a list of additional filter specifications to add to the
+                    elasticseach query.
+    :returns: records found.
+    """
+    results = []
+    found = {}
+    # Only user IST data
+    dbkey = 'istRankings'
+    es = elasticsearch.Elasticsearch(utils.getDefaultConfig()[dbkey],
+                                     timeout=300)
+    queryList = [{'match': {'visa_guid': handle}}]
+    filterList = [{'exists': {'field': 'metrics'}}]
+    if queries is not None and len(queries):
+        queryList.append(queries)
+    if filters is not None and len(filters):
+        filterList.append(filters)
+    query = {
+        '_source': {'include': [
+            'doc_type', 'doc_guid', 'document.user', 'document.id',
+            'document.text', 'metrics',
+            # I probably need to tweek this for the non-tweet data
+        ]},
+        'size': 25000,
+        'query': {'function_score': {
+            'filter': {'bool': {'must': filterList}},
+            'query': {'bool': {'must': queryList}},
+        }},
+    }
+    queryinfo[dbkey] = query
+    res = es.search(body=json.dumps(query))
+    for hit in res['hits']['hits']:
+        record = hit['_source']
+        newVal = used = False
+        for metric in record.get('metrics', {}):
+            if metric not in found:
+                newVal = True
+                found[metric] = True
+            used = True
+        if used and (not limited or newVal):
+            record['db_key'] = dbkey
+            results.append(record)
+    return results
+
+
 def getRankingsForHandle(dbname, handle, limited=False, queryinfo={}):
     """
     Get all rankings associated with a specific handle, or one of each ranking
@@ -278,15 +369,16 @@ def getRankingsForHandle(dbname, handle, limited=False, queryinfo={}):
         '/', 1)[0] + '/ranking'
     dbkey = collection
     es = elasticsearch.Elasticsearch(collection, timeout=300)
+    queryList = [{'match': {'entityId': handle}}]
     query = {
         '_source': {'include': [
             'documentId', 'documentSource', 'documentLink', 'name', 'info',
             'score'
         ]},
         'size': 25000,
-        'query': {'function_score': {'query': {'bool': {'must': [
-            {'match': {'entityId': handle}},
-        ]}}}},
+        'query': {'function_score': {
+            'query': {'bool': {'must': queryList}},
+        }},
     }
     queryinfo[dbkey] = query
     res = es.search(body=json.dumps(query))
@@ -311,15 +403,13 @@ def getRankingsForHandle(dbname, handle, limited=False, queryinfo={}):
     dbkey = 'istRankings'
     es = elasticsearch.Elasticsearch(utils.getDefaultConfig()[dbkey],
                                      timeout=300)
+    queryList = [{'match': {'visa_guid': handle}}]
+    filterList = [{'exists': {'field': 'metrics'}}]
     query = {
         'size': 25000,
         'query': {'function_score': {
-            'filter': {'bool': {'must': [
-                {'exists': {'field': 'metrics'}}
-            ]}},
-            'query': {'bool': {'must': [
-                {'match': {'visa_guid': handle}},
-            ]}},
+            'filter': {'bool': {'must': filterList}},
+            'query': {'bool': {'must': queryList}},
         }},
     }
     queryinfo[dbkey] = query
@@ -371,7 +461,8 @@ def getUsedPersonGuids(allowBuffered=True):
     return guids
 
 
-def lineupFromMetrics(response, docs, firstColumns, lastColumns=[]):
+def lineupFromMetrics(response, docs, firstColumns, lastColumns=[],
+                      includeZeroMetrics=False):
     """
     Add information for lineup into a response document.
 
@@ -382,9 +473,10 @@ def lineupFromMetrics(response, docs, firstColumns, lastColumns=[]):
                          row id, not as a column.  Required.
     :param lastColumns: a list of column ids to include at the end of the line
                         up.  Optional.
+    :param includeZeroMetrics: if True, include metrics for which all values
+                               are exactly zero.
     """
     response['primaryKey'] = firstColumns[0]
-    response['separator'] = '\t'
     response['columns'] = col = []
     laycol = []
     primecol = []
@@ -405,34 +497,26 @@ def lineupFromMetrics(response, docs, firstColumns, lastColumns=[]):
         if len(col) == len(firstColumns):
             primecol.append(
                 {"type": "stacked", "label": "Combined", "children": laycol})
-    metrics = {}
-    for doc in docs:
-        for metric in doc['metrics']:
-            if metric not in metrics:
-                metrics[metric] = [
-                    doc['metrics'][metric], doc['metrics'][metric]]
-            metrics[metric][0] = min(metrics[metric][0],
-                                     doc['metrics'][metric])
-            metrics[metric][1] = max(metrics[metric][1],
-                                     doc['metrics'][metric])
-            # Flatten key structure
-            doc[metric] = doc['metrics'][metric]
+    metrics = getMetricDomains(docs)
+    import pprint
+    pprint.pprint(metrics)  # ##DWM::
     for metric in metrics.keys():
         domain = metrics[metric]
-        if domain[0] >= 0 and domain[1] > 0:
+        if domain[0] >= 0 and domain[1] >= 0:
             domain[0] = 0
             if domain[1] < 1:
                 domain[1] = 1
         elif domain[0] < 0 and domain[1] < 0:
             domain[1] = 0
-        if domain[0] == domain[1]:
+        if (domain[0] == domain[1] and (
+                domain[0] != 0 or not includeZeroMetrics)):
             del metrics[metric]
+    pprint.pprint(metrics)  # ##DWM::
     for metric in sorted(metrics.keys()):
-        domain = metrics[metric]
         col.append({
             'column': metric,
             'type': 'number',
-            'domain': domain,
+            'domain': metrics[metric],
         })
         if MetricLabels.get(metric):
             col[-1]['label'] = MetricLabels[metric]

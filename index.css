@@ -6,6 +6,7 @@ html, body {
 
 body {
     padding-top: 49px;
+    overflow: hidden;
 }
 
 #control-panel {
@@ -49,7 +50,7 @@ h3 {
   stroke-opacity: .6;
 }
 #controls {
-    overflow-y: hidden;
+    overflow: hidden;
 }
 nav ol{height:300px; width:200px;}
 nav ol{overflow:hidden; overflow-y:scroll;}
@@ -101,7 +102,7 @@ nav ol{overflow:hidden; overflow-y:scroll;}
 #examine-button {
     margin-left: 20px;
 }
-#graph2-selector-fixed {
+#graph2-selector-fixed, #document-title {
     font-size: 24px;
     margin-left: 20px; 
     margin-top: 10px;
@@ -111,7 +112,19 @@ nav ol{overflow:hidden; overflow-y:scroll;}
 }
 #lugui-wrapper {
     top: 0;
+    height: calc(100% - 50px);
+    position: inherit;
+    clear: none;
+}
+#lugui2-container {
+    position: relative;
+    height: calc(100% - 100px);
+}
+#lugui2-wrapper {
+    top: 0;
     height: 100%;
+    position: inherit;
+    clear: none;
 }
 #controls {
     padding: 0;
@@ -122,4 +135,30 @@ nav ol{overflow:hidden; overflow-y:scroll;}
 }
 #match-gap {
     height: 10px;
+}
+#review-button {
+    width: 150px;
+    margin: 8px auto 0 auto;
+    display: block;
+}
+#match-controls, #document-controls, #match-panel, #document-panel {
+    height: 100%;
+}
+#document-controls, #document-panel {
+    display: none;
+}
+#doc-match-summary {
+    font-size: 18px;
+    padding: 10px;
+    height: 50px;
+}
+#doc-match-desc, #doc-match-confidence {
+    padding-right: 10px;
+    font-weight: bold;
+}
+#doc-buttons {
+    padding: 8px;
+}
+#doc-next-button {
+    margin-right: 50px;
 }

@@ -55,7 +55,7 @@
 <script src="lineup_js/src/lineup_datastructure.js"></script>
 <script src="lineup_js/src/lineup_storage.js"></script>
 
-<link href='//fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
+<link href="//fonts.googleapis.com/css?family=Lato:400,700" rel="stylesheet" type="text/css">
 <link href="lineup_js/css/font-awesome.min.css" rel="stylesheet">
 <link href="lineup_js/css/style.css" rel="stylesheet">
 <link href="lineup_js/demo/css/style-demo.css" rel="stylesheet">
@@ -157,7 +157,7 @@
     </div>
 </div>
 
-<div id='seed-panel' class="modal fade draper" data-wf="1"  data-description="list seeds">
+<div id="seed-panel" class="modal fade draper" data-wf="1"  data-description="list seeds">
     <div class=modal-dialog>
         <div class=modal-content>
             <div class=modal-header>
@@ -171,7 +171,7 @@
 
             <div class=modal-footer>
                 <a class="btn btn-default" data-dismiss=modal>Close Window</a>
-                <a id='publish-parings-button' class="btn btn-success" data-dismiss=modal>Publish Pairing</a>
+                <a id="publish-parings-button" class="btn btn-success" data-dismiss=modal>Publish Pairing</a>
             </div>
         </div>
     </div>
@@ -201,11 +201,11 @@
     <div class=col-md-3>
         <div id="graph1-header"></div>
         <select id="graph1-selector" class="form-control">
-            <option selected disabled hidden value=''>Select a dataset</option>
+            <option selected disabled hidden value="">Select a dataset</option>
             <option>Twitter</option>
             <option>Instagram</option>
         </select>
-        <p id='ga-summary'></p>
+        <p id="ga-summary"></p>
         
         <text id="ga-nodeCount" style="margin-left:20px">-- </text>
         <text style="margin-left:20px">Cases with Documents</text>
@@ -221,54 +221,77 @@
         <p></p>
         -->
         <b>Case number:</b>
-        <input id='ga-name' style='margin-left:20px' disabled="disabled"></input> 
+        <input id="ga-name" style="margin-left:20px" disabled="disabled"></input> 
         <div id="person-list">
           <p class="person-list-header">Persons related to Case</p>
           <select class="person-list" size="5"></select>
         </div>
         <p></p>
-        <a id='examine-button' class="btn btn-default">Examine Potential Matches</a>
+        <a id="examine-button" class="btn btn-default">Examine Potential Matches</a>
         <!--
-        <a id='onehop-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Explore local network</a>
-        <a id='graph1-homepage' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Visit User Homepage</a>
+        <a id="onehop-button" class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Explore local network</a>
+        <a id="graph1-homepage" class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Visit User Homepage</a>
         -->
         <p></p>
         <div id="graph1-json-info">
         </div>
         <div id="graph1-container">
-          <svg id='graph1' style="height:300; margin-top:20px; margin-left:20px" ></svg>
+          <svg id="graph1" style="height:300; margin-top:20px; margin-left:20px" ></svg>
         </div>
-        <div id='info1' style='margin-top:20px'></div> 
+        <div id="info1" style="margin-top:20px"></div> 
     </div>
 
-   <!-- center panel for showing the ranking results -->
+    <!-- center panel for showing the ranking results -->
 
-    <div id='controls' class=col-md-6>
-   
-            <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
-
-                <!-- included excerpt from lineup definition -->
-                <div id="lugui-wrapper"></div>
-                 <!--   <script src="lineup.js/dist/LineUpJS.js"></script> -->
-
+    <div id="controls" class=col-md-6>
+        <div id="match-controls">
+            <select id="lineup-selector" class="form-control" style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
+            <!-- included excerpt from lineup definition -->
+            <div id="lugui-wrapper"></div>
+            <!--   <script src="lineup.js/dist/LineUpJS.js"></script> -->
+            <div>
+                <a id="review-button" class="btn btn-default" title="Review documents from possible matches">Review Documents</a>
+            </div>
+        </div>
+        <div id="document-controls">
+            <div id="doc-match-summary">
+                <span>Potential Match:</span>
+                <span id="doc-match-desc"></span>
+                <span>Confidence:</span>
+                <span id="doc-match-confidence"></span>
+            </div>
+            <div id="lugui2-container">
+                <div id="lugui2-wrapper"></div>
+            </div>
+            <div id="doc-buttons">
+                <a id="doc-prev-button" class="btn btn-default" title="Review documents from previous potential match">Previous Potential Match</a>
+                <a id="doc-next-button" class="btn btn-default" title="Review documents from next potential match">Next Potential Match</a>
+                <a id="doc-report-button" class="btn btn-default" title="Generate a report of documents that were marked as potentially derogatory">Generate Report</a>
+            </div>
+        </div>
     </div>
    
 
   <!-- right panel for graph 2 -->
 
      <div class=col-md-3>
-        <h4 id='graph2-selector' class="form-control" style="font-size: 24px; margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px; width: calc(100% - 30px);display:none;" >Document</h4>
-        <h4 id='graph2-selector-fixed'>Potential Match</h4>
-        <div id='match'>
-            <label><input id='match-enabled' type="checkbox"> Possible Match</label>
-            <div>Not Confident <input id="match-confidence" type="text" data-slider-min="0" data-slider-max="100" data-slider-step="10" data-slider-value="50" data-slider-handle="square" data-slider-id="match-confidence-ctl" class="slider-ctl form-control input-sm"> Confident</div>
-            <p id='match-gap'></p>
-            <div id='match-type'>Type: <span></span></div>
-            <div id='match-id'>ID: <span></span></div>
-            <div id='match-description'>Description: <span></span></div>
-            <div id='match-link'>Link: <span></span></div>
-            <div id='match-json-info'>
+        <div id="match-panel">
+            <h4 id="graph2-selector" class="form-control" style="font-size: 24px; margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px; width: calc(100% - 30px);display:none;" >Document</h4>
+            <h4 id="graph2-selector-fixed">Potential Match</h4>
+            <div id="match">
+                <label><input id="match-enabled" type="checkbox"> Possible Match</label>
+                <div>Not Confident <input id="match-confidence" type="text" data-slider-min="0" data-slider-max="100" data-slider-step="10" data-slider-value="50" data-slider-handle="square" data-slider-id="match-confidence-ctl" class="slider-ctl form-control input-sm"> Confident</div>
+                <p id="match-gap"></p>
+                <div id="match-type">Type: <span></span></div>
+                <div id="match-id">ID: <span></span></div>
+                <div id="match-description">Description: <span></span></div>
+                <div id="match-link">Link: <span></span></div>
+                <div id="match-json-info">
+                </div>
             </div>
+        </div>
+        <div id="document-panel">
+            <h4 id="document-title">Document</h4>
         </div>
     </div>
   </div>

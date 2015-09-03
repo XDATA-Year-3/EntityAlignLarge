@@ -1,5 +1,5 @@
 /*jslint browser:true, unparam:true */
-/*globals $, console, d3, log, loadDataImpl, lineup, logSetupLineUp, logOpenTwitterWindow, logOpenInstagramWindow, initializeLoggingFramework, logSelectLineUpEntry, logPublishPairings */
+/*globals $, console, d3, log, loadDataImpl, lineup, logSetupLineUp, logOpenTwitterWindow, logOpenInstagramWindow, initializeLoggingFramework, logSelectLineUpEntry, logPublishPairings, LineUp */
 
 
 var color = null;
@@ -17,6 +17,13 @@ entityAlign.force2 = null;
 entityAlign.host = null;
 entityAlign.ac = null;
 entityAlign.textmode = false;
+
+var lineUpConfig = {
+    svgLayout: {
+        mode: 'separate'
+    }
+};
+var lineup2;
 
 /* All but the data element should be saved to recover the user state. */
 var actionState = {data: {}};
@@ -215,6 +222,10 @@ function updatePersonList() {
         return;
     }
     actionState['case'] = casename;
+    $('#document-controls').css('display', 'none');
+    $('#document-panel').css('display', 'none');
+    $('#match-controls').css('display', 'block');
+    $('#match-panel').css('display', 'block');
     //DWM:: clear person list, lineup, match data
     $('#person-list').attr('case', casename);
     var graphPathname = $('#graph1-selector').val();
@@ -535,7 +546,7 @@ function selectUserFromLineup(row) {
         $('#match #match-type span').text(match.type || 'Unknown');
         $('#match #match-id span').text(match.user_id || 'Unknown');
         $('#match #match-description span').text(match.description || '');
-        var link, id = match.user_id;
+        var link, id = row.id;
         if (match.type === 'twitter_user') {
             link = 'http://twitter.com/' + match.user_id;
         }
@@ -557,9 +568,36 @@ function selectUserFromLineup(row) {
             'indeterminate', actionState.matches[id].check === null);
         $('#match-confidence').bootstrapSlider(
             'setValue', actionState.matches[id].confidence);
-        console.log(row, match); //DWM::
-        //DWM::
     });
+}
+
+/* Create or recreate a lineup control.
+ *
+ * @param elem: selector to the parent div wrapper for the control.
+ * @param name: name of the control.
+ * @param desc: column description.
+ * @param dataset: dataset to load.
+ * @lineupObj: old lineup object to replace.
+ * @returns: a lineup control object.
+ */
+function createLineup(elem, name, desc, dataset, lineupObj) {
+    /* This has been parroted from th demo. */
+    var spec = {};
+    spec.name = name;
+    spec.dataspec = desc;
+    delete spec.dataspec.file;
+    delete spec.dataspec.separator;
+    spec.dataspec.data = dataset;
+    spec.storage = LineUp.createLocalStorage(
+        dataset, desc.columns, desc.layout, desc.primaryKey);
+
+    if (lineupObj) {
+        lineupObj.changeDataStorage(spec);
+    } else {
+        lineupObj = LineUp.create(
+            spec, d3.select(elem), lineUpConfig);
+    }
+    return lineupObj;
 }
 
 function initializeLineUpAroundEntity(handle) {
@@ -582,7 +620,7 @@ function initializeLineUpAroundEntity(handle) {
             var dataset = response.result, desc = response;
             actionState.data.lineup = response;
             actionState.matches = {};
-            loadDataImpl(name, desc, dataset);
+            loadDataImpl('main', desc, dataset);
             lineup.sortBy('Combined');
             lineup.on('selected', selectUserFromLineup);
         });
@@ -595,7 +633,7 @@ function initializeLineUpAroundEntity(handle) {
             d3.json('service/lineupdataset/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + graphA + '/' + graphB + '/' + handle + '/' + displaymode, function (err, dataset) {
                 console.log('lineup loading description:', desc);
                 console.log('lineup loading dataset for handle:', handle, dataset.result);
-                loadDataImpl(name, desc, dataset.result);
+                loadDataImpl('main', desc, dataset.result);
                 lineup.sortBy('Combined');
             });
         } else {
@@ -604,7 +642,7 @@ function initializeLineUpAroundEntity(handle) {
                 d3.json('service/lineupdataset_neighborhood/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + graphA + '/' + handle + '/' + encodedEntityList + '/' + displaymode, function (err, dataset) {
                         console.log('lineup loading description:', desc);
                         console.log('lineup loading dataset for handle:', handle, dataset.result);
-                        loadDataImpl(name, desc, dataset.result);
+                        loadDataImpl('main', desc, dataset.result);
                     });
             });
         }
@@ -642,6 +680,10 @@ function exploreLocalGraphAregion() {
         centralHandle = centralHandle.substr(0, centralHandle.indexOf(' - '));
     }
     actionState.guid = centralHandle;
+    $('#document-controls').css('display', 'none');
+    $('#document-panel').css('display', 'none');
+    $('#match-controls').css('display', 'block');
+    $('#match-panel').css('display', 'block');
     //DWM:: clear match data
     initializeLineUpAroundEntity(centralHandle);
     getEntityJSON(centralHandle);
@@ -763,7 +805,69 @@ function acceptListedPairing() {
 }
 
 function showPairings() {
+}
 
+/* Show the currently selected match, next and previous buttons as appropriate,
+ * and fetch the lineup data for this set of documents.
+ */
+function updateDocumentLineup() {
+    var row = actionState.data.matchedRows[actionState.currentRow];
+    $('#doc-match-desc').text(row.row.description);
+    $('#doc-match-confidence').text(row.match.confidence || 0);
+    var graphPathname = $('#graph1-selector').val();
+    var graphA = getDatasetName(graphPathname);
+    d3.json('service/lineupuserdoc/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + encodeURIComponent(graphA) + '/' + encodeURIComponent(actionState.guid) + '/' + encodeURIComponent(row.id), function (err, response) {
+        actionState.data.doclineup = response;
+        console.log(response);
+        var dataset = response.result, desc = response;
+        lineup2 = createLineup(
+            '#lugui2-wrapper', 'second', desc, dataset, lineup2);
+        lineup2.sortBy('Combined');
+        lineup2.on('selected', selectUserFromLineup);
+    });
+    //DWM::
+}
+
+/* Review the next possible match of documents in the list.
+ */
+function reviewNext() {
+    var len = actionState.data.matchedRows.length;
+    actionState.currentRow = (actionState.currentRow + 1) % len;
+    updateDocumentLineup();
+}
+
+/* Review the previous possible match of documents in the list.
+ */
+function reviewPrevious() {
+    var len = actionState.data.matchedRows.length;
+    actionState.currentRow = (actionState.currentRow + len - 1) % len;
+    updateDocumentLineup();
+}
+
+/* Given a selection of possible matches, show the documents for them.
+ */
+function reviewDocuments() {
+    var docs = [];
+    for (var i = 0; i < actionState.data.lineup.result.length; i += 1) {
+        var row = actionState.data.lineup.result[i];
+        if (actionState.matches[row.id] && actionState.matches[row.id].check) {
+            docs.push({
+                row: row, match: actionState.matches[row.id], id: row.id});
+        }
+    }
+    if (!docs.length) {
+        alert('No possible matches were indicated, therefore there are no documents to review.');
+        return;
+    }
+    actionState.data.matchedRows = docs;
+    actionState.currentRow = 0;
+    $('#match-controls').css('display', 'none');
+    $('#match-panel').css('display', 'none');
+    $('#document-controls').css('display', 'block');
+    $('#document-panel').css('display', 'block');
+    $('#doc-prev-button').toggleClass('disabled', docs.length <= 1);
+    $('#doc-next-button').toggleClass('disabled', docs.length <= 1);
+    updateDocumentLineup();
 }
 
 function firstTimeInitialize() {
@@ -815,6 +919,11 @@ function firstTimeInitialize() {
             .on('click', showPairings);
         d3.select('#examine-button')
             .on('click', exploreLocalGraphAregion);
+        d3.select('#review-button')
+            .on('click', reviewDocuments);
+        d3.select('#doc-prev-button').on('click', reviewPrevious);
+        d3.select('#doc-next-button').on('click', reviewNext);
+        //DWM::d3.select('#doc-report-button').on('click', reviewNext);
         d3.select('#accept-button')
             .on('click', acceptListedPairing);
         d3.select('#graph1-homepage')
