@@ -1,5 +1,8 @@
 {
     "allname-levenshtein": {
+        "alt": "levenshtein"
+    },
+    "levenshtein": {
         "label": "Levenshtein",
         "description": "Levenshtein string distance",
         "domain": [0, 1]
@@ -21,8 +24,35 @@
         "hide": true
     },
     "jaro-winkler": {
+        "alt": "jaro_winkler"
+    },
+    "jaro_winkler": {
         "label": "Jaro Winkler",
         "description": "Jaro Winkler string distance",
         "domain": [0, 1]
+    },
+    "tfidf": {
+        "label": "TF-IDF",
+        "description": "Term Frequency/Inverse Document Frequency Normalization"
+    },
+    "spinseeker_max_clm": {
+        "label": "Spin Max",
+        "description": "Highest score obtained by any single tweet for similarity of content to those tweeted by known ISIL Twitter accounts. Higher generally indicates more ISIL-like content."
+    },
+    "spinseeker_mean_clm": {
+        "label": "Spin Mean",
+        "description": "Mean (average) score over all tweets for similarity of content to those tweeted by known ISIL Twitter accounts. Higher generally indicates more ISIL-like content."
+    },
+    "spinseeker_median_clm": {
+        "label": "Spin Median",
+        "description": "Median (middle) score over all tweets for similarity of content to those tweeted by known ISIL Twitter accounts. Higher generally indicates moreISIL-like content."
+    },
+    "spinseeker_num_positive_clm": {
+        "label": "Spin Number Positive",
+        "description": "Number of tweets classified by our algorithms as ISIL-like."
+    },
+    "spinseeker_prop_positive_clm": {
+        "label": "Spin Proportion Positive",
+        "description": "Proportion of tweets classified by our algorithms as ISIL-like."
     }
 }

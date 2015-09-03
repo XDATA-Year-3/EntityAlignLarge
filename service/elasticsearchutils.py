@@ -286,16 +286,22 @@ def getEntityMetricsForGuid(guid):
     return entities
 
 
-def getMetricDomains(docs):
+def getMetricDomains(docs, settings={}):
     """
     Based on a set of documents that contain a metrics key, determine the
     domain of unique metrics.
 
     :param docs: a list of document objects.
+    :param settings: a dictionary of metric settings.
     :returns: a dictionary of metric domains.
     """
     metrics = {}
     for doc in docs:
+        for metric in doc['metrics'].keys():
+            if (settings.get(metric, {}).get('alt') and
+                    settings.get(metric, {}).get('alt') not in doc['metrics']):
+                altmetric = settings.get(metric, {})['alt']
+                doc['metrics'][altmetric] = doc['metrics'][metric]
         for metric in doc['metrics'].keys():
             if not isinstance(doc['metrics'][metric], (int, float)):
                 try:
@@ -579,7 +585,7 @@ def lineupFromMetrics(response, docs, firstColumns, lastColumns=[],
         if len(col) == len(firstColumns):
             primecol.append(
                 {"type": "stacked", "label": "Combined", "children": laycol})
-    metrics = getMetricDomains(docs)
+    metrics = getMetricDomains(docs, settings)
     for metric in metrics.keys():
         domain = metrics[metric]
         if domain[0] >= 0 and domain[1] >= 0:
@@ -592,7 +598,8 @@ def lineupFromMetrics(response, docs, firstColumns, lastColumns=[],
                 domain[0] != 0 or not includeZeroMetrics)):
             del metrics[metric]
             continue
-        if settings.get(metric, {}).get('hide'):
+        if (settings.get(metric, {}).get('hide') or
+                settings.get(metric, {}).get('alt')):
             del metrics[metric]
             continue
     for metric in sorted(metrics.keys()):

@@ -594,6 +594,8 @@ function selectDocumentFromLineup(row) {
         var link;
         if (doc.doc_type === 'QCR_holdings') {
             link = doc.document._source.link;
+        } else if (doc.doc_type === 'tweet') {
+            link = 'http://twitter.com/' + doc.document.user.screen_name + '/statuses/' + doc.document.id_str;
         }
         $('#document-link span').empty();
         if (link) {
@@ -640,6 +642,13 @@ function createLineup(elem, name, desc, dataset, lineupObj) {
         lineupObj = LineUp.create(
             spec, d3.select(elem), lineUpConfig);
     }
+    window.setTimeout(function () {
+        for (var i = 0; i < desc.columns.length; i += 1) {
+            if (desc.columns[i].description) {
+                $('title', $(elem + ' .lu-header .header text:contains("' + desc.columns[i].label + '")').parent()).text(desc.columns[i].label + ': ' + desc.columns[i].description);
+            }
+        }
+    }, 1);
     return lineupObj;
 }
 
@@ -667,6 +676,11 @@ function initializeLineUpAroundEntity(handle) {
             loadDataImpl('main', desc, dataset);
             lineup.sortBy('Combined');
             lineup.on('selected', selectUserFromLineup);
+            for (var i = 0; i < desc.columns.length; i += 1) {
+                if (desc.columns[i].description) {
+                    $('title', $('#lugui-wrapper .lu-header .header text:contains("' + desc.columns[i].label + '")').parent()).text(desc.columns[i].label + ': ' + desc.columns[i].description);
+                }
+            }
         });
         return;
     }

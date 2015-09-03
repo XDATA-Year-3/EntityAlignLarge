@@ -52,7 +52,7 @@ RUN git clone git://github.com/XDATA-Year-3/EntityAlignLarge && \
     git reset --hard
 WORKDIR /home/kwuser/EntityAlignLarge
 ENV PATH $PATH:/home/kwuser/.local/bin
-RUN pip install --user tangelo elasticsearch pymongo
+RUN pip install --user tangelo elasticsearch pymongo python-Levenshtein
 
 COPY makelocalcfg.py /home/kwuser/makelocalcfg.py
 
