@@ -19,8 +19,9 @@ def run(host, database, graphA, guid, entityId, *args, **kwargs):
         guid, queries=entity.get('query'), filters=entity.get('filter'))
     # Massage the data to a simpler form, add a description, etc.
     for record in records:
-        record['description'] = record.get('document', {}).get(
-            'text', 'No description')
+        if not record.get('description'):
+            record['description'] = record.get('document', {}).get(
+                'text', 'No description')
         record['id'] = record.get('doc_type', '') + ':' + record['doc_guid']
     response['result'] = records
     elasticsearchutils.lineupFromMetrics(

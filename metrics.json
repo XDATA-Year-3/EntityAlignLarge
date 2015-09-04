@@ -60,5 +60,10 @@
     },
     "suspected_isil_accounts_followed": {
         "label": "Suspected ISIL Accounts Followed"
+    },
+    "HG_distance_score_metric": {
+        "label": "HG Text Match Distance",
+        "description": "Number of characters that need to be changed to match user names.",
+        "domain": [-2, 0]
     }
 }

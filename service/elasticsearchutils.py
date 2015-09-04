@@ -405,7 +405,7 @@ def getRankingsForGUID(handle, limited=False, queryinfo={}, queries=None,
     query = {
         '_source': {'include': [
             'doc_type', 'doc_guid', 'document.user', 'document.id',
-            'document.text', 'metrics',
+            'document.text', 'document.site', 'metrics',
             # I probably need to tweek this for the non-tweet data
         ]},
         'size': 25000,
@@ -430,8 +430,14 @@ def getRankingsForGUID(handle, limited=False, queryinfo={}, queries=None,
                 {'match': {'doc_type': record['doc_type']}},
                 {'match': {'doc_guid': record['doc_guid']}},
             ]
-            record['description'] = record.get('document', {}).get(
-                'text', 'No description')
+            doc = record.get('document', {})
+            desc = doc.get('text')
+            if desc is None:
+                desc = doc.get('site', {}).get('name')
+                if desc and doc['site'].get('host'):
+                    desc += ' (%s)' % doc['site']['host']
+            record['description'] = (
+                desc if desc is not None else 'No description')
             record['id'] = record.get(
                 'doc_type', '') + ':' + record['doc_guid']
             results.append(record)
