@@ -926,7 +926,7 @@ function updateDocumentLineup() {
         lineup2.sortBy('Combined');
         lineup2.on('selected', selectDocumentFromLineup);
     });
-    $('#match-panel').css('display', 'none');
+    $('#document-panel').css('display', 'none');
 }
 
 /* Review the next possible match of documents in the list.
