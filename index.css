@@ -143,8 +143,6 @@ nav ol{overflow:hidden; overflow-y:scroll;}
 }
 #match-controls, #document-controls, #match-panel, #document-panel {
     height: 100%;
-}
-#document-controls, #document-panel {
     display: none;
 }
 #doc-match-summary {

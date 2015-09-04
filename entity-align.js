@@ -222,11 +222,12 @@ function updatePersonList() {
         return;
     }
     actionState['case'] = casename;
+    /* Clear old details */
     $('#document-controls').css('display', 'none');
     $('#document-panel').css('display', 'none');
-    $('#match-controls').css('display', 'block');
-    $('#match-panel').css('display', 'block');
-    //DWM:: clear person details, lineup, match data
+    $('#match-controls').css('display', 'none');
+    $('#match-panel').css('display', 'none');
+    $('#graph1-json-info').empty();
     $('#person-list').attr('case', casename);
     var graphPathname = $('#graph1-selector').val();
     var selectedDataset = getDatasetName(graphPathname);
@@ -553,7 +554,7 @@ function selectUserFromLineup(row) {
         $('#match #match-link span').empty();
         if (link) {
             $('#match #match-link span').append($('<a/>').attr(
-                'href', link).text(link));
+                {href: link, target: '_blank'}).text(link));
         }
         actionState.currentMatch = id;
         actionState.data.lineuprow = row;
@@ -569,6 +570,7 @@ function selectUserFromLineup(row) {
             'indeterminate', actionState.matches[id].check === null);
         $('#match-confidence').bootstrapSlider(
             'setValue', actionState.matches[id].confidence);
+        $('#match-panel').css('display', 'block');
     });
 }
 
@@ -600,7 +602,7 @@ function selectDocumentFromLineup(row) {
         $('#document-link span').empty();
         if (link) {
             $('#document-link span').append($('<a/>').attr(
-                'href', link).text(link));
+                {href: link, target: '_blank'}).text(link));
         }
         actionState.currentDocument = id;
         actionState.data.lineupdocrow = row;
@@ -613,6 +615,7 @@ function selectDocumentFromLineup(row) {
         $('#document-derog').prop(
             'checked', actionState.documents[id].derog).prop(
             'indeterminate', actionState.documents[id].derog === null);
+        $('#document-panel').css('display', 'block');
     });
 }
 
@@ -666,6 +669,7 @@ function initializeLineUpAroundEntity(handle) {
     // a displaymode selector (currently disabled) can be set to determine which mode the UI shuld be in.
 
     //var displaymode = 'compare networks'
+    $('#match-panel').css('display', 'none');
     var displaymode = 'document rankings';
     if (displaymode === 'document rankings') {
         d3.json('service/lineupuser/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + encodeURIComponent(graphA) + '/' + encodeURIComponent(handle), function (err, response) {
@@ -681,6 +685,7 @@ function initializeLineUpAroundEntity(handle) {
                     $('title', $('#lugui-wrapper .lu-header .header text:contains("' + desc.columns[i].label + '")').parent()).text(desc.columns[i].label + ': ' + desc.columns[i].description);
                 }
             }
+            $('#match-controls').css('display', 'block');
         });
         return;
     }
@@ -741,8 +746,7 @@ function exploreLocalGraphAregion() {
     $('#document-controls').css('display', 'none');
     $('#document-panel').css('display', 'none');
     $('#match-controls').css('display', 'block');
-    $('#match-panel').css('display', 'block');
-    //DWM:: clear match data
+    $('#match-panel').css('display', 'none');
     initializeLineUpAroundEntity(centralHandle);
     getEntityJSON(centralHandle);
 
@@ -922,7 +926,7 @@ function updateDocumentLineup() {
         lineup2.sortBy('Combined');
         lineup2.on('selected', selectDocumentFromLineup);
     });
-    //DWM:: clear document panel
+    $('#match-panel').css('display', 'none');
 }
 
 /* Review the next possible match of documents in the list.
@@ -962,7 +966,7 @@ function reviewDocuments() {
     $('#match-controls').css('display', 'none');
     $('#match-panel').css('display', 'none');
     $('#document-controls').css('display', 'block');
-    $('#document-panel').css('display', 'block');
+    $('#document-panel').css('display', 'none');
     $('#doc-prev-button').toggleClass('disabled', docs.length <= 1);
     $('#doc-next-button').toggleClass('disabled', docs.length <= 1);
     updateDocumentLineup();
