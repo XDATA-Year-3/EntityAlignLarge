@@ -43,6 +43,7 @@ def convertXMLToObject(node):
 
 dbref = None
 
+
 def getDb():
     """
     Get a connection to Elasticsearch.
@@ -127,7 +128,7 @@ def printAndStoreMetric(state, entity, metClass, metric):
     del entity['metrics']
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # noqa
     reverse = False
     offset = 0
     filename = None
@@ -219,7 +220,7 @@ Syntax: xmlmetric.py (xml file) [-r] [--offet=(offset)]
             for email in ident.get('Email', []):
                 if 'Username' in email:
                     namelower = email['Username'].lower()
-                    if not namelower in entity['name']:
+                    if namelower not in entity['name']:
                         entity['name'].append(namelower)
         entities.append(entity)
         count += 1

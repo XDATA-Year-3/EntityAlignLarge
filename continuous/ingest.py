@@ -94,7 +94,6 @@ def calculateMetrics(state, entities=None, nonDbEntities=None, callback=None):
         metric.loadMetric(met, metricDict[met])
     if entities is not None:
         entities = [castObjectId(entity) for entity in entities]
-    metColl = getDb('metrics', state)
     entityColl = getDb('entity', state)
     linkColl = getDb('link', state)
     latestEntity = entityColl.find(timeout=False).sort([
@@ -119,6 +118,30 @@ def calculateMetrics(state, entities=None, nonDbEntities=None, callback=None):
         cursor.skip(state['args']['offset'])
     if state['args'].get('limit'):
         cursor.limit(state['args']['limit'])
+    calculateMetricsLoop(state, cursor, nonDbEntities, callback, numEntities,
+                         latestEntity, latestLink)
+
+
+def calculateMetricsLoop(state, cursor, nonDbEntities, callback, numEntities,
+                         latestEntity, latestLink):
+    """
+    Loop through the entities and metrics and perform the actual calculations.
+
+    :param state: the state dictionary with the config values.
+    :param cursor: a Mongo cursor or list of entities to calculate metrics for.
+
+    :param nonDbEntities: a list of entity-like records that didn't come from
+                          our database.
+    :param callback: a function to call after calculating a metric.
+                     callback(state, entity, metClass, metric) is called.
+    :param numEntities: the number of entities that we are computing metrics
+                        for.
+    :param latestEntity: the epoch of the most recently changed entity record.
+    :param latestLink: the epoch of the most recently changed link record.
+    """
+    metColl = getDb('metrics', state)
+    entityColl = getDb('entity', state)
+    linkColl = getDb('link', state)
     count = numCalc = 0
     starttime = lastreport = time.time()
     queryBuffer = {}
@@ -144,7 +167,7 @@ def calculateMetrics(state, entities=None, nonDbEntities=None, callback=None):
                 entityColl, linkColl, metColl, metClass, entity, oldMetric,
                 state, starttime, queryBuffer)
             if nonDbEntities is not None:
-                if not 'metrics' in entity:
+                if 'metrics' not in entity:
                     entity['metrics'] = {}
                 entity['metrics'][metClass.name] = metricDoc
             numCalc += 1
@@ -424,7 +447,6 @@ def getDb(dbName, state):
         'entity': [
             [('user_id', pymongo.ASCENDING)],
             [('name', pymongo.ASCENDING)],
-            [('msgs.msg_id', pymongo.ASCENDING)],
             [('date_updated', pymongo.ASCENDING)],
         ],
         'link': [
@@ -434,6 +456,9 @@ def getDb(dbName, state):
         ],
         'metrics': [
             [('entity', pymongo.ASCENDING)],
+        ],
+        'msg': [
+            [('msg_id', pymongo.ASCENDING)],
         ],
     }
     for index in indices.get(dbName, []):
@@ -509,6 +534,28 @@ def getEntityByName(state, entity):
                               timeout=False)
     if not doc and hasUserId and entity['name'] is not None:
         doc = entityColl.find_one(specName, timeout=False)
+    return getEntityByNameAdd(state, doc, entity, specName, hasUserId)
+
+
+def getEntityByNameAdd(state, doc, entity, specName, hasUserId):
+    """
+    Add or update an entity for which we did not have complete information.
+
+    :param state: includes the database connection.
+    :param doc: an existing document for the entity to be updated or None
+                if this is a new entity.
+    :param entity: a dictionary of _id, service, user_id, name, and fullname.
+                   if _id is unspecified, service is required and at least one
+                   of user_id or name.
+    :param specName: a mongo query to get an extant entity.
+    :param hasUserId: True if we know the user Id (for the service) of this
+                      entity.
+
+    :returns: an entity document or None.
+    :returns: updated: True if the document was changed in any way.  'new' if
+              the entity was added.
+    """
+    entityColl = getDb('entity', state)
     curtime = time.time()
     if doc:
         # We have this user id, but not all of its aliases.
@@ -563,15 +610,15 @@ def ingestMessage(state, msg):
         sys.exit(0)
         return None
     curtime = time.time()
-    entityColl = getDb('entity', state)
+    msgColl = getDb('msg', state)
     # Assume if we have processed this message, then we have everything we care
     # about in our database.  This might not be true -- a message could get
     # reposted with new information.
-    if entityColl.find_one({'msgs': {'$elemMatch': {
+    if msgColl.find_one({
             'service': msg['service'], 'msg_id': msg['msg_id'],
-            'subset': msg['subset'],
-            }}}, {'_id': True}, limit=1, timeout=False):
+            }, {'_id': True}, limit=1, timeout=False):
         return False
+    entityColl = getDb('entity', state)
     entity, changed = getEntityByName(state, {
         'service': msg['service'],
         'user_id': msg['user_id'],
@@ -589,8 +636,6 @@ def ingestMessage(state, msg):
                 entityColl.save(entity)
             found = True
             break
-    if found and not changed:
-        return False
     if not found:
         newmsg = {
             'service': msg['service'],
@@ -608,6 +653,9 @@ def ingestMessage(state, msg):
         entityColl.save(entity)
     # Mark descendants as dirty (for when we merge nodes)
     # ##DWM::
+    msgColl.save(msg)
+    if found and not changed:
+        return False
     return True
 
 

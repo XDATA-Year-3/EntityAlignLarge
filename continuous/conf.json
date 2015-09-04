@@ -11,6 +11,10 @@
     "metrics": {
       "dbUri": "mongodb://127.0.0.1:27017/syria",
       "collection": "metrics"
+    },
+    "msg": {
+      "dbUri": "mongodb://127.0.0.1:27017/syria",
+      "collection": "msg"
     }
   },
   "topk": {
