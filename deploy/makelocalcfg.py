@@ -12,8 +12,10 @@ cfg = """
     "entities"      : "%HOSTIP%:9200!test1!entity",
     "metrics"       : "%HOSTIP%:9200!test1!metrics",
     "rankings"      : "%HOSTIP%:9200!test1!rankings",
-    "istRankingsOld": "https://memex:3vYAZ8bSztbxmznvhD4C@els.istresearch.com:49200/syrian_visa",
-    "istRankings"   : "http://%HOSTIP%:9200/syrian_visa",
+    "istRankings"   : "https://memex:--@els.istresearch.com:49200/syrian_visa-1/Tweet,QCR_Holding,Child_Exploitation,HG_Profiler",
+    "nameRankings"  : "https://memex:--@els.istresearch.com:49200/syrian_visa-1/name",
+    "userRankings"  : "https://memex:--@els.istresearch.com:49200/syrian_visa-1/user",
+    "istRankingsLocal"   : "http://%HOSTIP%:9200/syrian_visa",
     "loggingUrl"    : "http://10.253.253.253",
     "toolVersion"   : "1.0.0",
     "sendLogs"      : false

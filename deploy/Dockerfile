@@ -48,7 +48,7 @@ RUN git config --global url."https://".insteadOf git://
 
 RUN git clone git://github.com/XDATA-Year-3/EntityAlignLarge && \
     cd EntityAlignLarge && \
-    git checkout 89ae2ac3cd4fdd4e6ea97889df446557d56adc3b && \
+    git checkout 243bfba863a8f44c729c3e1b1d8eaba694eb8f75 && \
     git reset --hard
 WORKDIR /home/kwuser/EntityAlignLarge
 ENV PATH $PATH:/home/kwuser/.local/bin
