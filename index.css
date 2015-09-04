@@ -171,3 +171,7 @@ nav ol{overflow:hidden; overflow-y:scroll;}
 .user-metric-label::after {
     content: ": ";
 }
+ul.ui-autocomplete {
+    max-height: 80%;
+    overflow-y: auto;
+}
