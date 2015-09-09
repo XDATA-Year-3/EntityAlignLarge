@@ -55,10 +55,6 @@ def levenshteinSimilarity(s1, s2):
     # The C-module version of Levenshtein is vastly faster
     if Levenshtein is None:
         return (totalLen - levenshtein(s1, s2)) / totalLen
-    if isinstance(s1, str):
-        s1 = s1.decode('utf8')
-    if isinstance(s2, str):
-        s2 = s2.decode('utf8')
     return (totalLen - Levenshtein.distance(s1, s2)) / totalLen
 
 
@@ -75,6 +71,7 @@ class MetricLevenshtein(metric.Metric):
             'msgs.service': True,
             'msgs.subset': True
         }
+        self.normalizeNames = True
         self.saveWork = True
 
     def calc(self, ga, work, **kwargs):
@@ -104,34 +101,33 @@ class MetricLevenshtein(metric.Metric):
         """
         # We actually calculate the BEST levenshtein similarity between any
         # name of ga with any name of gb and use that.
+        cat = metric.topKCategories(gb)
         simName = simFull = simBoth = 0
-        for gaName in ga['name']:
-            for gbName in gb['name']:
-                # Note: both gaName and gbName are lowercase.  We may wish to
-                # also find the substring match between fullnames.
+        gaNames = ga['normname']
+        gbNames = gb['normname']
+        gaFullnames = ga['normfullname']
+        gbFullnames = gb['normfullname']
+        for gaName in gaNames:
+            for gbName in gbNames:
+                # Note: both gaName and gbName are lowercase.
                 simName = max(simName, levenshteinSimilarity(gaName, gbName))
-            for gbName in gb['fullname']:
-                simBoth = max(simBoth, levenshteinSimilarity(gaName,
-                                                           gbName.lower()))
-        for gaName in ga['fullname']:
-            for gbName in gb['fullname']:
-                # Note: both gaName and gbName are lowercase.  We may wish to
-                # also find the levenshtein match between fullnames.
-                simFull = max(simFull, levenshteinSimilarity(
-                    gaName.lower(), gbName.lower()))
-            for gbName in gb['name']:
-                simBoth = max(simBoth, levenshteinSimilarity(gaName.lower(),
-                                                           gbName))
+            for gbName in gbFullnames:
+                simBoth = max(simBoth, levenshteinSimilarity(gaName, gbName))
+        for gaName in gaFullnames:
+            for gbName in gbFullnames:
+                simFull = max(simFull, levenshteinSimilarity(gaName, gbName))
+            for gbName in gbNames:
+                simBoth = max(simBoth, levenshteinSimilarity(gaName, gbName))
         simBoth = max(simBoth, simName, simFull)
         if simName:
             metric.trackTopK(work['name'], simName, gb['_id'],
-                             metric.topKCategories(gb), state)
+                             cat, state)
         if simFull:
             metric.trackTopK(work['fullname'], simFull, gb['_id'],
-                             metric.topKCategories(gb), state)
+                             cat, state)
         if simBoth:
             metric.trackTopK(work['name_fullname'], simBoth, gb['_id'],
-                             metric.topKCategories(gb), state)
+                             cat, state)
 
     def calcEntityPrep(self, ga, work={}, **kwargs):
         """
@@ -141,8 +137,9 @@ class MetricLevenshtein(metric.Metric):
         :param work: an object for working on the metric.  Results should be
                      stored here.
         """
+        metric.normalizeNames(ga)
         for key in ('name', 'fullname', 'name_fullname'):
-            if not key in work:
+            if key not in work:
                 work[key] = {}
 
 

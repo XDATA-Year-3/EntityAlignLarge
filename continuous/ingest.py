@@ -33,7 +33,8 @@ Timers = {'lastreport': time.time()}
 
 # -------- General Functions --------
 
-def bufferedQuery(buffer, key, coll, query, fields=None, maxBuffer=2000000):
+def bufferedQuery(buffer, key, coll, query, fields=None, maxBuffer=2000000,
+                  verbose=0, normalizeNames=False):
     """
     Buffer some queries we expect to be repeated.  When using a buffered query,
     the results are a list instead of a cursor.
@@ -44,6 +45,8 @@ def bufferedQuery(buffer, key, coll, query, fields=None, maxBuffer=2000000):
     :param query: the query.
     :param fields: the fields to return from the query.
     :param maxBuffer: max count to buffer.
+    :param verbose: log verbosity.
+    :param normalizeNames: if True, normalize names.
     :returns: either a cursor or a list.
     """
     if (key in buffer and coll == buffer[key]['coll'] and
@@ -52,10 +55,32 @@ def bufferedQuery(buffer, key, coll, query, fields=None, maxBuffer=2000000):
         return buffer[key]['last']
     cursor = coll.find(query, fields, timeout=False)
     if cursor.count() <= maxBuffer:
-        cursor = [row for row in cursor]
+        if verbose >= 2:
+            print 'Buffered', key, query, fields
+        newlist = []
+        allmsg = []
+        for row in cursor:
+            if len(row.get('msgs', [])):
+                msgs = []
+                for msg in row['msgs']:
+                    if msg not in msgs:
+                        if msg not in allmsg:
+                            allmsg.append(msg)
+                        msg = allmsg[allmsg.index(msg)]
+                        msgs.append(msg)
+                row['msgs'] = msgs
+            if normalizeNames:
+                metric.normalizeNames(row)
+                del row['name']
+                del row['fullname']
+                row = row.copy()  # can reduce memory footprint
+            newlist.append(row)
+            if verbose >= 2 and not len(newlist) % 10000:
+                print '%d' % len(newlist), len(allmsg)
         buffer[key] = {
-            'coll': coll, 'query': query, 'fields': fields, 'last': cursor
+            'coll': coll, 'query': query, 'fields': fields, 'last': newlist
         }
+        cursor = newlist
     return cursor
 
 
@@ -223,13 +248,20 @@ def calculateOneMetric(entityColl, linkColl, metColl, metClass, entity,
         query = ({} if not metClass.onEntitiesOnlyNew or refresh else
                  {'date_updated': {'$gte': metricDoc['date_updated']}})
         fields = getattr(metClass, 'entityFields', None)
-        res = bufferedQuery(queryBuffer, metClass.name, entityColl, query,
-                            fields)
+        bufkey = 'metric' + (
+            'norm' if getattr(metClass, 'normalizeNames') else '')
+        res = bufferedQuery(
+            queryBuffer, bufkey, entityColl, query, fields,
+            verbose=state['args']['verbose'],
+            normalizeNames=getattr(metClass, 'normalizeNames'))
         if ((isinstance(res, list) and len(res)) or
                 (not isinstance(res, list) and res.count())):
             metClass.calcEntityPrep(entity, **kwargs)
             for gb in res:
                 if castObjectId(gb) != entityId:
+                    if (not isinstance(res, list) and
+                            getattr(metClass, 'normalizeNames')):
+                        metric.normalizeNames(gb)
                     metClass.calcEntity(entity, gb, **kwargs)
     if metClass.onLinks:
         query = ({} if not metClass.onLinksOnlyNew or refresh else

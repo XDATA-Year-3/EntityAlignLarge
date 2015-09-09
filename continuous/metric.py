@@ -6,6 +6,7 @@
 import collections
 import importlib
 import pprint
+import unicodedata
 
 LoadedMetrics = collections.OrderedDict()
 
@@ -136,6 +137,31 @@ def loadMetric(metricClass, initVal=None):
         return True
 
 
+def normalizeAndLower(text):
+    """
+    Convert some text so that it is normalized and lowercased unicode.
+
+    :param text: the text to alter.
+    :returns: the normalized and lower-cased text.
+    """
+    if isinstance(text, str):
+        text = text.decode('utf8')
+    text = unicodedata.normalize('NFC', text)
+    return text.lower()
+
+
+def normalizeNames(entity):
+    """
+    Normalize the name and fullname lists in an entity.
+
+    :param entity: the entity to modify.
+    """
+    entity['normname'] = list({normalizeAndLower(name)
+                               for name in entity['name']})
+    entity['normfullname'] = list({normalizeAndLower(name)
+                                   for name in entity['fullname']})
+
+
 def topKCategories(entity):
     """
     Return a set of categories used for tracking topk.
@@ -144,7 +170,7 @@ def topKCategories(entity):
     :returns: a set of categories.
     """
     cat = set()
-    if entity.get('service', None):
+    if entity.get('service'):
         cat.add(entity['service'])
     for msg in entity.get('msgs', []):
         cat.update([msg['service'] + '-' + subset for subset in msg['subset']])
@@ -217,13 +243,12 @@ def trackTopK(topkDict, value, id, cats, state):
                 break
     # Skip this one if we can tell it shouldn't be added.
     if (len(topk) >= k and value < topk[-1][0] and
-            min([topkDict['cats'].get(cat, 0) for cat in cats]) >= k):
+            not any(topkDict['cats'].get(cat, 0) < k for cat in cats)):
         return False
     # Add the entry to the list
     entry = (value, id, cats)
     topk.append(entry)
-    topk.sort()
-    topk.reverse()
+    topk.sort(reverse=True)
     topkDict['ids'][id] = True
     for cat in cats:
         topkDict['cats'][cat] = topkDict['cats'].get(cat, 0) + 1
@@ -271,3 +296,25 @@ def trackTopKRemove(topkDict, entry):
             if not remove:
                 break
     return kept
+
+
+def trackTopKWorst(topkDict, cats, low):
+    """
+    Determine the worst value that we need to care about for tracking the
+    sepecified categories.
+
+    :param topkDict: a dictionary with the top-k.
+    :param cats: a set of categories for a potential item.
+    :param low: a fall-back low value.
+    :return: The worst value that could be added to the top-k for these
+             categories.
+    """
+    if not cats or not len(cats) or 'topk' not in topkDict:
+        return low
+    topk = topkDict['topk']
+    k = topkDict['k']
+    if len(topk) < k or isinstance(topk[0][-1], list):
+        return low
+    if any(topkDict['cats'].get(cat, 0) < k for cat in cats):
+        return low
+    return topk[-1][0]
