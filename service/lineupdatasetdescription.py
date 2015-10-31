@@ -35,7 +35,7 @@ def run(displaymode):
                                {'column': translate['2spectral'], 'type': 'number', 'domain': [0,1]}]
         response['layout'] = {'primary': [{'column': translate['entity'], 'width':100},
                                           {"type": "stacked", "label": "Combined", "children": [{'column': translate['apriori'],'width':150},
-                                                                                                {'column': 'LSGM','width':50},
+                                                                                                #{'column': 'LSGM','width':50},
                                                                                                 {'column': translate['lev'],'width':50},
                                                                                                 {'column': translate['substring'],'width':50},
                                                                                                 {'column': translate['1hop'],'width':50},
