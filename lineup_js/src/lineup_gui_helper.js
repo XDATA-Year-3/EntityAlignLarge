@@ -222,6 +222,8 @@ var LineUp;
       }).on("input", function (d) {
         data[d.index].weight = +this.value;
         redraw();
+        // add Draper logging
+        logReweightStackedColumn()
       });
 
     trs.append("td").append("div").attr("class", "predictBar").style({
@@ -732,6 +734,8 @@ var LineUp;
     function dragWeightStarted() {
       d3.event.sourceEvent.stopPropagation();
       d3.select(this).classed('dragging', true);
+      // add Draper logging of event
+      logDragColumnStart()
     }
 
 
@@ -748,6 +752,8 @@ var LineUp;
         that.listeners['change-sortcriteria'](that, that.config.columnBundles.primary.sortedColumn);
         that.storage.resortData({column: that.config.columnBundles.primary.sortedColumn});
         that.updateBody(that.storage.getColumnLayout(), that.storage.getData(), false);
+      // add Draper logging of event
+      logDragColumnEnded()
       }
 //        that.updateBody(that.storage.getColumnLayout(), that.storage.getData())
 

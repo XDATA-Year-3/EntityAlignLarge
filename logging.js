@@ -132,6 +132,62 @@ function logSelectLineUpEntry() {
             log(msg);        
 }
 
+
+
+function logDragColumnStart() {
+    var msg = {
+                activity: 'alter',
+                action: 'DRAG',
+                elementId: 'lugui-wrapper',
+                elementType: 'DATAGRID',
+                elementGroup: 'column_group',
+                source: 'user',
+                tags: ['columnDragStart']
+            };
+            log(msg);
+}
+
+
+
+function logDragColumnEnded() {
+    var msg = {
+                activity: 'alter',
+                action: 'DRAG',
+                elementId: 'lugui-wrapper',
+                elementType: 'DATAGRID',
+                elementGroup: 'column_group',
+                source: 'user',
+                tags: ['columnDragEnd']
+            };
+            log(msg);
+}
+
+function logReweightStackedColumn() {
+    var msg = {
+                activity: 'alter',
+                action: 'DRAG',
+                elementId: 'lugui-wrapper',
+                elementType: 'DATAGRID',
+                elementGroup: 'column_group',
+                source: 'user',
+                tags: ['rewightStackedColumn']
+            };
+            log(msg);    
+}
+
+function logChangeColumnValueMapping() {
+     var msg = {
+                activity: 'alter',
+                action: 'EDIT',
+                elementId: 'lugui-wrapper',
+                elementType: 'DATAGRID',
+                elementGroup: 'column_group',
+                source: 'user',
+                tags: ['changeColumnValueMapping']
+            };
+            log(msg);   
+}
+
 function initializeLoggingFramework(defaults) {
 
      extend = function() {
