@@ -1,6 +1,6 @@
 {
-    "mongoHost"     : "localhost",
-    "graphsDatabase": "qcr_mentions",
+    "mongoHost"     : "127.0.0.1",
+    "graphsDatabase": "may2016_isil",
     "twitter"       : "twitter_isil_36_nodelink",
     "instagram"     : "twitter_isil_36_nodelink",
     "loggingUrl"    : "http://172.16.1.100",

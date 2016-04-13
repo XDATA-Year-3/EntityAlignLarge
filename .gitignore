@@ -1,3 +1,5 @@
-*.swp
-*.swo
-*.pyc
+*.sw[op]
+*.py[cod]
+env/*
+built/*
+node_modules
