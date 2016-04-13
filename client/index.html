@@ -4,22 +4,14 @@
   <title>Large Network Alignment</title>
   <link rel="shortcut icon" href="icon.png">
   <script src="libs/libs.min.js"></script>
+  <script src="libs/libs-additional.min.js"></script>
   <link href="libs/libs.min.css" rel="stylesheet">
   <script src="userale/userale.js"></script>
 
-<!-- for clique -->
+<!-- for clique; keep this until we refactor to use modern clique -->
 <script src="cache/cola.v3.min.js"></script>
-
-
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
-<link rel="stylesheet" href="cache2/bootstrap.min.css">
-<link rel="stylesheet" href="index.css">
-
-
 <script src="cache/clique.js"></script>  
 
-
-<link href=//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css rel=stylesheet>
 
 <!--  lineup inclusions -->
 
@@ -27,7 +19,6 @@
 <script src="lineup_js/src/lineup_datastructure.js"></script>
 <script src="lineup_js/src/lineup_storage.js"></script>
 
-<link href='//fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'>
 <link href="lineup_js/css/font-awesome.min.css" rel="stylesheet">
 <link href="lineup_js/css/style.css" rel="stylesheet">
 <link href="lineup_js/demo/css/style-demo.css" rel="stylesheet">
@@ -40,72 +31,7 @@
 
 <script src="lineup_js/demo/lineup_demo.js"></script>
 
-
-<!-- Latest compiled and minified Bootstrap Table JavaScript for the pairings list -->
-<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/bootstrap-table.min.js"></script>
-
-
-<style>
-    html, body {
-        height: 100%;
-        background-color: lightgray;
-    }
-
-    body {
-        padding-top: 50px;
-    }
-
-    #control-panel {
-        background-color: lightgray;
-    }
-
-    #controls {
-      background-color: ghostwhite;
-      height: 100%;
-      overflow: scroll;
-    }
-
-    .container-fluid {
-      height: 100%;
-    }
-
-    .row {
-        height: 100%;
-    }
-
-    select.form-control {
-      background-color: white;
-      padding-left: 10px;
-      padding-right: 10px;
-    }
-
-    p {
-        color: gray;
-    }
-
-    h3 {
-        color: gray;
-    }
-    #map img {
-        max-width: none;
-    }
-
-
-    .link {
-      stroke: #999;
-      stroke-opacity: .6;
-    }
-
-</style>
-
-<!-- definition for scrollable list of active entities -->
-<style>
-  nav ol{height:300px; width:200px;}
-  nav ol{overflow:hidden; overflow-y:scroll;}
-</style>
-
-<!-- for the bootstrap table in the pairings popover -->
-<link rel="stylesheet" href="bootstrap-table.css">
+  <link rel="stylesheet" href="index.css">
 
 </head>
 <body class=fuelux>
@@ -333,7 +259,7 @@
   <!-- right panel for graph 2 -->
 
      <div class=col-md-3>
-        <h4 id='graph2-selector' class="form-control" style="font-size: 24px; margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px; width: calc(100% - 30px);" ></h4>
+        <h4 id='graph2-selector' class="NOTform-control" style="font-size: 24px; margin-left: 20px; margin-top: 20px; margin-bottom: 20px; margin-right: 40px; width: calc(100% - 30px);" ></h4>
         <p id='gb-summary'></p>
         <text  id="gb-nodeCount" style="margin-left:20px">0 </text>
         <text  style="margin-left:20px">nodes loaded</text>

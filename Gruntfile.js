@@ -103,12 +103,11 @@ module.exports = function (grunt) {
         files: {
           'built/libs/libs.min.css': [
             'node_modules/bootstrap/dist/css/bootstrap.css',
-            'node_modules/bootstrap-slider/dist/css/bootstrap-slider.css',
-            'node_modules/bootstrap-table/dist/bootstrap-table.css',
             'node_modules/jquery-ui-bundle/jquery-ui.css',
             'node_modules/font-awesome/css/font-awesome.css',
             'node_modules/LineUpJS/css/style.css',
             'node_modules/LineUpJS/demo/css/style-demo.css',
+            'node_modules/bootstrap-table/dist/bootstrap-table.css',
             'built/googlefonts.css'
           ]
         }
@@ -155,6 +154,13 @@ module.exports = function (grunt) {
       },
       googlefonts: {
         command: 'node node_modules/google-fonts-offline/bin/goofoffline outDir=built/libs outCss=../googlefonts.css \'http://fonts.googleapis.com/css?family=Lato:400,700\''
+      },
+      npmlibs: {
+        command: [
+          'cd node_modules/Clique',
+          'npm install',
+          'npm run build'
+        ].join(' && ')
       }
     },
 
@@ -179,28 +185,8 @@ module.exports = function (grunt) {
           src: 'cache',
           dest: 'built/cache'
         }, {
-          src: 'cache2',
-          dest: 'built/cache2'
-        }, {
           src: 'lineup_js',
           dest: 'built/lineup_js'
-        }, {
-          src: 'logging.js',
-          dest: 'built/logging.js'
-        }, {
-          src: 'entity-align.js',
-          dest: 'built/entity-align.js'
-        }, {
-          src: 'bootstrap-table.css',
-          dest: 'built/bootstrap-table.css'
-        /* DWM::
-        }, {
-          src: 'metrics.json',
-          dest: 'built/metrics.json'
-        }, {
-          src: 'locations.dat',
-          dest: 'built/locations.dat'
-        */
         }]
       }
     },
@@ -231,13 +217,17 @@ module.exports = function (grunt) {
             'node_modules/underscore/underscore.js',
             'node_modules/backbone/backbone.js',
             'node_modules/bootstrap/dist/js/bootstrap.js',
-            'node_modules/bootstrap-slider/js/bootstrap-slider.js',
             'node_modules/bootstrap-table/dist/bootstrap-table.js',
             'node_modules/LineUpJS/dist/LineUpJS.js',
-            'node_modules/mousetrap/mousetrap.js',
-            'node_modules/sprintf-js/dist/sprintf.min.js',
-            'node_modules/jade/runtime.js',
+            // 'node_modules/jade/runtime.js',
             'built/entitylib-version.js'
+          ]
+        }
+      },
+      npmlibs: {
+        files: {
+          'built/libs/libs-additional.min.js': [
+            'node_modules/Clique/dist/clique.js'
           ]
         }
       }
@@ -312,6 +302,11 @@ module.exports = function (grunt) {
 
   grunt.registerTask('libversion-info', [
     'file-creator:libs'
+  ]);
+
+  grunt.registerTask('npmlibs', [
+    'shell:npmlibs',
+    'uglify:npmlibs'
   ]);
 
   grunt.registerTask('build-default', [
