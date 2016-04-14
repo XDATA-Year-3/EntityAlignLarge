@@ -1,18 +1,6 @@
-/* globals $, console, d3, log, clique, lineup,
+/* globals $, console, d3, log, clique, createLineup,
    initializeLoggingFramework, logPublishPairings, logOpenTwitterWindow,
-   logOpenInstagramWindow, logSetupLineUp, logSelectLineUpEntry,
-   loadDataImpl */
-
-/* DWM::
-var color = null;
-
-var graph = null;
-var svg = null;
-var width = 0;
-var height = 0;
-var transition_time;
-var translate = [0, 0];
-*/
+   logOpenInstagramWindow, logSetupLineUp, logSelectLineUpEntry */
 
 var entityAlign = {};
 entityAlign.force1 = null;
@@ -543,8 +531,8 @@ function InitializeLineUpAroundEntity (handle) {
       d3.json('service/lineupdataset/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + graphA + '/' + graphB + '/' + handle + '/' + displaymode, function (ignore_err, dataset) {
         console.log('lineup loading description:', desc);
         console.log('lineup loading dataset for handle:', handle, dataset.result);
-        loadDataImpl(name, desc, dataset.result);
-        lineup.sortBy('Combined');
+        createLineup('#lugui-wrapper', 'main', desc, dataset.result, undefined,
+                     'Combined', selectEntityFromLineup);
       });
     } else {
       console.log('local network');
@@ -553,7 +541,8 @@ function InitializeLineUpAroundEntity (handle) {
         d3.json('service/lineupdataset_neighborhood/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + graphA + '/' + handle + '/' + encodedEntityList + '/' + displaymode, function (ignore_err, dataset) {
           console.log('lineup loading description:', desc);
           console.log('lineup loading dataset for handle:', handle, dataset.result);
-          loadDataImpl(name, desc, dataset.result);
+          createLineup('#lugui-wrapper', 'main', desc, dataset.result,
+                       undefined, 'Combined', selectEntityFromLineup);
         });
       });
     }
@@ -578,6 +567,17 @@ function ExploreLocalGraphBregion (handle) {
   logSelectLineUpEntry();
   document.getElementById('gb-name').value = handle;
   initGraph2WithClique();
+}
+
+/* When a lineup row is selected, change what graph B is showing.
+ *
+ * @param row: the selected lineup row.
+ */
+function selectEntityFromLineup (row) {
+  if (!row || !row.entity) {
+    return;
+  }
+  ExploreLocalGraphBregion(row['entity']);
 }
 
 // this function resets lineup to the appropriate view whenever the focus selector is changed

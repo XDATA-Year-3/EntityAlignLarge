@@ -4,7 +4,9 @@
   <title>Large Network Alignment</title>
   <link rel="shortcut icon" href="icon.png">
   <script src="libs/libs.min.js"></script>
+  <!--
   <script src="libs/libs-additional.min.js"></script>
+  -->
   <link href="libs/libs.min.css" rel="stylesheet">
   <script src="userale/userale.js"></script>
 
@@ -14,6 +16,7 @@
 
 
 <!--  lineup inclusions -->
+<!--
 <script src="lineup_js/demo/libs/FileSaver.js"></script>
 <script src="lineup_js/src/lineup_datastructure.js"></script>
 <script src="lineup_js/src/lineup_storage.js"></script>
@@ -29,11 +32,13 @@
 <script src="lineup_js/src/lineup_mappingeditor.js"></script>
 
 <script src="lineup_js/demo/lineup_demo.js"></script>
+-->
 
   <link rel="stylesheet" href="index.css">
   <script src="logging.js"></script>
+  <script src="lineupWidget.js"></script>
   <!-- Driver script for this app -->
-  <script src=entity-align.js></script>
+  <script src="entity-align.js"></script>
 
 </head>
 <body>
@@ -248,13 +253,12 @@
    <!-- center panel for showing the ranking results -->
 
     <div id='controls' class=col-md-6>
+      <div class="lineup_container">
    
-            <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
+        <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
 
-                <!-- included excerpt from lineup definition -->
-                <div id="lugui-wrapper"></div>
-                 <!--   <script src="lineup.js/dist/LineUpJS.js"></script> -->
-
+        <div id="lugui-wrapper"></div>
+      </div>
     </div>
    
 

@@ -32,7 +32,8 @@ def run(displaymode):
                                {'column': translate['substring'],'type':'number', 'domain':[0,1]},
                                {'column': '1hop','type':'number', 'domain':[0,1]},
                                {'column': '2hop','type':'number', 'domain':[0,1]}]
-        response['layout'] = {'primary': [{'column': translate['entity'], 'width':100},
+        response['layout'] = {'primary': [{'type': 'rank', 'width': 50},
+                                          {'column': translate['entity'], 'width':100},
                                           {"type": "stacked", "label": "Combined", "children": [
                                                                                                 {'column': 'lsgm','width':150},
                                                                                                 {'column': translate['lev'],'width':120},

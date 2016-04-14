@@ -159,7 +159,10 @@ module.exports = function (grunt) {
         command: [
           'cd node_modules/Clique',
           'npm install',
-          'npm run build'
+          'npm run build',
+          'cd ../candela',
+          'npm install',
+          'npm run dist'
         ].join(' && ')
       }
     },
@@ -218,6 +221,7 @@ module.exports = function (grunt) {
             'node_modules/backbone/backbone.js',
             'node_modules/bootstrap/dist/js/bootstrap.js',
             'node_modules/bootstrap-table/dist/bootstrap-table.js',
+            //'node_modules/LineUpJS/libs/d3.js',
             'node_modules/LineUpJS/dist/LineUpJS.js',
             // 'node_modules/jade/runtime.js',
             'built/entitylib-version.js'
@@ -227,7 +231,8 @@ module.exports = function (grunt) {
       npmlibs: {
         files: {
           'built/libs/libs-additional.min.js': [
-            'node_modules/Clique/dist/clique.js'
+            'node_modules/Clique/dist/clique.js',
+            'node_modules/candela/dist/candela.js'
           ]
         }
       }
