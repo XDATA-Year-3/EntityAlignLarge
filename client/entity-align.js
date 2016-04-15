@@ -1,4 +1,4 @@
-/* globals $, console, d3, log, clique, createLineup,
+/* globals $, _, console, d3, log, clique, createLineup,
    initializeLoggingFramework, logPublishPairings, logOpenTwitterWindow,
    logOpenInstagramWindow, logSetupLineUp, logSelectLineUpEntry */
 
@@ -616,15 +616,9 @@ function acceptListedPairing () {
 
   var newPairing = {'twitter': handleA, 'instagram': handleB};
 
-  // store an entry only if the array doesn't already have the entry
-  // tried $.inArray()  and .indexOf() unsuccessfully
-
-  var found = false;
-  for (var pair in entityAlign.pairings) {
-    if (pair['twitter'] === handleA && pair['instagram'] === handleB) {
-      found = true;
-    }
-  }
+  var found = _.any(entityAlign.pairings, function (pair) {
+    return (pair['twitter'] === handleA && pair['instagram'] === handleB);
+  });
   if (found === false) {
     entityAlign.pairings.push(newPairing);
     console.log('new pairing: ', newPairing);

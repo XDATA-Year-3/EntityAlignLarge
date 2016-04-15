@@ -187,9 +187,6 @@ module.exports = function (grunt) {
         }, {  /* DWM:: */
           src: 'cache',
           dest: 'built/cache'
-        }, {
-          src: 'lineup_js',
-          dest: 'built/lineup_js'
         }]
       }
     },
