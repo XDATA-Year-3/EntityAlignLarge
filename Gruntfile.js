@@ -159,10 +159,10 @@ module.exports = function (grunt) {
         command: [
           'cd node_modules/Clique',
           'npm install',
-          'npm run build',
+          'npm run build' /*,
           'cd ../candela',
           'npm install',
-          'npm run dist'
+          'npm run dist' */
         ].join(' && ')
       }
     },
@@ -184,9 +184,6 @@ module.exports = function (grunt) {
         }, {
           src: 'defaults.json',
           dest: 'built/defaults.json'
-        }, {  /* DWM:: */
-          src: 'cache',
-          dest: 'built/cache'
         }]
       }
     },
@@ -213,12 +210,12 @@ module.exports = function (grunt) {
           'built/libs/libs.min.js': [
             'node_modules/jquery/dist/jquery.js',
             'node_modules/jquery-ui-bundle/jquery-ui.js',
-            'node_modules/d3/d3.js',
+            /* We get d3 with Clique, so don't include it here. */
+            // 'node_modules/d3/d3.js',
             'node_modules/underscore/underscore.js',
             'node_modules/backbone/backbone.js',
             'node_modules/bootstrap/dist/js/bootstrap.js',
             'node_modules/bootstrap-table/dist/bootstrap-table.js',
-            //'node_modules/LineUpJS/libs/d3.js',
             'node_modules/LineUpJS/dist/LineUpJS.js',
             // 'node_modules/jade/runtime.js',
             'built/entitylib-version.js'
@@ -228,8 +225,9 @@ module.exports = function (grunt) {
       npmlibs: {
         files: {
           'built/libs/libs-additional.min.js': [
-            'node_modules/Clique/dist/clique.js',
-            'node_modules/candela/dist/candela.js'
+            // 'node_modules/candela/dist/candela.js',
+            'node_modules/Clique/dist/clique.js'
+            // 'node_modules/Clique/src/tangelo/mongo/web/mongo.js'
           ]
         }
       }
@@ -243,14 +241,10 @@ module.exports = function (grunt) {
             fd,
             [
               '/* global entity: true */',
-              '/* jshint ignore: start */',
-              '//jscs:disable',
               'window.versionInfo = ',
               entityVersion,
               ';',
-              'window.versionInfo.libVersion = libVersionInfo;',
-              '/* jshint ignore: end */',
-              '//jscs:enable\n'
+              'window.versionInfo.libVersion = libVersionInfo;'
             ].join('\n')
           );
           done();
@@ -263,13 +257,9 @@ module.exports = function (grunt) {
             fd,
             [
               '/* global entity: true */',
-              '/* jshint ignore: start */',
-              '//jscs:disable',
               'window.libVersionInfo = ',
               entityLibVersion,
-              ';',
-              '/* jshint ignore: end */',
-              '//jscs:enable\n'
+              ';'
             ].join('\n')
           );
           done();

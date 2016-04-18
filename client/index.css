@@ -45,11 +45,6 @@ h3 {
   max-width: none;
 }
 
-.link {
-  stroke: #999;
-  stroke-opacity: .6;
-}
-
 /* definition for scrollable list of active entities */
 nav ol {
   height: 300px;
@@ -78,5 +73,26 @@ nav ol {
   width: 100%;
   height: 100%;
   position: relative;
+}
+
+#graph1,#graph2 {
+  height: 300px; 
+  width: 100%;
+}
+#info1,#info2 {
+  margin-top: 5px;
+}
+#info1 .pagination,#info2 .pagination {
+  margin: 0;
+}
+#info1 .container,#info2 .container {
+  padding: 0;
+}
+#info1>.container>.container>.row+.row,#info2>.container>.container>.row+.row {
+  display: none;
+}
+#info1>.container>.container>.row table td:first-child,#info2>.container>.container>.row table td:first-child {
+  max-width: 150px;
+  overflow: hidden
 }
 

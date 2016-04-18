@@ -9,6 +9,14 @@ entityAlign.host = null;
 entityAlign.ac = null;
 entityAlign.textmode = false;
 
+var defaultCola = {
+  linkDistance: 75,
+  nodeRadius: 5,
+  label: function (d) {
+    return d.data ? (d.data.name || '') : '';
+  }
+};
+
 // logging is handled largely in
 
 function logSystemActivity (group, element, activityEnum, action, tags) {
@@ -273,39 +281,46 @@ function initGraph1WithClique () {
   // var logText = 'dataset1 select: start=' + graphPathname;
   // logSystemActivity('Kitware entityAlign - '+logText);
 
-  window.graph1 = graph1 = new clique.Graph({
-    adapter: clique.adapter.Mongo,
-    options: {
+  window.graph1 = graph1 = new clique.default.model.Graph({
+    adapter: clique.adapter.Mongo({
       host: entityAlign.host,
       database: entityAlign.graphsDatabase,
       collection: selectedDataset
-    }
+    })
   });
 
   console.log('selectedDataset', selectedDataset);
+  window.view1 = view1 = new clique.default.view.Cola($.extend(
+    {}, defaultCola, {
+      model: graph1,
+      el: '#graph1'
+    }
+  ));
 
-  graph1.adapter.findNode({name: centralHandle})
-            .then(function (center) {
-              console.log('center:', center);
-              if (center) {
-                graph1.addNeighborhood({
-                  center: center,
-                  radius: 1,
-                  deleted: false
-                });
-              }
-            });
-
-  window.view1 = view1 = new clique.view.Cola({
-    model: graph1,
-    el: '#graph1'
-  });
-
-  window.info1 = new clique.view.SelectionInfo({
+  window.info1 = new clique.default.view.SelectionInfo({
     model: view1.selection,
     el: '#info1',
     graph: graph1
   });
+  window.info1.render();
+
+  /*
+  window.linkinfo1 = new clique.default.view.LinkInfo({
+    model: view1.linkSelection,
+    el: '#link-info',
+    graph: graph1
+  });
+  window.linkinfo1.render();
+  */
+
+  graph1.adapter.findNode({name: centralHandle})
+        .then(function (center) {
+          console.log('center:', center);
+          if (center) {
+            graph1.addNode(center);
+            graph1.addNeighborhood(center);
+          }
+        });
 }
 
 function initGraph2WithClique () {
@@ -322,38 +337,37 @@ function initGraph2WithClique () {
   //var logText = "dataset2 select: start="+graphPathname;
   //logSystemActivity('Kitware entityAlign - '+logText);
 
-  window.graph2 = graph2 = new clique.Graph({
-    adapter: clique.adapter.Mongo,
-    options: {
+  window.graph2 = graph2 = new clique.default.model.Graph({
+    adapter: clique.adapter.Mongo({
       host: entityAlign.host,
       database: entityAlign.graphsDatabase,
       collection: selectedDataset
+    })
+  });
+
+  window.view2 = view2 = new clique.default.view.Cola($.extend(
+    {}, defaultCola, {
+      model: graph2,
+      el: '#graph2'
     }
-  });
+  ));
 
-  graph2.adapter.findNode({name: centralHandle})
-            .then(function (center) {
-              console.log('center:', center);
-              if (center) {
-                graph2.addNeighborhood({
-                  center: center,
-                  radius: 1,
-                  deleted: false
-                });
-              }
-            });
-
-  window.view2 = view2 = new clique.view.Cola({
-    model: graph2,
-    el: '#graph2'
-  });
-
-  window.info2 = new clique.view.SelectionInfo({
+  window.info2 = new clique.default.view.SelectionInfo({
     model: view2.selection,
     el: '#info2',
     graph: graph2
   });
+
+  graph2.adapter.findNode({name: centralHandle})
+        .then(function (center) {
+          console.log('center:', center);
+          if (center) {
+            graph2.addNode(center);
+            graph2.addNeighborhood(center);
+          }
+        });
 }
+
 function publishPairLists () {
   logPublishPairings();
   console.log('publishing');
