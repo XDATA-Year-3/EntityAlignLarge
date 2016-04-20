@@ -38,7 +38,7 @@
     "jade": "~1.11",
     "jquery": "~2.2",
     "jquery-ui-bundle": "~1.11",
-    "LineUpJS": "git+https://github.com/Caleydo/lineup.js#51ae6f2bcb55aead3f63357864e90d5799789910",
+    "LineUpJS": "git+https://github.com/Caleydo/lineup.js#c70349be518936d6ef2b8ea9965c02e81caa57c3",
     "underscore": "~1.8"
   },
   "devDependencies": {

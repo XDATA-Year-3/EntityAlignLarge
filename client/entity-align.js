@@ -588,6 +588,7 @@ function ExploreLocalGraphBregion (handle) {
  * @param row: the selected lineup row.
  */
 function selectEntityFromLineup (row) {
+  console.log('select', arguments); //DWM::
   if (!row || !row.entity) {
     return;
   }

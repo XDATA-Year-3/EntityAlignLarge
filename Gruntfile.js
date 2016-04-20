@@ -105,7 +105,7 @@ module.exports = function (grunt) {
             'node_modules/bootstrap/dist/css/bootstrap.css',
             'node_modules/jquery-ui-bundle/jquery-ui.css',
             'node_modules/font-awesome/css/font-awesome.css',
-            'node_modules/LineUpJS/css/style.css',
+            'node_modules/LineUpJS/dist/style.css',
             'node_modules/LineUpJS/demo/css/style-demo.css',
             'node_modules/bootstrap-table/dist/bootstrap-table.css',
             'built/googlefonts.css'

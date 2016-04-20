@@ -1,19 +1,26 @@
-/* globals $, d3, LineUp */
+/* globals $, d3 */
 
 var lineUpConfig = {
   interaction: {
     tooltips: false
   },
   renderingOptions: {
-    animation: true
+    animation: true,
+    stacked: false
   },
-  svgLayout: {
+  header: {
+    headerHeight: 24
+  },
+  body: {  /* was called svgLayout */
     mode: 'separate',
-    rowPadding: 0
-  }
+    rowHeight: 18,
+    rowPadding: 2.0 / 18
+  },
+  manipulative: true  /* false to previce removing columns and other actions */
 };
 var lineup = {};
 var lineupCol = {};
+var lineupRankWidth = 50;
 
 /* Create or recreate a lineup control.
  *
@@ -28,6 +35,7 @@ var lineupCol = {};
  */
 function createLineup (elem, name, desc, dataset, lineupObj, sort,
                        selectCallback) {
+  var lineupjs = window.LineUpJS || window.LineUp;
   /* This has been parroted from the demo. */
   var spec = {};
   spec.name = name;
@@ -35,8 +43,9 @@ function createLineup (elem, name, desc, dataset, lineupObj, sort,
   delete spec.dataspec.file;
   delete spec.dataspec.separator;
   spec.dataspec.data = dataset;
-  spec.storage = LineUp.createLocalStorage(
-        dataset, desc.columns, desc.layout, desc.primaryKey);
+  spec.storage = lineupjs.createLocalStorage(dataset, lineupjs.deriveColors(
+      desc.columns));
+
   var config = ((lineupObj ? lineupObj.config : $.extend(
     {}, lineUpConfig)) || {});
   if (!config.renderingOptions) {
@@ -51,13 +60,15 @@ function createLineup (elem, name, desc, dataset, lineupObj, sort,
    * and regeneration works around it.  Both cases bleed memory, I think, and
    * regeneration is worse than update. */
   if (lineupObj && 0) {
-    lineupObj.changeDataStorage(spec);
+    // untested after refactor
+    lineupObj.changeDataStorage(spec.storage, desc);
   } else {
     $(elem).empty();
     /* Lineup takes a d3 element */
-    lineupObj = LineUp.create(spec, d3.select(elem), lineUpConfig);
+    lineupObj = lineupjs.create(spec.storage, d3.select(elem), lineUpConfig);
+    lineupObj.restore(desc);
     config = lineupObj.config;
-    lineupObj.dragWeight.on('dragend.lineupWidget', function (evt) {
+    lineupObj.header.dragHandler.on('dragend.lineupWidget', function (evt) {
       lineupDragColumnEnd(name, evt);
     });
   }
@@ -68,7 +79,7 @@ function createLineup (elem, name, desc, dataset, lineupObj, sort,
   if (sort) {
     lineupObj.sortBy(sort);
   }
-  config.renderingOptions.animation = oldAnimation;
+  lineupObj.changeRenderingOption('animation', oldAnimation);
   var fixTooltips = function () {
     for (var i = 0; i < desc.columns.length; i += 1) {
       if (desc.columns[i].description) {
@@ -79,8 +90,10 @@ function createLineup (elem, name, desc, dataset, lineupObj, sort,
     }
   };
   if (selectCallback) {
-    // lineupObj.off('selected.lineupWidget');
-    lineupObj.on('selected', selectCallback);
+    lineupObj.on('selectionChanged.lineupWidget', null);
+    lineupObj.on('selectionChanged.lineupWidget', function (row) {
+      selectCallback(dataset[row]);
+    });
   }
   /* Try twice to work around some issues */
   window.setTimeout(fixTooltips, 1);
@@ -99,6 +112,7 @@ function createLineup (elem, name, desc, dataset, lineupObj, sort,
  * @returns: relative scale of lineup to available space.
  */
 function createLineupAdjustWidth (elem, name, spec, fixed) {
+  var rankWidth = 0;
   var total = 0;
   var count = 0;
   var c1, c2;
@@ -111,11 +125,16 @@ function createLineupAdjustWidth (elem, name, spec, fixed) {
         total += lineupGetColumnWidth(name, col[c1].children[c2], fixed);
       }
     } else {
+      if (col[c1].type === 'rank') { /* LineUp wants this to be 50 */
+        rankWidth = lineupRankWidth + fixed;
+        continue;
+      }
       count += 1;
       total += lineupGetColumnWidth(name, col[c1], fixed);
     }
   }
-  var avail = width - count * fixed;
+  var avail = width - count * fixed - rankWidth;
+  avail -= count + (rankWidth ? 1 : 0); // I'm not sure why this is necessary
   var scale = avail / total;
   for (c1 = 0; c1 < col.length; c1 += 1) {
     if (col[c1].children) {
@@ -124,6 +143,9 @@ function createLineupAdjustWidth (elem, name, spec, fixed) {
       }
     } else {
       col[c1].width = fixed + col[c1].widthBasis * scale;
+      if (col[c1].type === 'rank') { /* LineUp wants this to be fixed */
+        col[c1].width = lineupRankWidth + fixed;
+      }
     }
   }
   return scale;
@@ -140,16 +162,16 @@ function lineupDragColumnEnd (name) {
     lineupCol[name] = {};
   }
   var record = lineupCol[name];
-  var col = lineup[name].storage.getColumnLayout();
+  var col = lineup[name].dump().rankings[0].columns;
   var scale = lineup[name]['column-scale'];
   var fixed = lineup[name]['column-fixed'];
   for (c1 = 0; c1 < col.length; c1 += 1) {
     if (col[c1].children) {
       for (c2 = 0; c2 < col[c1].children.length; c2 += 1) {
-        record[col[c1].children[c2].columnLink] = (col[c1].children[c2].columnWidth - fixed) / scale;
+        record[col[c1].children[c2].desc.split('@')[1]] = (col[c1].children[c2].width - fixed) / scale;
       }
     } else {
-      record[col[c1].columnLink || 'rank'] = (col[c1].columnWidth - fixed) / scale;
+      record[col[c1].desc.label ? 'rank' : col[c1].desc.split('@')[1]] = (col[c1].width - fixed) / scale;
     }
   }
 }
@@ -169,6 +191,9 @@ function lineupGetColumnWidth (name, col, fixed) {
     width = lineupCol[name][colname] + fixed;
   }
   var colWidth = width < fixed ? 0 : (width - fixed);
+  if (col === 'rank') {  /* defined in LineUp */
+    colWidth = lineupRankWidth;
+  }
   col.widthBasis = colWidth;
   col.widthFixed = fixed;
   return col.widthBasis;
