@@ -113,3 +113,17 @@ div.lu-header {
 div.lu text {
   baseline-shift: -1px;
 }
+div.lu .toolbar i.fa-pencil-square-o,div.lu .toolbar i.fa-toggle-left,div.lu .number .toolbar i.fa-filter {
+  display: none;
+}
+div.lu .header.rank .toolbar i.fa-times,
+div.lu .header.string .toolbar i.fa-times,
+div.lu .header.stack .toolbar i.fa-times {
+  display: none;
+}
+div.lu .header.rank~.header.rank .toolbar i.fa-times,
+div.lu .header.string~.header.string.toolbar i.fa-times,
+div.lu .header.stack~.header.stack .toolbar i.fa-times {
+  display: inline-block;
+}
+
