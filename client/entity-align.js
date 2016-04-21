@@ -130,8 +130,7 @@ function updateGraph1 () {
   document.getElementById('gb-name').value = '';
   $('#graph1').empty();
   $('#info1').empty();
-  // below is too powerful, it clears the LineUp area, but LU doesn't work anymore
-  //$('#lugui-wrapper').empty()
+  window.graph1 = null;
 }
 
 function updateGraph2 () {
@@ -145,7 +144,7 @@ function updateGraph2 () {
   document.getElementById('gb-name').value = '';
   $('#graph2').empty();
   $('#info2').empty();
-  //$('#lugui-wrapper').empty()
+  window.graph2 = null;
 }
 
 // The InitGraph functions are called the first time a graph is loaded from the graph datastore.  The ajax call to load from the store
@@ -261,6 +260,76 @@ function updateUserList (namelist) {
 
 // ------ end of autocomplete users
 
+/* Create a clique graph for a particular element and dataset.
+ *
+ * @param selectedDataset: name of the collection to load from.
+ * @param existing: optional existing graph information to update.
+ * @param graphElement: name of the selector to place the graph (e.g.,
+ *                      '#graph1')
+ * @param infoElement: optional name of selector to place info element that is
+ *                     shown when a node is selected.
+ * @param linkInfoElement: optional name of selector to place link info element
+ *                         that is shown when a link is selected.
+ * @returns: an object with graph, view, info, linkinfo, and selectedDataset.
+ */
+function createCliqueGraph (selectedDataset, existing, graphElement, infoElement, linkInfoElement) {
+  'use strict';
+
+  if (existing) {
+    if (existing.adapter) {
+      /* Cancel old pending requests */
+      existing.adapter.cancel();
+      //DWM:: clear old graph for reuse?
+    }
+  }
+  // reuse ?
+  if (!existing || existing.selectedDataset !== selectedDataset || true) {
+    existing = null;
+  }
+
+  var graph = {selectedDataset: selectedDataset};
+
+  if (existing) {
+    graph.graph = existing.graph;
+  } else {
+    graph.adapter = clique.adapter.Mongo({
+      host: entityAlign.host,
+      database: entityAlign.graphsDatabase,
+      collection: selectedDataset
+    });
+    graph.graph = new clique.default.model.Graph({
+      adapter: graph.adapter
+    });
+    console.log('selectedDataset', selectedDataset);
+  }
+
+  graph.view = new clique.default.view.Cola($.extend(
+    {}, defaultCola, {
+      model: graph.graph,
+      el: graphElement
+    }
+  ));
+
+  if (infoElement) {
+    graph.info = new clique.default.view.SelectionInfo({
+      model: graph.view.selection,
+      el: infoElement,
+      graph: graph.graph
+    });
+    graph.info.render();
+  }
+
+  if (linkInfoElement) {
+    graph.linkinfo = new clique.default.view.LinkInfo({
+      model: graph.view.linkSelection,
+      el: linkInfoElement,
+      graph: graph.graph
+    });
+    graph.linkinfo.render();
+  }
+  return graph;
+}
+
 // The InitGraph functions are called the first time a graph is loaded from the graph datastore.  The ajax call to load from the store
 // is included here.  Globals variables are filled with the graph nodes and links.  No rendering is done in this method.  A method is
 // written for graph1 and graph2.  The only difference between the graph1 and graph2 methods is that they fill different global variables.
@@ -269,7 +338,6 @@ function initGraph1WithClique () {
   'use strict';
   // entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
   logSystemActivity('graph_A_group', '#graph1', 'EXAMINE', 'SHOW', ['clique', 'neightborhood']);
-  var graph1, view1;
 
   // Get the name of the graph dataset to render
   var graphPathname = d3.select('#graph1-selector').node();
@@ -281,52 +349,22 @@ function initGraph1WithClique () {
   // var logText = 'dataset1 select: start=' + graphPathname;
   // logSystemActivity('Kitware entityAlign - '+logText);
 
-  window.graph1 = graph1 = new clique.default.model.Graph({
-    adapter: clique.adapter.Mongo({
-      host: entityAlign.host,
-      database: entityAlign.graphsDatabase,
-      collection: selectedDataset
-    })
-  });
+  var graph = createCliqueGraph(selectedDataset, window.graph1, '#graph1',
+                                '#info1');
+  window.graph1 = graph;
 
-  console.log('selectedDataset', selectedDataset);
-  window.view1 = view1 = new clique.default.view.Cola($.extend(
-    {}, defaultCola, {
-      model: graph1,
-      el: '#graph1'
+  graph.graph.adapter.findNode({name: centralHandle}).then(function (center) {
+    console.log('center:', center);
+    if (center) {
+      graph.graph.addNode(center);
+      graph.graph.addNeighborhood(center);
     }
-  ));
-
-  window.info1 = new clique.default.view.SelectionInfo({
-    model: view1.selection,
-    el: '#info1',
-    graph: graph1
   });
-  window.info1.render();
-
-  /*
-  window.linkinfo1 = new clique.default.view.LinkInfo({
-    model: view1.linkSelection,
-    el: '#link-info',
-    graph: graph1
-  });
-  window.linkinfo1.render();
-  */
-
-  graph1.adapter.findNode({name: centralHandle})
-        .then(function (center) {
-          console.log('center:', center);
-          if (center) {
-            graph1.addNode(center);
-            graph1.addNeighborhood(center);
-          }
-        });
 }
 
 function initGraph2WithClique () {
   'use strict';
   logSystemActivity('graph_B_group', '#graph2', 'EXAMINE', 'SHOW', ['clique', 'neightborhood']);
-  var graph2, view2;
 
   // Get the name of the graph dataset to render
   var selectedDataset = getDatasetName(d3.select('#graph2-selector').text());
@@ -337,35 +375,17 @@ function initGraph2WithClique () {
   //var logText = "dataset2 select: start="+graphPathname;
   //logSystemActivity('Kitware entityAlign - '+logText);
 
-  window.graph2 = graph2 = new clique.default.model.Graph({
-    adapter: clique.adapter.Mongo({
-      host: entityAlign.host,
-      database: entityAlign.graphsDatabase,
-      collection: selectedDataset
-    })
-  });
+  var graph = createCliqueGraph(selectedDataset, window.graph2, '#graph2',
+                                '#info2');
+  window.graph2 = graph;
 
-  window.view2 = view2 = new clique.default.view.Cola($.extend(
-    {}, defaultCola, {
-      model: graph2,
-      el: '#graph2'
+  graph.graph.adapter.findNode({name: centralHandle}).then(function (center) {
+    console.log('center:', center);
+    if (center) {
+      graph.graph.addNode(center);
+      graph.graph.addNeighborhood(center);
     }
-  ));
-
-  window.info2 = new clique.default.view.SelectionInfo({
-    model: view2.selection,
-    el: '#info2',
-    graph: graph2
   });
-
-  graph2.adapter.findNode({name: centralHandle})
-        .then(function (center) {
-          console.log('center:', center);
-          if (center) {
-            graph2.addNode(center);
-            graph2.addNeighborhood(center);
-          }
-        });
 }
 
 function publishPairLists () {

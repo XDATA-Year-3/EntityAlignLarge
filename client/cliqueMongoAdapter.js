@@ -45,6 +45,8 @@
      * ES6 transpiled code. */
     var adapter = new clique.default.adapter.Adapter();
     var m_this = this;
+    var pendingRequests = {next: 0, requests: {}};
+
     _.each(Object.getOwnPropertyNames(adapter), function (key) {
       m_this[key] = adapter[key];
     });
@@ -67,7 +69,7 @@
         limit: limit || 0
       }, this.mongoStore);
 
-      return $.getJSON('service/findNodes', data)
+      return this.getJSON('service/findNodes', data)
               .then(_.partial(_.map, _, processNode, undefined));
     };
 
@@ -83,7 +85,7 @@
         limit: limit || 0
       }, this.mongoStore);
 
-      return $.getJSON('service/findLinks', data)
+      return this.getJSON('service/findLinks', data)
               .then(_.partial(_.map, _, processLink, undefined));
     };
 
@@ -100,7 +102,7 @@
         limit: limit || 0
       }, this.mongoStore);
 
-      return $.getJSON('service/neighborLinks', data)
+      return this.getJSON('service/neighborLinks', data)
               .then(_.partial(_.map, _, processLink, undefined));
     };
 
@@ -115,7 +117,7 @@
         undirected: _.isUndefined(opts.undirected) ? true : opts.undirected
       }, this.mongoStore);
 
-      return $.getJSON('service/neighborLinkCount', data);
+      return this.getJSON('service/neighborLinkCount', data);
     };
 
     this.neighborCount = function (node, opts) {
@@ -129,7 +131,7 @@
         undirected: _.isUndefined(opts.undirected) ? true : opts.undirected
       }, this.mongoStore);
 
-      return $.getJSON('service/neighborCount', data);
+      return this.getJSON('service/neighborCount', data);
     };
 
     this.neighborhood = function (node, radius, linklimit) {
@@ -139,137 +141,31 @@
         linklimit: linklimit
       }, this.mongoStore);
 
-      return $.getJSON('service/neighborhood', data);
+      return this.getJSON('service/neighborhood', data);
+    };
+
+    /* This is a wrapper around jquery's getJSON that keeps track of the
+     * request so that it can be aborted.
+     */
+    this.getJSON = function () {
+      var req = $.getJSON.apply(this, arguments);
+      req.requestNumber = pendingRequests.next;
+      pendingRequests.next += 1;
+      pendingRequests.requests[req.requestNumber] = req;
+      req.always(function () {
+        delete pendingRequests.requests[req.requestNumber];
+      });
+      return req;
+    };
+
+    /* Abort all pending requests. */
+    this.cancel = function () {
+      $.each(pendingRequests.requests, function (idx, req) {
+        req.abort();
+      });
+      pendingRequests.requests = {};
     };
 
     return this;
-
-    /*
-    var findNodesService = 'service/findNodes';
-    var mutators = {};
-    var mongoStore = {
-      host: cfg.host || 'localhost',
-      db: cfg.database,
-      coll: cfg.collection
-    };
-
-    return _.extend({
-      findNodes: function (spec) {
-        var data = _.extend({
-          spec: JSON.stringify(spec)
-        }, mongoStore);
-
-        return $.getJSON(findNodesService, data)
-                   .then(_.partial(_.map, _, _.bind(this.getMutator, this)));
-      },
-
-      findNode: function (spec) {
-        var data = _.extend({
-          spec: JSON.stringify(spec),
-          singleton: JSON.stringify(true)
-        }, mongoStore);
-
-        return $.getJSON(findNodesService, data)
-                .then(_.bind(function (result) {
-                  var def = new $.Deferred();
-
-                  if (result) {
-                    result = this.getMutator(result);
-                  }
-
-                  def.resolve(result);
-                  return def;
-                }, this));
-      },
-
-      neighborNodes: function (node, types, slice) {
-        var options = {};
-        return this.neighborhood($.extend(options, node, {radius: 1}));
-      },
-
-      neighborLinks: function (node) {
-        var options = {};
-        return this.neighborhood($.extend(options, {center: node}, {radius: 1}), true);
-      },
-
-      neighborhood: function (options, returnLinks) {
-        console.log(options); //DWM::
-        options = _.clone(options);
-        options.center = options.center.key();
-        options = _.extend(options, mongoStore);
-
-        return $.getJSON('service/neighborhood', options)
-               .then(_.bind(function (results) {
-                 var def = new $.Deferred();
-
-                 _.each(results.nodes, _.bind(function (node, i) {
-                   var mut = this.getMutator(node);
-
-                   if (mut.key() === options.center) {
-                     mut.setTransient('root', true);
-                   }
-
-                   results.nodes[i] = mut.getTarget();
-                 }, this));
-                 if (returnLinks) {
-                   var links = [];
-                   _.each(results.links, function (link) {
-                     links.push({
-                       key: function () {
-                         return link.source + '_' + link.target;
-                       },
-                       source: function () { return link.source; },
-                       target: function () { return link.target; },
-                       getAttribute: function (prop) {
-                         return prop === 'undirected';
-                       },
-                       getRaw: function () { return link; }
-                     });
-                   });
-                   results = links;
-                 }
-                 def.resolve(results);
-                 return def;
-               }, this));
-      },
-
-      sync: function () {
-        var def = new $.Deferred();
-        def.resolve();
-        return def;
-      },
-
-      getMutator: function (mongoRec) {
-        var key = mongoRec._id.$oid;
-        var mut = {target: {data: mongoRec.data}};
-        mut.getTarget = function () {
-          return mut.target;
-        };
-        mut.key = mut.target.key = function () {
-          return key;
-        };
-        mut.clearAttribute = function (prop) {
-          delete mut.target[prop];
-        };
-        mut.setTransient = function (prop, value) {
-          mut.target[prop] = value;
-        };
-        mut.target.getRaw = function () {
-          return mut.target.data;
-        };
-        mutators[key] = mut;
-        return mut;
-      },
-
-      getAccessor: function (key) {
-        if (mutators[key]) {
-          return mutators[key];
-        }
-        return {
-          clearAttribute: function () {}
-        };
-      }
-    }, Backbone.Events);
-    */
   };
 }(window.clique, window.jQuery, window._, window.Backbone));
