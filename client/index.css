@@ -14,6 +14,10 @@ body {
   padding-right: 5px;
 }
 
+.navbar-nav>li>a {
+  cursor: pointer;
+}
+
 #control-panel {
   background-color: lightgray;
 }

@@ -173,10 +173,10 @@
       <a class=navbar-brand href=/examples>Resonant - Large Network Alignment</a>
     </div>
     <ul class="nav navbar-nav">
-      <li><a style=cursor:pointer data-toggle=modal data-target=#info-panel><span class="glyphicon glyphicon-info-sign"></span> Info</a>
-      <li><a style=cursor:pointer data-toggle=modal data-target=#help-panel><span class="glyphicon glyphicon-question-sign"></span> Help</a>
-      <li><a style=cursor:pointer data-toggle=modal data-target=#video-panel><span class="glyphicon glyphicon-facetime-video"></span> Intro Video</a>
-      <li><a style=cursor:pointer data-toggle=modal data-target=#seed-panel><span class="caret"></span>Review Pairings</a>
+      <li><a data-toggle=modal data-target=#info-panel><span class="glyphicon glyphicon-info-sign"></span> Info</a>
+      <li><a data-toggle=modal data-target=#help-panel><span class="glyphicon glyphicon-question-sign"></span> Help</a>
+      <li><a data-toggle=modal data-target=#video-panel><span class="glyphicon glyphicon-facetime-video"></span> Intro Video</a>
+      <li><a data-toggle=modal data-target=#seed-panel><span class="caret"></span>Review Pairings</a>
     </ul>
   </div>
 
@@ -208,7 +208,9 @@
         <a id='onehop-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Explore local network</a>
         <a id='graph1-homepage' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Visit User Homepage</a>
         <p></p>
-        <svg id='graph1' oncontextmenu="return false;"></svg>
+        <div class="clique">
+          <svg id='graph1' oncontextmenu="return false;"></svg>
+        </div>
         <div id='info1'></div> 
 
       </div>
@@ -240,7 +242,9 @@
         <a id='accept-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Accept This Pairing</a>
         <a id='graph2-homepage' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Visit User Homepage</a>
         <p></p>
-        <svg id='graph2' oncontextmenu="return false;"></svg>
+        <div class="clique">
+          <svg id='graph2' oncontextmenu="return false;"></svg>
+        </div>
         <div id='info2'></div>
       </div>
     </div>

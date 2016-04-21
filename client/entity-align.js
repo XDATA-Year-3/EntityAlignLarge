@@ -331,29 +331,14 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       el: graphElement
     }
   ));
+  graph.view.mode = 'label';
 
   if (infoElement) {
     var SelectionInfo = clique.default.view.SelectionInfo;
     graph.info = new SelectionInfo({
       model: graph.view.selection,
       el: infoElement,
-      graph: graph.graph /*,
-      nodeButtons: [{
-        label: 'Hide',
-        color: 'purple',
-        icon: 'eye-close',
-        callback: function (node) {
-          _.bind(SelectionInfo.hideNode, this)(node);
-        }
-      }, {
-        label: 'Expand',
-        color: 'blue',
-        icon: 'fullscreen',
-        callback: function (node) {
-          _.bind(SelectionInfo.expandNode, this)(node);
-        }
-      }]
-      */
+      graph: graph.graph
     });
     graph.info.render();
   }
@@ -367,6 +352,29 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
     graph.linkinfo.render();
   }
 
+  /* Handle a context menu callback on the clicked-on node.  If multiple nodes
+   * are selected and that selection includes the clicked node, process all of
+   * the selected nodes.
+   */
+  function contextCallback (menu, evt) {
+    var nodekey = d3.select(evt.$trigger.closest('.node')[0]).datum().key;
+    var nodes;
+    if (graph.view.selected.has(nodekey)) {
+      nodes = Array.from(graph.view.selected);
+    } else {
+      nodes = [nodekey];
+    }
+    var func = {
+      hide: SelectionInfo.hideNode,
+      expand: SelectionInfo.expandNode
+    }[menu];
+    nodes.forEach(function (nodekey) {
+      graph.adapter.findNodeByKey(nodekey).then(function (node) {
+        _.bind(func, graph.info)(node);
+      });
+    });
+  }
+
   $.contextMenu({
     selector: graphElement + ' g.node',
     position: function (evt, x, y) {
@@ -375,18 +383,8 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       evt.$menu.css({top: offset.top + 10, left: offset.left});
     },
     items: {
-      hide: {name: 'Hide', callback: function (menu, evt) {
-        var nodekey = d3.select(evt.$trigger.closest('.node')[0]).datum().key;
-        graph.adapter.findNodeByKey(nodekey).then(function (node) {
-          _.bind(SelectionInfo.hideNode, graph.info)(node);
-        });
-      }},
-      expand: {name: 'Expand', callback: function (menu, evt) {
-        var nodekey = d3.select(evt.$trigger.closest('.node')[0]).datum().key;
-        graph.adapter.findNodeByKey(nodekey).then(function (node) {
-          _.bind(SelectionInfo.expandNode, graph.info)(node);
-        });
-      }},
+      hide: {name: 'Hide', callback: contextCallback},
+      expand: {name: 'Expand', callback: contextCallback},
       toggle: {name: 'Toggle Labels', callback: function () {
         graph.view.toggleLabels();
       }}
