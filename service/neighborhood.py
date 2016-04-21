@@ -4,7 +4,7 @@ import json
 from pymongo import MongoClient
 
 
-CachedNodes = {}   # Set to None to disable
+CachedNodes = {'maxentries': 10000}   # Set to None to disable
 CheckedIndices = False
 
 
@@ -43,6 +43,10 @@ def run(host=None, db=None, coll=None, center=None, radius=None,
     db = client[db]
     graph = db[coll]
     ensureLinkIndices(graph)
+    if CachedNodes:
+        CachedNodes.setdefault(coll, {})
+        if len(CachedNodes[coll]) > CachedNodes['maxentries']:
+            CachedNodes[coll] = {}
 
     # Prepare the arguments.
     radius = int(radius)
@@ -82,7 +86,7 @@ def run(host=None, db=None, coll=None, center=None, radius=None,
                 source = link["data"]["source"] in [id, str(int(id))]
                 neighbor_id = int(source and link["data"]["target"] or
                                   link["data"]["source"])
-                if CachedNodes is None or neighbor_id not in CachedNodes:
+                if CachedNodes is None or neighbor_id not in CachedNodes[coll]:
                     query_clauses = [{"type": "node"},
                                      {"data.id": neighbor_id}]
                     if not deleted:
@@ -91,9 +95,9 @@ def run(host=None, db=None, coll=None, center=None, radius=None,
                                     {"data.deleted": False}]})
                     neighbor = graph.find_one({"$and": query_clauses})
                     if CachedNodes is not None:
-                        CachedNodes[neighbor_id] = neighbor
+                        CachedNodes[coll][neighbor_id] = neighbor
                 else:
-                    neighbor = CachedNodes[neighbor_id]
+                    neighbor = CachedNodes[coll][neighbor_id]
                 if neighbor is not None:
                     frozen = freeze(neighbor)
                     if frozen not in neighbor_nodes:

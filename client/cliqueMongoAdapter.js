@@ -106,44 +106,6 @@
               .then(_.partial(_.map, _, processLink, undefined));
     };
 
-    this.neighborLinkCount = function (node, opts) {
-      var data;
-
-      opts = opts || {};
-      data = _.extend({
-        node: node.key(),
-        outgoing: _.isUndefined(opts.outgoing) ? true : opts.outgoing,
-        incoming: _.isUndefined(opts.incoming) ? true : opts.incoming,
-        undirected: _.isUndefined(opts.undirected) ? true : opts.undirected
-      }, this.mongoStore);
-
-      return this.getJSON('service/neighborLinkCount', data);
-    };
-
-    this.neighborCount = function (node, opts) {
-      var data;
-
-      opts = opts || {};
-      data = _.extend({
-        node: node.key(),
-        outgoing: _.isUndefined(opts.outgoing) ? true : opts.outgoing,
-        incoming: _.isUndefined(opts.incoming) ? true : opts.incoming,
-        undirected: _.isUndefined(opts.undirected) ? true : opts.undirected
-      }, this.mongoStore);
-
-      return this.getJSON('service/neighborCount', data);
-    };
-
-    this.neighborhood = function (node, radius, linklimit) {
-      var data = _.extend({
-        start_key: node.key(),
-        radius: radius,
-        linklimit: linklimit
-      }, this.mongoStore);
-
-      return this.getJSON('service/neighborhood', data);
-    };
-
     /* This is a wrapper around jquery's getJSON that keeps track of the
      * request so that it can be aborted.
      */

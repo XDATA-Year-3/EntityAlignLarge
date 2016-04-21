@@ -31,7 +31,10 @@ function logSystemActivity (group, element, activityEnum, action, tags) {
     elementType: 'OTHER',
     elementGroup: group,
     source: 'system',
-    tags: tags
+    tags: tags,
+    meta: {
+      element: element
+    }
   };
   log(msg);
 }
@@ -67,7 +70,7 @@ entityAlign.SavedGraphB = null;
 entityAlign.currentMatches = [];
 entityAlign.pairings = [];
 
-// how far to go out on the default rendering of a local neightborhood
+// how far to go out on the default rendering of a local neighborhood
 entityAlign.numberHops = 2;
 
 entityAlign.cliqueA = null;
@@ -128,9 +131,10 @@ function updateGraph1 () {
   // clear out the person name element
   document.getElementById('ga-name').value = '';
   document.getElementById('gb-name').value = '';
+  emptyCliqueGraph(entityAlign.graph1);
   $('#graph1').empty();
   $('#info1').empty();
-  window.graph1 = null;
+  entityAlign.graph1 = null;
 }
 
 function updateGraph2 () {
@@ -142,9 +146,10 @@ function updateGraph2 () {
   initGraphStats('B');
   // clear out the person name element
   document.getElementById('gb-name').value = '';
+  emptyCliqueGraph(entityAlign.graph2);
   $('#graph2').empty();
   $('#info2').empty();
-  window.graph2 = null;
+  entityAlign.graph2 = null;
 }
 
 // The InitGraph functions are called the first time a graph is loaded from the graph datastore.  The ajax call to load from the store
@@ -260,6 +265,26 @@ function updateUserList (namelist) {
 
 // ------ end of autocomplete users
 
+/* Empty a clique graph of all nodes and cancel any pending requests.
+ *
+ * @param existing: optional existing graph information to update.
+ */
+function emptyCliqueGraph (existing) {
+  if (existing) {
+    if (existing.adapter) {
+      /* Cancel old pending requests */
+      existing.adapter.cancel();
+    }
+    if (existing.graph && existing.graph.nodes) {
+      var oldNodes = [];
+      $.each(existing.graph.nodes, function (node) {
+        oldNodes.push(node);
+      });
+      existing.graph.removeNodes(oldNodes);
+    }
+  }
+}
+
 /* Create a clique graph for a particular element and dataset.
  *
  * @param selectedDataset: name of the collection to load from.
@@ -275,33 +300,30 @@ function updateUserList (namelist) {
 function createCliqueGraph (selectedDataset, existing, graphElement, infoElement, linkInfoElement) {
   'use strict';
 
-  if (existing) {
-    if (existing.adapter) {
-      /* Cancel old pending requests */
-      existing.adapter.cancel();
-      //DWM:: clear old graph for reuse?
-    }
-  }
-  // reuse ?
-  if (!existing || existing.selectedDataset !== selectedDataset || true) {
-    existing = null;
+  emptyCliqueGraph(existing);
+  if (existing && existing.selectedDataset === selectedDataset &&
+      existing.graphElement === graphElement &&
+      existing.infoElement === infoElement &&
+      existing.linkInfoElement === linkInfoElement) {
+    return existing;
   }
 
-  var graph = {selectedDataset: selectedDataset};
+  var graph = {
+    selectedDataset: selectedDataset,
+    graphElement: graphElement,
+    infoElement: infoElement,
+    linkInfoElement: linkInfoElement
+  };
 
-  if (existing) {
-    graph.graph = existing.graph;
-  } else {
-    graph.adapter = clique.adapter.Mongo({
-      host: entityAlign.host,
-      database: entityAlign.graphsDatabase,
-      collection: selectedDataset
-    });
-    graph.graph = new clique.default.model.Graph({
-      adapter: graph.adapter
-    });
-    console.log('selectedDataset', selectedDataset);
-  }
+  graph.adapter = clique.adapter.Mongo({
+    host: entityAlign.host,
+    database: entityAlign.graphsDatabase,
+    collection: selectedDataset
+  });
+  graph.graph = new clique.default.model.Graph({
+    adapter: graph.adapter
+  });
+  console.log('selectedDataset', selectedDataset);
 
   graph.view = new clique.default.view.Cola($.extend(
     {}, defaultCola, {
@@ -337,7 +359,7 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
 function initGraph1WithClique () {
   'use strict';
   // entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
-  logSystemActivity('graph_A_group', '#graph1', 'EXAMINE', 'SHOW', ['clique', 'neightborhood']);
+  logSystemActivity('graph_A_group', '#graph1', 'INSPECT', 'SHOW', ['clique', 'neighborhood']);
 
   // Get the name of the graph dataset to render
   var graphPathname = d3.select('#graph1-selector').node();
@@ -349,9 +371,9 @@ function initGraph1WithClique () {
   // var logText = 'dataset1 select: start=' + graphPathname;
   // logSystemActivity('Kitware entityAlign - '+logText);
 
-  var graph = createCliqueGraph(selectedDataset, window.graph1, '#graph1',
+  var graph = createCliqueGraph(selectedDataset, entityAlign.graph1, '#graph1',
                                 '#info1');
-  window.graph1 = graph;
+  entityAlign.graph1 = graph;
 
   graph.graph.adapter.findNode({name: centralHandle}).then(function (center) {
     console.log('center:', center);
@@ -364,7 +386,7 @@ function initGraph1WithClique () {
 
 function initGraph2WithClique () {
   'use strict';
-  logSystemActivity('graph_B_group', '#graph2', 'EXAMINE', 'SHOW', ['clique', 'neightborhood']);
+  logSystemActivity('graph_B_group', '#graph2', 'INSPECT', 'SHOW', ['clique', 'neighborhood']);
 
   // Get the name of the graph dataset to render
   var selectedDataset = getDatasetName(d3.select('#graph2-selector').text());
@@ -375,9 +397,9 @@ function initGraph2WithClique () {
   //var logText = "dataset2 select: start="+graphPathname;
   //logSystemActivity('Kitware entityAlign - '+logText);
 
-  var graph = createCliqueGraph(selectedDataset, window.graph2, '#graph2',
+  var graph = createCliqueGraph(selectedDataset, entityAlign.graph2, '#graph2',
                                 '#info2');
-  window.graph2 = graph;
+  entityAlign.graph2 = graph;
 
   graph.graph.adapter.findNode({name: centralHandle}).then(function (center) {
     console.log('center:', center);
@@ -592,8 +614,7 @@ function ExploreLocalGraphAregion () {
 
   // clear possible leftover state from a previous search
   document.getElementById('gb-name').value = '';
-  $('#graph2').empty();
-  $('#info2').empty();
+  emptyCliqueGraph(entityAlign.graph2);
 }
 
 function ExploreLocalGraphBregion (handle) {
