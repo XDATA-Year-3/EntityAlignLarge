@@ -1,4 +1,4 @@
-(function (clique, $, _, Backbone) {
+(function (clique, $, _, Backbone, moment) {
   'use strict';
 
   function processNode (response) {
@@ -11,6 +11,14 @@
         result[key] = value;
       }
     });
+    if (result.data) {
+      _.each(result.data, function (value, key) {
+        if (value && value.$date) {
+          result.data[key] = moment.utc(value.$date).format(
+            'YYYY-MM-DD HH:mm:ss');
+        }
+      });
+    }
     return result;
   }
 
@@ -130,4 +138,4 @@
 
     return this;
   };
-}(window.clique, window.jQuery, window._, window.Backbone));
+}(window.clique, window.jQuery, window._, window.Backbone, window.moment));

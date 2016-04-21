@@ -5,8 +5,7 @@ html, body {
 
 body {
   padding-top: 50px;
-  overflow-y: scroll;
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .col-md-3,.col-md-6 {
@@ -19,12 +18,17 @@ body {
 }
 
 #graph1-selector, #graph2-selector, #graph1-selector-one, #graph2-selector-one {
-  margin: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
   width: calc(100% - 30px);
 }
 #graph1-selector-one, #graph2-selector-one {
   font-size: 20px;
   display: none;
+}
+
+.leftindent {
+  margin-left: 10px;
 }
 
 #control-panel {
@@ -34,10 +38,9 @@ body {
 #controls {
   background-color: ghostwhite;
   height: 100%;
-  overflow-y: scroll;
-  overflow-x: auto;
   padding-right: 0;
   padding-left: 5px;
+  overflow: hidden;
 }
 
 .container-fluid {
@@ -101,6 +104,14 @@ nav ol {
 }
 #info1,#info2 {
   margin-top: 5px;
+  overflow: auto;
+}
+#info1 .row,#info2 .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+#info1 .col-md-1,#info2 .col-md-1 {
+  padding: 0;
 }
 #info1 .pagination,#info2 .pagination {
   margin: 0;
@@ -108,11 +119,17 @@ nav ol {
 #info1 .container,#info2 .container {
   padding: 0;
 }
+#info1 .table,#info2 .table {
+  margin: 0;
+}
+#info1 td,#info2 td {
+  padding: 3px;
+}
 #info1>.container>.container>.row+.row,#info2>.container>.container>.row+.row {
   display: none;
 }
 #info1>.container>.container>.row table td:first-child,#info2>.container>.container>.row table td:first-child {
-  max-width: 150px;
+  max-width: 130px;
   overflow: hidden
 }
 

@@ -219,6 +219,7 @@ module.exports = function (grunt) {
             'node_modules/bootstrap/dist/js/bootstrap.js',
             'node_modules/bootstrap-table/dist/bootstrap-table.js',
             'node_modules/LineUpJS/dist/LineUpJS.js',
+            'node_modules/moment/moment.js',
             // 'node_modules/jade/runtime.js',
             'built/entitylib-version.js'
           ]

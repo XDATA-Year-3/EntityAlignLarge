@@ -186,27 +186,27 @@
 
       <!-- left panel for graph 1 -->
       <div class=col-md-3>
-        <h4 id='graph1-selector-one'></h4>
-        <select id='graph1-selector' class='form-control'>
+        <h4 id='graph1-selector-one' class='leftindent'></h4>
+        <select id='graph1-selector' class='form-control leftindent'>
           <option selected disabled hidden value=''>Select a dataset</option>
         </select>
         <p id='ga-summary'></p>
         
-        <text id="ga-nodeCount" style="margin-left:20px">0 </text>
-        <text style="margin-left:20px">nodes loaded</text>
+        <text id="ga-nodeCount" class="leftindent">0</text>
+        <text class="leftindent">nodes loaded</text>
         <p></p>
-        <text id="ga-linkCount" style="margin-left:20px">0 </text>
-        <text style="margin-left:20px">links loaded</text>
+        <text id="ga-linkCount" class="leftindent">0</text>
+        <text class="leftindent">links loaded</text>
         <p></p>
         <!--
-        <text  id="ga-matchCount" style="margin-left:20px">0 </text>
-        <text  style="margin-left:20px">matched nodes</text>    
+        <text id="ga-matchCount" class="leftindent">0</text>
+        <text class="leftindent">matched nodes</text>    
         <p></p>
         -->
-        <input id='ga-name' style='margin-left:20px' disabled="disabled"> Enter an entity name</input> 
+        <input id='ga-name' class="leftindent" disabled="disabled"> Enter an entity name</input> 
         <p></p>
-        <a id='onehop-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Explore local network</a>
-        <a id='graph1-homepage' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Visit User Homepage</a>
+        <a id='onehop-button' class="btn btn-default leftindent" style="margin-top: 10px">Explore local network</a>
+        <a id='graph1-homepage' class="btn btn-default leftindent" style="margin-top: 10px">Visit User Homepage</a>
         <p></p>
         <div class="clique">
           <svg id='graph1' oncontextmenu="return false;"></svg>
@@ -218,32 +218,32 @@
       <!-- center panel for showing the ranking results -->
       <div id='controls' class=col-md-6>
         <div class="lineup_container">
-          <select id='lineup-selector' class='form-control' style="margin-left: 20px; margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
+          <select id='lineup-selector' class='form-control leftindent' style="margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
           <div id="lugui-wrapper"></div>
         </div>
       </div>
    
       <!-- right panel for graph 2 -->
       <div class=col-md-3>
-        <h4 id='graph2-selector-one'></h4>
-        <select id='graph2-selector' class='form-control'>
+        <h4 id='graph2-selector-one' class='leftindent'></h4>
+        <select id='graph2-selector' class='form-control leftindent'>
           <option selected disabled hidden value=''>Select a dataset</option>
         </select>
         <p id='gb-summary'></p>
-        <text id="gb-nodeCount" style="margin-left:20px">0 </text>
-        <text style="margin-left:20px">nodes loaded</text>
+        <text id="gb-nodeCount" class="leftindent">0</text>
+        <text class="leftindent">nodes loaded</text>
         <p></p>
-        <text id="gb-linkCount" style="margin-left:20px">0 </text>
-        <text style="margin-left:20px">links loaded</text>
+        <text id="gb-linkCount" class="leftindent">0</text>
+        <text class="leftindent">links loaded</text>
         <p></p>
         <!--
-        <text id="gb-matchCount" style="margin-left:20px">0 </text>
-        <text style="margin-left:20px">matched nodes</text>
+        <text id="gb-matchCount" class="leftindent">0</text>
+        <text class="leftindent">matched nodes</text>
         <p></p>
         -->
-        <input id='gb-name' style='margin-left:20px' readonly> Displayed Entity</input>
-        <a id='accept-button' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Accept This Pairing</a>
-        <a id='graph2-homepage' class="btn btn-default" style="margin-top: 10px; margin-left: 20px">Visit User Homepage</a>
+        <input id='gb-name' class="leftindent" readonly> Displayed Entity</input>
+        <a id='accept-button' class="btn btn-default leftindent" style="margin-top: 10px">Accept This Pairing</a>
+        <a id='graph2-homepage' class="btn btn-default leftindent" style="margin-top: 10px">Visit User Homepage</a>
         <p></p>
         <div class="clique">
           <svg id='graph2' oncontextmenu="return false;"></svg>

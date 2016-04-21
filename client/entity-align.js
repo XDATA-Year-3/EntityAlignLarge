@@ -264,6 +264,21 @@ function emptyCliqueGraph (existing) {
   }
 }
 
+/* Resize the info element if we aren't showing anything beneath it.
+ *
+ * @param infoElement: optional name of selector to place info element that is
+ *                     shown when a node is selected.
+ * @param linkInfoElement: optional name of selector to place link info element
+ *                         that is shown when a link is selected.
+ */
+function resizeInfoElement (infoElement, linkInfoElement) {
+  if (!linkInfoElement) {
+    var bodyRect = $('body')[0].getBoundingClientRect();
+    var infoRect = $(infoElement)[0].getBoundingClientRect();
+    $(infoElement).css('height', (bodyRect.bottom - infoRect.top - 5) + 'px');
+  }
+}
+
 /* Create a clique graph for a particular element and dataset.
  *
  * @param selectedDataset: name of the collection to load from.
@@ -284,6 +299,7 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       existing.graphElement === graphElement &&
       existing.infoElement === infoElement &&
       existing.linkInfoElement === linkInfoElement) {
+    resizeInfoElement(infoElement, linkInfoElement);
     return existing;
   }
 
@@ -320,6 +336,7 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       graph: graph.graph
     });
     graph.info.render();
+    resizeInfoElement(infoElement, linkInfoElement);
   }
 
   if (linkInfoElement) {
