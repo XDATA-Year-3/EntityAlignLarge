@@ -1,8 +1,12 @@
 {
     "mongoHost"     : "127.0.0.1",
     "graphsDatabase": "may2016_isil",
-    "twitter"       : "twitter_isil_36_nodelink",
-    "instagram"     : "twitter_isil_36_nodelink",
+    "graph1Datasets": [{
+        "key": "twitter_isil_36_nodelink", "name": "Twitter ISIL 36"
+    }, {
+        "key": "twitter_isil_36", "name": "Some other Twitter"
+    }],
+    "graph2Datasets": ["twitter_isil_36_nodelink"],
     "loggingUrl"    : "http://172.16.1.100",
     "toolVersion"   : "1.0.0",
     "sendLogs"      : false

@@ -108,22 +108,7 @@ entityAlign.nodeColorArray = [
   '#b0e0e6', '#faf0e6', '#e0ffff', '#fff5e0', '#f0fff0'
 ];
 
-function getDatasetName (label) {
-  if (label === 'twitter_isil_36hours') {
-    return entityAlign.twitter;
-  } else if (label === 'twitter_isil_36hours') {
-    return entityAlign.instagram;
-  }
-}
-
 function updateGraph1 () {
-  var graph1opt = d3.select('#graph1-selector').node();
-  graph1opt = graph1opt.options[graph1opt.selectedIndex].text;
-
-  d3.select('#graph2-selector')
-        .text(graph1opt === 'Twitter' ? 'twitter_isil_36hours' : 'twitter_isil_36hours');
-//        .text(graph1opt === "Twitter" ? "Instagram" : "Twitter");
-
   //updateGraph1_d3()
   //initGraph1FromDatastore()
   loadNodeNames('A');
@@ -160,21 +145,18 @@ function initGraphStats (graphIndexString) {
   'use strict';
   var graphelement = (graphIndexString === 'A') ? '#graph1' : '#graph2';
   logSystemActivity('graph_' + graphIndexString + '_group', graphelement, 'inspect', 'OPEN');
-  var data, graphPathname, selectedDataset;
+  var data, selectedDataset;
 
   // Get the name of the graph dataset to render
   if (graphIndexString === 'A') {
-    graphPathname = d3.select('#graph1-selector').node();
-    selectedDataset = getDatasetName(graphPathname.options[graphPathname.selectedIndex].text);
+    selectedDataset = $('#graph1-selector').val();
     // save the current dataset name for the graph
     entityAlign.graphA_dataset = selectedDataset;
   } else {
-    graphPathname = d3.select('#graph2-selector').text();
-    selectedDataset = getDatasetName(graphPathname);
+    selectedDataset = $('#graph2-selector').val();
     // save the current dataset name for the graph
     entityAlign.graphB_dataset = selectedDataset;
   }
-  // var logText = 'dataset ' + graphIndexString + ' select: start=' + graphPathname;
   // logSystemActivity('Kitware entityAlign - '+logText);
 
   $.ajax({
@@ -208,13 +190,10 @@ function loadNodeNames (graphIndexString) {
 
   // Get the name of the graph dataset to render
   if (graphIndexString === 'A') {
-    var graphPathname = d3.select('#graph1-selector').node();
-    selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+    selectedDataset = $('#graph1-selector').val();
   } else {
-    selectedDataset = d3.select('#graph2-selector').text();
+    selectedDataset = $('#graph2-selector').val();
   }
-
-  selectedDataset = getDatasetName(selectedDataset);
 
   // non-blocking call to initialize this
   var data;
@@ -402,14 +381,11 @@ function initGraph1WithClique () {
   // entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
   logSystemActivity('graph_A_group', '#graph1', 'INSPECT', 'SHOW', ['clique', 'neighborhood']);
 
-  // Get the name of the graph dataset to render
-  var graphPathname = d3.select('#graph1-selector').node();
-  var selectedDataset = getDatasetName(graphPathname.options[graphPathname.selectedIndex].text);
+  var selectedDataset = $('#graph1-selector').val();
 
   var centralHandle = document.getElementById('ga-name').value;
   console.log('doing one hop around', centralHandle);
 
-  // var logText = 'dataset1 select: start=' + graphPathname;
   // logSystemActivity('Kitware entityAlign - '+logText);
 
   var graph = createCliqueGraph(selectedDataset, entityAlign.graph1, '#graph1',
@@ -429,13 +405,11 @@ function initGraph2WithClique () {
   'use strict';
   logSystemActivity('graph_B_group', '#graph2', 'INSPECT', 'SHOW', ['clique', 'neighborhood']);
 
-  // Get the name of the graph dataset to render
-  var selectedDataset = getDatasetName(d3.select('#graph2-selector').text());
+  var selectedDataset = $('#graph2-selector').val();
 
   var centralHandle = document.getElementById('gb-name').value;
   console.log('doing one hop around', centralHandle);
 
-  //var logText = "dataset2 select: start="+graphPathname;
   //logSystemActivity('Kitware entityAlign - '+logText);
 
   var graph = createCliqueGraph(selectedDataset, entityAlign.graph2, '#graph2',
@@ -459,11 +433,11 @@ function publishPairLists () {
 // open the user homepages by clicking buttons on the UI.  This checks which way the association is going and opens
 // the appropriate homepage.  The test had to examine
 function openHompageGraph1 () {
-  var graphPathname = d3.select('#graph1-selector').node();
-  var selectedDataset = graphPathname.options[graphPathname.selectedIndex].text;
+  var selectedDataset = $('#graph1-selector').val();
+
   var handleName = document.getElementById('ga-name').value;
   console.log('slice:', selectedDataset);
-  if (selectedDataset === 'twitter_isil_36hours') {
+  if (selectedDataset.slice(0, 7) === 'twitter') {
     //console.log('opening twitter')
     logOpenTwitterWindow();
     window.open('http://www.twitter.com/' + handleName);
@@ -471,19 +445,18 @@ function openHompageGraph1 () {
     //console.log('opening instagram')
     logOpenInstagramWindow();
     window.open('http://www.instagram.com/' + handleName);
-    //var selectedDataset = getDatasetName(graphPathname);
   }
 }
 
 function openHompageGraph2 () {
-  var graphB = getDatasetName(d3.select('#graph2-selector').text());
+  var selectedDataset = $('#graph2-selector').val();
   //console.log('homepage datatype:',graphB)
   var handleName = document.getElementById('gb-name').value;
   //console.log('handle was:',handleName)
   // *** Kludge,  why does this come back with the dataset name instead of Twitter or instagram? This test
   // will function only if the collection names starts with 'twitter_'
   //console.log('slice:',graphB.slice(0,7))
-  if (graphB.slice(0, 7) === 'twitter') {
+  if (selectedDataset.slice(0, 7) === 'twitter') {
     //console.log('opening twitter')
     logOpenTwitterWindow();
     window.open('http://www.twitter.com/' + handleName);
@@ -491,8 +464,34 @@ function openHompageGraph2 () {
     //console.log('opening instagram')
     logOpenInstagramWindow();
     window.open('http://www.instagram.com/' + handleName);
-    //var selectedDataset = getDatasetName(graphPathname);
   }
+}
+
+/* Set the available datasets.  Pick the first one.  If there is only one, show
+ * a fixed display rather than a control.
+ *
+ * @param datasets: a list of datasets.  Each entry is either a string (in which case the string is used as both the collection name and the display name), or an object with key and name, where 'key' is the collection name and 'name' is the display name.
+ * @param selector: the seletor of the <select> element.
+ * @param fixed: the selector of the fixed element.
+ */
+function setGraphDatasets (datasets, selector, fixed) {
+  var first;
+  $.each(datasets, function (idx, set) {
+    if (!set.key) {
+      set = {key: set, name: set};
+    }
+    $(selector).append(
+        $('<option/>').text(set.name).attr('value', set.key));
+    if (!idx) {
+      $(fixed).text(set.name);
+      first = set.key;
+    }
+  });
+  if (datasets.length === 1) {
+    $(selector).hide();
+    $(fixed).show();
+  }
+  $(selector).val(first);
 }
 
 function firstTimeInitialize () {
@@ -508,9 +507,6 @@ function firstTimeInitialize () {
     entityAlign.host = defaults.mongoHost || 'localhost';
     entityAlign.graphsDatabase = defaults.graphsDatabase || 'year3_graphs';
     console.log('set graphs database: ', entityAlign.graphsDatabase);
-
-    entityAlign.twitter = defaults.twitter;
-    entityAlign.instagram = defaults.instagram;
 
     fillSeedList('#seed-selector');
 
@@ -531,11 +527,8 @@ function firstTimeInitialize () {
     // set a watcher on the dataset selector so datasets are filled in
     // automatically when the user selects it via UI selector elements.
 
-    d3.select('#graph1-selector')
-            .on('change', function () {
-              updateGraph1();
-              updateGraph2();
-            });
+    d3.select('#graph1-selector').on('change', updateGraph1);
+    d3.select('#graph2-selector').on('change', updateGraph2);
     d3.select('#lineup-selector')
             .on('change', handleLineUpSelectorChange);
     d3.select('#show-pairings')
@@ -555,18 +548,10 @@ function firstTimeInitialize () {
               console.log(entityAlign.showMatchesEnabled);
             });
 
-    // block the contextmenu from coming up (often attached to right clicks). Since many
-    // of the right clicks will be on the graph, this has to be at the document level so newly
-    // added graph nodes are all covered by this handler.
-
-    /**
-     * No! Only block context menu on _specific_ elements!
-     *
-    $(document).bind('contextmenu', function(e){
-        e.preventDefault();
-        return false;
-        });
-    */
+    setGraphDatasets(defaults.graph1Datasets || ['twitter'], '#graph1-selector', '#graph1-selector-one');
+    setGraphDatasets(defaults.graph2Datasets || ['instagram'], '#graph2-selector', '#graph2-selector-one');
+    updateGraph1();
+    updateGraph2();
   });
 
   d3.select('#publish-parings-button')
@@ -610,9 +595,8 @@ function fillSeedList (element) {
 function InitializeLineUpAroundEntity (handle) {
   logSetupLineUp();
   //InitializeLineUpJS();
-  var graphPathname = d3.select('#graph1-selector').node();
-  var graphA = getDatasetName(graphPathname.options[graphPathname.selectedIndex].text);
-  var graphB = getDatasetName(d3.select('#graph2-selector').text());
+  var graphA = $('#graph1-selector').val();
+  var graphB = $('#graph2-selector').val();
 
   //var displaymodeselector = d3.select("#lineup-selector").node();
   //   var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
@@ -670,7 +654,6 @@ function ExploreLocalGraphBregion (handle) {
  * @param row: the selected lineup row.
  */
 function selectEntityFromLineup (row) {
-  console.log('select', arguments); //DWM::
   if (!row || !row.entity) {
     return;
   }
@@ -702,12 +685,6 @@ function fillLineUpSelector () {
 }
 
 function acceptListedPairing () {
-  // these aren't set anymore in the streamlined UI
-  //var graphPathname = d3.select("#graph1-selector").node();
-  //var graphA = graphPathname.options[graphPathname.selectedIndex].text;
-  //var graphPathname = d3.select("#graph2-selector").node();
-  //var graphB = graphPathname.options[graphPathname.selectedIndex].text;
-
   var handleA = document.getElementById('ga-name').value;
   var handleB = document.getElementById('gb-name').value;
 

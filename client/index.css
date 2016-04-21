@@ -18,6 +18,15 @@ body {
   cursor: pointer;
 }
 
+#graph1-selector, #graph2-selector, #graph1-selector-one, #graph2-selector-one {
+  margin: 20px;
+  width: calc(100% - 30px);
+}
+#graph1-selector-one, #graph2-selector-one {
+  font-size: 20px;
+  display: none;
+}
+
 #control-panel {
   background-color: lightgray;
 }
