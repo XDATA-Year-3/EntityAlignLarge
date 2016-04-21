@@ -104,6 +104,7 @@ module.exports = function (grunt) {
           'built/libs/libs.min.css': [
             'node_modules/bootstrap/dist/css/bootstrap.css',
             'node_modules/jquery-ui-bundle/jquery-ui.css',
+            'node_modules/jquery-contextmenu/dist/jquery.contextMenu.css',
             'node_modules/font-awesome/css/font-awesome.css',
             'node_modules/LineUpJS/dist/style.css',
             'node_modules/LineUpJS/demo/css/style-demo.css',
@@ -210,6 +211,7 @@ module.exports = function (grunt) {
           'built/libs/libs.min.js': [
             'node_modules/jquery/dist/jquery.js',
             'node_modules/jquery-ui-bundle/jquery-ui.js',
+            'node_modules/jquery-contextmenu/dist/jquery.contextMenu.js',
             /* We get d3 with Clique, so don't include it here. */
             // 'node_modules/d3/d3.js',
             'node_modules/underscore/underscore.js',

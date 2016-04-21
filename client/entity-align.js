@@ -333,10 +333,27 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
   ));
 
   if (infoElement) {
-    graph.info = new clique.default.view.SelectionInfo({
+    var SelectionInfo = clique.default.view.SelectionInfo;
+    graph.info = new SelectionInfo({
       model: graph.view.selection,
       el: infoElement,
-      graph: graph.graph
+      graph: graph.graph /*,
+      nodeButtons: [{
+        label: 'Hide',
+        color: 'purple',
+        icon: 'eye-close',
+        callback: function (node) {
+          _.bind(SelectionInfo.hideNode, this)(node);
+        }
+      }, {
+        label: 'Expand',
+        color: 'blue',
+        icon: 'fullscreen',
+        callback: function (node) {
+          _.bind(SelectionInfo.expandNode, this)(node);
+        }
+      }]
+      */
     });
     graph.info.render();
   }
@@ -349,6 +366,32 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
     });
     graph.linkinfo.render();
   }
+
+  $.contextMenu({
+    selector: graphElement + ' g.node',
+    position: function (evt, x, y) {
+      var elem = evt.$trigger.closest('.node');
+      var offset = elem.offset();
+      evt.$menu.css({top: offset.top + 10, left: offset.left});
+    },
+    items: {
+      hide: {name: 'Hide', callback: function (menu, evt) {
+        var nodekey = d3.select(evt.$trigger.closest('.node')[0]).datum().key;
+        graph.adapter.findNodeByKey(nodekey).then(function (node) {
+          _.bind(SelectionInfo.hideNode, graph.info)(node);
+        });
+      }},
+      expand: {name: 'Expand', callback: function (menu, evt) {
+        var nodekey = d3.select(evt.$trigger.closest('.node')[0]).datum().key;
+        graph.adapter.findNodeByKey(nodekey).then(function (node) {
+          _.bind(SelectionInfo.expandNode, graph.info)(node);
+        });
+      }},
+      toggle: {name: 'Toggle Labels', callback: function () {
+        graph.view.toggleLabels();
+      }}
+    }
+  });
   return graph;
 }
 

@@ -37,6 +37,7 @@
     "grunt-string-replace": "~1.2",
     "jade": "~1.11",
     "jquery": "~2.2",
+    "jquery-contextmenu": "~2.1",
     "jquery-ui-bundle": "~1.11",
     "LineUpJS": "git+https://github.com/Caleydo/lineup.js#c70349be518936d6ef2b8ea9965c02e81caa57c3",
     "underscore": "~1.8"
