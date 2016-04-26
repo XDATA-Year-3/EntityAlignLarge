@@ -109,10 +109,17 @@ entityAlign.nodeColorArray = [
 ];
 
 function updateGraph1 () {
-  //updateGraph1_d3()
-  //initGraph1FromDatastore()
-  loadNodeNames('A');
   initGraphStats('A');
+  // enable selection
+  $('#ga-name').prop('disabled', false);
+  $('#ga-name').autocomplete({
+    source: function (term, callback) {
+      return autocompleteName('A', term, callback);
+    },
+    /* Change collisiont to 'fit' to prevent the list from being off screen if
+     * it would fit. */
+    position: {my: 'left top', at: 'left bottom', collision: 'none'}
+  });
   // clear out the person name element
   document.getElementById('ga-name').value = '';
   document.getElementById('gb-name').value = '';
@@ -123,11 +130,6 @@ function updateGraph1 () {
 }
 
 function updateGraph2 () {
-  //initGraph2FromDatastore()
-  // this rendering call below is the old style rendering, which doesn't update.  comment this out in favor of using
-  //updateGraph2_d3_afterLoad()
-  //updateGraph2_d3()
-  loadNodeNames('B');
   initGraphStats('B');
   // clear out the person name element
   document.getElementById('gb-name').value = '';
@@ -185,67 +187,32 @@ function initGraphStats (graphIndexString) {
   });
 }
 
-// ----- start of autocomplete for users
-
-// do a non-blocking call to a python service that returns all the names in the graph.  Assign this to a global variable
-function loadNodeNames (graphIndexString) {
+/* Fetch the matching node names for a given graph.
+ *
+ * @param {string} graphIndex: 'A' or 'B'.
+ * @param {object} term: an object with a term element with the string to
+ *                       search for.
+ * @param {function} callback: a function that takes an ordered array of
+ *                             strings.
+ */
+function autocompleteName (graphIndex, term, callback) {
   var selectedDataset;
 
-  // Get the name of the graph dataset to render
-  if (graphIndexString === 'A') {
+  if (graphIndex === 'A') {
     selectedDataset = $('#graph1-selector').val();
   } else {
     selectedDataset = $('#graph2-selector').val();
   }
-
-  // non-blocking call to initialize this
-  var data;
-  $.ajax({
-    url: 'service/loadnodenames/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + selectedDataset,
-    data: data,
-    dataType: 'json',
-    success: function (response) {
-      if (response.error) {
-        console.log('error: ' + response.error);
-        return;
-      }
-      console.log('data returned:', response.result);
-      if (graphIndexString === 'A') {
-        // copy the result into the array and enable name selection from the input field
-        entityAlign.graphAnodeNames = response.result.nodes;
-        var inputfield = d3.select('#ga-name');
-        inputfield.attr('disabled', null);
-        updateUserList(response.result.nodes);
-      } else {
-        entityAlign.graphBnodeNames = response.result.nodes;
-      }
-    }
+  var url = 'service/loadnodenames/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + selectedDataset;
+  $.getJSON({url: url, data: {
+    term: term.term,
+    list: 30
+  }}).done(function (data) {
+    callback(data.names);
+  }).error(function () {
+    callback([]);
   });
 }
-
-$('#ga-name').autocomplete().keyup(function (evt) {
-  console.log(evt);
-  // respond to enter by starting a query
-  if (evt.which === 13) {
-    updateUserList(entityAlign.graphAnodeNames);
-  }
-});
-
-// reset the user list on a new time range query
-function resetUserList () {
-  $('#ga-name').autocomplete({ source: [] });
-}
-
-// update the user list from a mongo response
-function updateUserList (namelist) {
-  resetUserList();
-
-  // Update the user filter selection box
-  // .slice(0, 10)
-  $('#ga-name').autocomplete({source: namelist});
-}
-
-// ------ end of autocomplete users
 
 /* Empty a clique graph of all nodes and cancel any pending requests.
  *

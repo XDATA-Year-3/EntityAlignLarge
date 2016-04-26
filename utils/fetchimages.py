@@ -28,6 +28,7 @@ import urllib
 
 
 MimeExtensions = {
+    'image/gif': '.gif',
     'image/jpeg': '.jpg',
     'image/png': '.png',
 }

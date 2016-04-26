@@ -1,47 +1,33 @@
-import bson
-import pymongo
 import json
-from bson import ObjectId
+import re
 from pymongo import MongoClient
-import string
 
 
-def run(host,database,graphname):
-    # Create an empty response object.
-    response = {}
+def run(host, db, coll, **kwargs):
+    # Connect to the mongo collection.
+    client = MongoClient(host)
+    db = client[db]
+    graph = db[coll]
+    spec = {'type': 'node'}
+    term = kwargs.get('term')
+    if term:
+        rterm = re.compile(re.escape(term), re.IGNORECASE)
+        spec['data.name'] = rterm
 
-   # this method traverses the documents in the selected graph collection and builds a JSON object
-   # that represents a list of all nodes in the graph
-
-    client = MongoClient(host, 27017)
-    db = client[database]
-    # get a list of all collections (excluding system collections)
-    namehint_coll_name = 'topk_names_'+graphname
-    print 'looking in collection',namehint_coll_name
-    collection = db[namehint_coll_name]
-
-    namelist = [x["name"] for x in collection.find({})]
-     
-    # loop through the records in the network and take the appropriate action for each type. Suppress
-    # the ID field because it doesn't serialize in JSON.  If the node is named, return the name,  else return
-    # ID if there is an ID only
-
-#    nodes = collection.find({},{'_id':0}).limit(99999)
-    #namelist = []
-    #for x in nodes:
-        #if 'name' in x:
-            #namelist.append(x['name'])
-        #elif 'name' in x['data']:
-            #namelist.append(x['data']['name'])
-        #elif 'username' in x['data']:
-            #namelist.append(x['data']['username'])
-       
-
-    # Pack the results into the response object, and return it.
-    response['result'] = {}
-    response['result']['nodes'] = namelist
-    client.close()
-
-    # Return the response object.
-    #tangelo.log(str(response))
+    nodes = graph.find(spec, {'data.name': True, '_id': False},
+                       limit=int(kwargs.get('limit', 0)),
+                       skip=int(kwargs.get('offset', 0)))
+    names = [node['data']['name'] for node in nodes]
+    if term:
+        sortorder = [(
+            rterm.search(name).start() if rterm.search(name) else len(name),
+            len(name), name.lower(), name) for name in names]
+    else:
+        sortorder = [(
+            len(name), name.lower(), name) for name in names]
+    names = [entry[-1] for entry in sorted(sortorder)]
+    maxlist = int(kwargs.get('list', 30))
+    if maxlist:
+        names = names[:maxlist]
+    response = {'names': names}
     return json.dumps(response)

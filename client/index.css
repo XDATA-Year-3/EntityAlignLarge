@@ -160,4 +160,7 @@ div.lu .header.stack~.header.stack .toolbar i.fa-times {
   max-width: 192px;
   max-height: 192px;
 }
-
+.ui-autocomplete .ui-menu-item {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
