@@ -177,8 +177,11 @@ function initGraphStats (graphIndexString) {
         d3.select('#gb-nodeCount').text(response.result.nodes.toString());
         d3.select('#gb-linkCount').text(response.result.links.toString());
       }
+      if (graphIndexString === 'A' && !entityAlign.initialFocus) {
+        entityAlign.initialFocus = true;
+        $('#ga-name')[0].focus();
+      }
     }
-
   });
 }
 
@@ -302,6 +305,11 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
     resizeInfoElement(infoElement, linkInfoElement);
     return existing;
   }
+  if (existing) {
+    if (existing.infoObserver) {
+      existing.infoObserver.disconnect();
+    }
+  }
 
   var graph = {
     selectedDataset: selectedDataset,
@@ -337,6 +345,23 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
     });
     graph.info.render();
     resizeInfoElement(infoElement, linkInfoElement);
+    graph.infoObserver = new MutationObserver(function (mutations) {
+      if ($('img', infoElement).length) {
+        return;
+      }
+      $('table tr', infoElement).each(function (idx) {
+        if ($('td>strong', this).text() === 'profile_image') {
+          var row = $(this);
+          var url = $('td:last', this).text();
+          $('td:last', this).empty().append(
+            $('<img class="profile_image">').attr('src', url).on(
+              'error', function () {
+                row.remove();
+              }));
+        }
+      });
+    });
+    graph.infoObserver.observe($(infoElement)[0], {childList: true});
   }
 
   if (linkInfoElement) {
@@ -592,6 +617,11 @@ function firstTimeInitialize () {
 
 window.onload = function () {
   firstTimeInitialize();    // Fill out the dataset selectors with graph datasets that we can choose from
+  $('#ga-name').keyup(function (event) {
+    if (event.which === 13) {
+      ExploreLocalGraphAregion();
+    }
+  });
 };
 
 // use a python service to search the datastore and return a list of available seed arrays to pick from.  This fills a GUI selector, so the user

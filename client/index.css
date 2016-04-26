@@ -156,4 +156,8 @@ div.lu .header.string~.header.string.toolbar i.fa-times,
 div.lu .header.stack~.header.stack .toolbar i.fa-times {
   display: inline-block;
 }
+.profile_image {
+  max-width: 192px;
+  max-height: 192px;
+}
 

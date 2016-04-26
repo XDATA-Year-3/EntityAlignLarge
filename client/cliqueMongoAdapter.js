@@ -1,6 +1,9 @@
 (function (clique, $, _, Backbone, moment) {
   'use strict';
 
+  var nodeCache = {};
+  var nodeCacheMaxSize = 10000;
+
   function processNode (response) {
     var result = {};
     delete response.type;
@@ -17,6 +20,17 @@
           result.data[key] = moment.utc(value.$date).format(
             'YYYY-MM-DD HH:mm:ss');
         }
+      });
+    }
+    /* Keep nodes in cache, but also cap the cache size */
+    nodeCache[result.key] = { lastUsed: new Date().getTime(), node: result };
+    if (_.size(nodeCache) > nodeCacheMaxSize) {
+      var keys = _.keys(nodeCache).sort(function (a, b) {
+        return a.lastUsed - b.lastUsed;
+      });
+      keys = keys.slice(0, nodeCacheMaxSize / 2);
+      _.each(keys, function (key) {
+        delete nodeCache[key];
       });
     }
     return result;
@@ -79,6 +93,20 @@
 
       return this.getJSON('service/findNodes', data)
               .then(_.partial(_.map, _, processNode, undefined));
+    };
+
+    this.findNode = function (spec) {
+      if (_.size(spec) === 1 && spec.key && nodeCache[spec.key]) {
+        nodeCache[spec.key].lastUsed = new Date().getTime();
+        var node = this.addAccessor(nodeCache[spec.key].node);
+        return $.when().then(function () {
+          return node;
+        });
+      }
+      return $.when(this.findNodes(spec, {offset: 0, limit: 1})).then(
+        function (results) {
+          return results && results[0];
+        });
     };
 
     this.findLinksRaw = function (spec, source, target, directed, offset, limit) {
