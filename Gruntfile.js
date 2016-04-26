@@ -185,6 +185,9 @@ module.exports = function (grunt) {
         }, {
           src: 'defaults.json',
           dest: 'built/defaults.json'
+        }, {
+          src: 'profileimages',
+          dest: 'built/profileimages'
         }]
       }
     },
@@ -230,7 +233,6 @@ module.exports = function (grunt) {
           'built/libs/libs-additional.min.js': [
             // 'node_modules/candela/dist/candela.js',
             'node_modules/Clique/dist/clique.js'
-            // 'node_modules/Clique/src/tangelo/mongo/web/mongo.js'
           ]
         }
       }

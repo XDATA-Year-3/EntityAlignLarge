@@ -1,8 +1,27 @@
-import urllib
 import bson.json_util
 import json
+import os
+import re
+import unicodedata
+import urllib
 from bson.objectid import ObjectId
 from pymongo import MongoClient
+
+
+def safe_path(value, noperiods=False):
+    """
+    Make sure a string is a safe file path.
+
+    :param value: the string to escape.
+    :param noperids: if true, escape periods, too.
+    :returns: the escaped string
+    """
+    value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+    value = unicode(re.sub('[^\w\s-]', '', value).strip().lower())
+    value = re.sub('[-\s]+', '-', value)
+    if noperiods:
+        value = value.replace('.', '-')
+    return value
 
 
 def run(host=None, db=None, coll=None, spec=None, singleton=json.dumps(False),
@@ -30,9 +49,22 @@ def run(host=None, db=None, coll=None, spec=None, singleton=json.dumps(False),
     for node in nodes:
         if (coll.lower().startswith('twitter') and 'data' in node and
                 'name' in node['data']):
-            node['data']['profile_image'] = (
-                'https://twitter.com/%s/profile_image?size=original' % (
-                    urllib.quote(node['data']['name']), ))
+            username = node['data']['name']
+            url = 'https://twitter.com/%s/profile_image?size=original' % (
+                urllib.quote(username), )
+            safe_name = safe_path(username, True)
+            path = os.path.join('profileimages', 'twitter', safe_name[:2])
+            relpath = os.path.join('..', path)
+            if os.path.exists(relpath):
+                files = [file for file in os.listdir(relpath)
+                         if file.split('.')[0] == safe_name]
+                if len(files) and os.path.exists(
+                        os.path.join(relpath, files[0])):
+                    if os.path.getsize(os.path.join(relpath, files[0])):
+                        url = os.path.join(path, files[0])
+                    else:  # We know we don't have a valid image
+                        continue
+            node['data']['profile_image'] = url
     if singleton:
         result = nodes[0] if len(nodes) else None
     else:
