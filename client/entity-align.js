@@ -2,12 +2,17 @@
    initializeLoggingFramework, logPublishPairings, logOpenTwitterWindow,
    logOpenInstagramWindow, logSetupLineUp, logSelectLineUpEntry */
 
-var entityAlign = {};
-entityAlign.force1 = null;
-entityAlign.force2 = null;
-entityAlign.host = null;
-entityAlign.ac = null;
-entityAlign.textmode = false;
+var entityAlign = {
+  host: null,
+  graphsDatabase: null
+};
+
+entityAlign.showMatchesEnabled = false;
+
+// there is a global array corresponding to the current matches known between the two loaded graphs.  The matches are an array of JSON objects, each with a
+// "ga" and "gb" attribute, whose corresponding values are integers that match the node IDs.
+entityAlign.currentMatches = [];
+entityAlign.pairings = [];
 
 var defaultCola = {
   linkDistance: 75,
@@ -38,75 +43,6 @@ function logSystemActivity (group, element, activityEnum, action, tags) {
   };
   log(msg);
 }
-
-entityAlign.dayColor = d3.scale.category10();
-entityAlign.monthColor = d3.scale.category20();
-entityAlign.dayName = d3.time.format('%a');
-entityAlign.monthName = d3.time.format('%b');
-entityAlign.dateformat = d3.time.format('%a %b %e, %Y (%H:%M:%S)');
-
-// add globals for current collections to use.  Allows collection to be initialized at
-// startup time from a defaults.json file.   A pointer to the global datastructures for each graph, are initialized empty as well.
-
-entityAlign.graphsDatabase = null;
-entityAlign.showMatchesEnabled = false;
-entityAlign.graphA = null;
-entityAlign.graphB = null;
-
-entityAlign.graphA_dataset = null;
-entityAlign.graphB_dataset = null;
-entityAlign.graphAnodeNames = null;
-entityAlign.graphBnodeNames = null;
-
-// a backup copy of the files as read from the datastore is kept to send to the SGM algortihm.  The regular .graphA and .graphB entries
-// are operated-on by D3, so the datastructures don't work passed back to networkX directly anymore.  So a backup is kepts and this pristine
-// copy is used to initialize the SGM algorithm executed as a tangelo service.
-
-entityAlign.SavedGraphA = null;
-entityAlign.SavedGraphB = null;
-
-// there is a global array corresponding to the current matches known between the two loaded graphs.  The matches are an array of JSON objects, each with a
-// "ga" and "gb" attribute, whose corresponding values are integers that match the node IDs.
-entityAlign.currentMatches = [];
-entityAlign.pairings = [];
-
-// how far to go out on the default rendering of a local neighborhood
-entityAlign.numberHops = 2;
-
-entityAlign.cliqueA = null;
-entityAlign.cliqueB = null;
-
-entityAlign.monthNames = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec'
-];
-
-entityAlign.dayNames = [
-  'Sun',
-  'Mon',
-  'Tue',
-  'Wed',
-  'Thu',
-  'Fri',
-  'Sat'
-];
-
-// make alternating blue and tan colors gradually fading to background to add color gradient to network
-// see http://en.wikipedia.org/wiki/Web_colors
-entityAlign.nodeColorArray = [
-  '#ff2f0e', '#1f77b4', '#cd853f', '#1e90b4', '#f5deb3', '#add8e6', '#fff8dc',
-  '#b0e0e6', '#faf0e6', '#e0ffff', '#fff5e0', '#f0fff0'
-];
 
 function updateGraph1 () {
   initGraphStats('A');
@@ -152,12 +88,8 @@ function initGraphStats (graphIndexString) {
   // Get the name of the graph dataset to render
   if (graphIndexString === 'A') {
     selectedDataset = $('#graph1-selector').val();
-    // save the current dataset name for the graph
-    entityAlign.graphA_dataset = selectedDataset;
   } else {
     selectedDataset = $('#graph2-selector').val();
-    // save the current dataset name for the graph
-    entityAlign.graphB_dataset = selectedDataset;
   }
   // logSystemActivity('Kitware entityAlign - '+logText);
 
@@ -387,7 +319,6 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
 
 function initGraph1WithClique () {
   'use strict';
-  // entityAlign.ac.logUserActivity("Update Rendering.", "render", entityAlign.ac.WF_SEARCH);
   logSystemActivity('graph_A_group', '#graph1', 'INSPECT', 'SHOW', ['clique', 'neighborhood']);
 
   var selectedDataset = $('#graph1-selector').val();
@@ -519,18 +450,8 @@ function firstTimeInitialize () {
 
     fillSeedList('#seed-selector');
 
-    /*
-    var width = $(window).width();
-    var height = $(window).height();
-    */
-
     // set up the keystroke and mouse logger
     initializeLoggingFramework(defaults);
-
-    /*
-    var color = d3.scale.category20();
-    */
-    //color = entityAlignDistanceFunction;
 
     fillLineUpSelector();
     // set a watcher on the dataset selector so datasets are filled in
@@ -612,15 +533,11 @@ function InitializeLineUpAroundEntity (handle) {
   var graphA = $('#graph1-selector').val();
   var graphB = $('#graph2-selector').val();
 
-  //var displaymodeselector = d3.select("#lineup-selector").node();
-  //   var displaymode = displaymodeselector.options[displaymodeselector.selectedIndex].text;
-
   // setup the machinery to allow the interface to be used to introspect inside a single dataset or compare between the datasets
   // a displaymode selector (currently disabled) can be set to determine which mode the UI shuld be in.
 
   var displaymode = 'compare networks';
   d3.json('service/lineupdatasetdescription/' + displaymode, function (ignore_err, desc) {
-    console.log('description:', desc);
     if (displaymode === 'compare networks') {
       console.log('comparing networks');
       d3.json('service/lineupdataset/' + entityAlign.host + '/' + entityAlign.graphsDatabase + '/' + graphA + '/' + graphB + '/' + handle + '/' + displaymode, function (ignore_err, dataset) {
@@ -647,7 +564,6 @@ function InitializeLineUpAroundEntity (handle) {
 function ExploreLocalGraphAregion () {
   var centralHandle = document.getElementById('ga-name').value;
   //console.log('doing one hop around',centralHandle)
-  //initGraph1FromDatastore();
   initGraph1WithClique();
   InitializeLineUpAroundEntity(centralHandle);
 
