@@ -4,7 +4,16 @@
 
 var entityAlign = {
   host: null,
-  graphsDatabase: null
+  graphsDatabase: null,
+  maxFirstHopNodes: 100,
+  nodesPerExpand: 100,
+  /* Set to zero to disable timeout.  The graph timeout prevents large graphs
+   * from consuming resources forever, but it is implemented crudely, and the
+   * time doesn't reset on actions that occur while movement is still
+   * happening.  This means that the graph will occasionally stop when it
+   * shouldn't, but a nudge from the mouse would restart it.  Not ideal, but I
+   * think it is better than making the app unusable on complicated graphs. */
+  maxGraphActionTime: 10000
 };
 
 entityAlign.showMatchesEnabled = false;
@@ -15,6 +24,7 @@ entityAlign.currentMatches = [];
 entityAlign.pairings = [];
 
 var defaultCola = {
+  transitionTime: 0,
   linkDistance: 75,
   nodeRadius: 5,
   label: function (d) {
@@ -181,6 +191,25 @@ function resizeInfoElement (infoElement, linkInfoElement) {
   }
 }
 
+/* Add nodes to the neighborhood of another node.  This is identical to
+ * graph.addNeighborrhood or selectionInfo.expandNode, except that the
+ * maximum number of neighbors is limited.  Repeated calls will gradually add
+ * all neighbors.
+ *
+ * @param {object} graph: an object that contains {graph: the graph that
+ *      contains the central node, view: the cola layout}.
+ * @param {object} center: the central node.
+ */
+function addNeighborhood (graph, center) {
+  'use strict';
+  if (!center.limit && entityAlign.maxFirstHopNodes) {
+    center.limit = entityAlign.maxFirstHopNodes;
+  } else if (center.limit && entityAlign.nodesPerExpand) {
+    center.limit += entityAlign.nodesPerExpand;
+  }
+  graph.graph.addNeighborhood(center);
+}
+
 /* Create a clique graph for a particular element and dataset.
  *
  * @param selectedDataset: name of the collection to load from.
@@ -196,6 +225,9 @@ function resizeInfoElement (infoElement, linkInfoElement) {
 function createCliqueGraph (selectedDataset, existing, graphElement, infoElement, linkInfoElement) {
   'use strict';
 
+  if (existing && existing.actionTimeout) {
+    window.clearTimeout(existing.actionTimeout);
+  }
   emptyCliqueGraph(existing);
   if (existing && existing.selectedDataset === selectedDataset &&
       existing.graphElement === graphElement &&
@@ -286,7 +318,9 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
     }
     var func = {
       hide: SelectionInfo.hideNode,
-      expand: SelectionInfo.expandNode
+      expand: function (node) {
+        addNeighborhood(graph, node);
+      }
     }[menu];
     nodes.forEach(function (nodekey) {
       graph.adapter.findNodeByKey(nodekey).then(function (node) {
@@ -310,6 +344,24 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       }}
     }
   });
+
+  if (entityAlign.maxGraphActionTime) {
+    graph.view.cola.on('start', function () {
+      if (graph.actionTimeout) {
+        window.clearTimeout(graph.actionTimeout);
+      }
+      graph.actionTimeout = window.setTimeout(function () {
+        graph.view.cola.stop();
+        console.log('graph action stopped');
+      }, entityAlign.maxGraphActionTime);
+    });
+    graph.view.cola.on('end', function () {
+      if (graph.actionTimeout) {
+        window.clearTimeout(graph.actionTimeout);
+      }
+      graph.actionTimeout = null;
+    });
+  }
   return graph;
 }
 
@@ -336,7 +388,7 @@ function initGraph1WithClique () {
     console.log('center:', center);
     if (center) {
       graph.graph.addNode(center);
-      graph.graph.addNeighborhood(center);
+      addNeighborhood(graph, center);
     }
   });
 }
@@ -360,7 +412,7 @@ function initGraph2WithClique () {
     console.log('center:', center);
     if (center) {
       graph.graph.addNode(center);
-      graph.graph.addNeighborhood(center);
+      addNeighborhood(graph, center);
     }
   });
 }

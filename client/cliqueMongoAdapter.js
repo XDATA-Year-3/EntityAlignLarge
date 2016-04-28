@@ -128,6 +128,9 @@
     this.neighborLinksRaw = function (node, types, offset, limit) {
       var data;
 
+      if (!limit && node.limit) {
+        limit = node.limit;
+      }
       types = types || {};
       data = _.extend({
         node: node.key(),
