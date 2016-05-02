@@ -186,8 +186,11 @@ module.exports = function (grunt) {
           src: 'defaults.json',
           dest: 'built/defaults.json'
         }, {
-          src: 'profileimages',
-          dest: 'built/profileimages'
+          expand: true,
+          overwrite: true,
+          cwd: '.',
+          src: ['profileimages*'],
+          dest: 'built'
         }]
       }
     },
