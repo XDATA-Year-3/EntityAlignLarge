@@ -29,7 +29,14 @@ var defaultCola = {
   nodeRadius: 5,
   label: function (d) {
     return d.data ? (d.data.name || '') : '';
-  }
+  },
+  focusColor: 'yellow'
+};
+var unzoomCola = {
+  linkDistance: 75
+};
+var zoomCola = {
+  linkDistance: 125
 };
 
 // logging is handled largely in
@@ -233,6 +240,8 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       existing.graphElement === graphElement &&
       existing.infoElement === infoElement &&
       existing.linkInfoElement === linkInfoElement) {
+    existing.viewOptions.transform.splice(0, 6, 1, 0, 0, 1, 0, 0);
+    existing.view.updateTransform();
     resizeInfoElement(infoElement, linkInfoElement);
     return existing;
   }
@@ -241,6 +250,7 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       existing.infoObserver.disconnect();
     }
   }
+  $(graphElement).parent().children('a').show();
 
   var graph = {
     selectedDataset: selectedDataset,
@@ -259,12 +269,15 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
   });
   console.log('selectedDataset', selectedDataset);
 
-  graph.view = new clique.default.view.Cola($.extend(
+  graph.viewOptions = $.extend(
     {}, defaultCola, {
       model: graph.graph,
-      el: graphElement
+      el: graphElement,
+      transform: []
     }
-  ));
+  );
+  graph.viewOptions.transform.splice(0, 6, 1, 0, 0, 1, 0, 0);
+  graph.view = new clique.default.view.Cola(graph.viewOptions);
   graph.view.mode = 'label';
 
   if (infoElement) {
@@ -486,6 +499,36 @@ function setGraphDatasets (datasets, selector, fixed) {
   $(selector).val(first);
 }
 
+/* Handle the zoom button on our clique graph.  This mostly toggles some CSS.
+ *
+ * @param {object} evt: jquyery event that triggered this call.
+ */
+function zoomClique (evt) {
+  var elem = $(evt.target).closest('.clique');
+  var graph = entityAlign[$('#graph1', elem).length ? 'graph1' : 'graph2'];
+  if (!graph) {
+    return;
+  }
+  var zoomIn = !elem.hasClass('enlarged');
+  var origW = $(graph.graphElement).width();
+  var origH = $(graph.graphElement).height();
+  elem.toggleClass('enlarged', zoomIn);
+  $(graph.infoElement).toggleClass('enlarged', zoomIn);
+  var newW = $(graph.graphElement).width();
+  var newH = $(graph.graphElement).height();
+  if (zoomIn) {
+    $(graph.infoElement).css('height', '');
+    $.extend(graph.viewOptions, zoomCola);
+  } else { /* zoom out */
+    resizeInfoElement(graph.infoElement, graph.linkInfoElement);
+    $.extend(graph.viewOptions, unzoomCola);
+  }
+  graph.viewOptions.transform[4] += (newW - origW) / 2;
+  graph.viewOptions.transform[5] += (newH - origH) / 2;
+  graph.view.updateTransform();
+  graph.view.cola.start();
+}
+
 function firstTimeInitialize () {
   'use strict';
 
@@ -539,7 +582,9 @@ function firstTimeInitialize () {
   d3.select('#publish-parings-button')
             .on('click', publishPairLists);
 
-  // declare a Boostrap table to display pairings made by the analyst
+  $('.clique>a').on('click', zoomClique);
+
+  // declare a Bootstrap table to display pairings made by the analyst
 
   $('#pairings-table').bootstrapTable({
     data: entityAlign.pairings,
@@ -553,7 +598,7 @@ function firstTimeInitialize () {
   });
 }
 
-// *** initialization.  What do we do the first time the app is opened and the document is ready?
+// *** initialization.
 
 window.onload = function () {
   firstTimeInitialize();    // Fill out the dataset selectors with graph datasets that we can choose from

@@ -232,6 +232,13 @@ module.exports = function (grunt) {
         }
       },
       npmlibs: {
+        options: {
+          /* Enable these options for a faster build.
+          beautify: {beautify: true},
+          mangle: false,
+          compress: false
+          */
+        },
         files: {
           'built/libs/libs-additional.min.js': [
             // 'node_modules/candela/dist/candela.js',

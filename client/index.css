@@ -98,37 +98,33 @@ nav ol {
   position: relative;
 }
 
-#graph1,#graph2 {
-  height: 300px; 
-  width: 100%;
-}
-#info1,#info2 {
-  margin-top: 5px;
+.clique-info {
+  padding-top: 5px;
   overflow: auto;
 }
-#info1 .row,#info2 .row {
+.clique-info .row {
   margin-left: 0;
   margin-right: 0;
 }
-#info1 .col-md-1,#info2 .col-md-1 {
+.clique-info .col-md-1 {
   padding: 0;
 }
-#info1 .pagination,#info2 .pagination {
+.clique-info .pagination {
   margin: 0;
 }
-#info1 .container,#info2 .container {
+.clique-info .container {
   padding: 0;
 }
-#info1 .table,#info2 .table {
+.clique-info .table {
   margin: 0;
 }
-#info1 td,#info2 td {
+.clique-info td {
   padding: 3px;
 }
-#info1>.container>.container>.row+.row,#info2>.container>.container>.row+.row {
+.clique-info>.container>.container>.row+.row {
   display: none;
 }
-#info1>.container>.container>.row table td:first-child,#info2>.container>.container>.row table td:first-child {
+.clique-info>.container>.container>.row table td:first-child {
   max-width: 130px;
   overflow: hidden
 }
@@ -164,3 +160,52 @@ div.lu .header.stack~.header.stack .toolbar i.fa-times {
   padding-top: 0px;
   padding-bottom: 0px;
 }
+.clique {
+  height: 300px; 
+  width: 100%;
+  position: relative;
+}
+.clique>svg {
+  height: 100%; 
+  width: 100%;
+}
+.clique.enlarged {
+  position: fixed;
+  background: #CCC;
+  left: 0;
+  top: 0;
+  right: 360px;
+  bottom: 0;
+  height: initial;
+  width: initial;
+  z-index: 20000;
+}
+.clique-info.enlarged {
+  position: fixed;
+  background: #CCC;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  height: initial;
+  width: 360px;
+  z-index: 20000;
+}
+.clique>.enlarge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  font-size: 16px;
+  color: #777;
+  display: none;
+}
+.clique>.enlarge>.shrink,.clique.enlarged>.enlarge>.grow {
+  display: none;
+}
+.clique.enlarged>.enlarge>.shrink {
+  display: inherit;
+  font-size: 20px;
+  padding-left: 5px;
+  padding-top: 5px;
+}
+
