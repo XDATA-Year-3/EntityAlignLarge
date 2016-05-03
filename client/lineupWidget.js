@@ -77,7 +77,15 @@ function createLineup (elem, name, desc, dataset, lineupObj, sort,
   lineupObj['lineup-key'] = name;
   $(elem).attr('lineup-key', name);
   if (sort) {
-    lineupObj.sortBy(sort);
+    var sortColumn;
+    $.each(lineupObj.data.getRankings(), function (ridx, ranking) {
+      $.each(ranking.flatColumns, function (cidx, column) {
+        if (column.label === sort) {
+          sortColumn = column.id;
+        }
+      });
+    });
+    lineupObj.sortBy(sortColumn !== undefined ? sortColumn : sort);
   }
   lineupObj.changeRenderingOption('animation', oldAnimation);
   var fixTooltips = function () {
