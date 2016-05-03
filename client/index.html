@@ -1,0 +1,263 @@
+<!doctype html>
+<head>
+  <meta charset=utf-8>
+  <title>Large Network Alignment</title>
+  <link rel="shortcut icon" href="icon.png">
+  <!-- libs-additional contains Clique and candela.  It must be before libs,
+       or it overwrites some desired libraries. -->
+  <script src="libs/libs-additional.min.js"></script>
+  <script src="libs/libs.min.js"></script>
+  <link href="libs/libs.min.css" rel="stylesheet">
+  <script src="userale/userale.js"></script>
+
+  <link rel="stylesheet" href="index.css">
+  <script src="logging.js"></script>
+  <script src="lineupWidget.js"></script>
+  <script src="cliqueMongoAdapter.js"></script>
+  <!-- Driver script for this app -->
+  <script src="entity-align.js"></script>
+
+</head>
+<body>
+  <div id=info-panel class="modal fade draper" data-wf="1" data-description="info panel">
+    <div class=modal-dialog>
+      <div class=modal-content>
+        <div class=modal-header>
+          <h3>Information</h3>
+        </div>
+        <div class=modal-body>
+          <p>Examine and Align Entities Across two networks</p>
+          <p>This application allows exploration and alignment edits between two large networks.  The 
+             networks are assumed too large to be directly rendered, so only k-hop subgraphs are ever rendered.</p>
+        </div>
+        <div class=modal-footer>
+          <a class="btn btn-default" data-dismiss=modal>OK</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id=help-panel class="modal fade draper" data-wf="1"  data-description="help panel">
+    <div class=modal-dialog>
+      <div class=modal-content>
+        <div class=modal-header>
+          <h3>Help</h3>
+        </div>
+
+        <div class=modal-body>
+          <p>To use:
+            <ol>
+              <li>Load a dataset by using the menu in the upper left
+                  corner.  The other dataset will also be loaded in the
+                  right-hand pane.
+
+              <li>Begin typing a username in the search box.  The
+                  autocomplete feature will show you some suggested names
+                  you may be looking for.
+
+              <li>Select the username you want, and click "Explore Local Network".
+
+              <li>Examine the network in the left-hand pane.
+
+              <li>Manipulate the columns in the center, sorting by
+                  various metrics, until you see the listings you
+                  want.
+
+              <li>Click on a name in the central listing.
+
+              <li>Examine the network in the right-hand pane.
+
+              <li>If you would like to save pairing between usernames,
+                  click "Accept This Pairing".
+
+              <li>Click on "Review Pairings" in the navbar at the top to
+                  see the list of pairings you have saved thus far.
+            </ol>
+          </p>
+
+          <p>The available metrics are:
+            <ul>
+              <li><strong>Self reported match.</strong> Indicates whether
+                  the users in the left- and right-hand panes are known to
+                  be the same user via a message duplication from one
+                  account to the other.
+
+              <li><strong>LSGM.</strong> LSGM (large seeded graph
+                  matching) is a measure of structural similarity
+                  between two networks, focused on a particular central
+                  node.
+
+              <li><strong>Username similarity.</strong> Measures the
+                  similarity between usernames by counting the number
+                  of additions, deletions, and changes to individual
+                  letters are needed to transform one name into the
+                  other.
+
+              <li><strong>Username substring match.</strong> Measures
+                  the similarity between usernames by calculating the
+                  largest substring common to both.
+
+              <li><strong>1-hop neighborhood size similarity.</strong>
+                  Measures how similar the sizes are of the 1-hop
+                  networks surrounding the two nodes.
+
+              <li><strong>2-hop neighborhood sizes similarity.</strong>
+                  Just like the 1-hop measure above, but includes a
+                  second hop going out from the central node.
+
+              <li><strong>2-hop neighborhood structural similarity.</strong>
+                  Compares two 2-hop networks, taking into account not
+                  just size but also connectivity.
+            </ul>
+          </p>
+
+          <p>To manipulate the columns, you can:
+            <ol>
+              <li>Drag the columns into a different order.
+
+              <li>Click on columns to order the items by that value.
+
+              <li>Drag the edges of columns to give them a different
+                  weight.
+
+              <li>Click on the "Combined" column header to order the
+                  items by the combined, weighted value of all the
+                  columns.
+            </ol>
+          </p>
+        </div>
+
+        <div class=modal-footer>
+          <a class="btn btn-default" data-dismiss=modal>OK</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id='video-panel' class="modal fade draper" data-wf="1"  data-description="intro video">
+    <div class=modal-dialog>
+      <div class=modal-content>
+        <div class=modal-header>
+          <h3>Intro Video</h3>
+        </div>
+        <div class=modal-body>
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/vZK7qFRMC-Q" frameborder="0" allowfullscreen></iframe>
+        </div>
+        <div class=modal-footer>
+          <a class="btn btn-default" data-dismiss=modal>Close Window</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id='seed-panel' class="modal fade draper" data-wf="1"  data-description="list seeds">
+    <div class=modal-dialog>
+      <div class=modal-content>
+        <div class=modal-header>
+          <h3>Review Pairings</h3>
+        </div>
+        <div class=modal-body>
+          <p>Below is a list of the entity pairs that have been selected, during this session, between the two networks:</p>
+          <table id="pairings-table"></table>
+        </div>
+        <div class=modal-footer>
+          <a class="btn btn-default" data-dismiss=modal>Close Window</a>
+          <a id='publish-parings-button' class="btn btn-success" data-dismiss=modal>Publish Pairing</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="navbar navbar-default navbar-fixed-top" >
+    <div class=navbar-header>
+      <a class=navbar-brand href=/examples>Resonant - Large Network Alignment</a>
+    </div>
+    <ul class="nav navbar-nav">
+      <li><a data-toggle=modal data-target=#info-panel><span class="glyphicon glyphicon-info-sign"></span> Info</a>
+      <li><a data-toggle=modal data-target=#help-panel><span class="glyphicon glyphicon-question-sign"></span> Help</a>
+      <li><a data-toggle=modal data-target=#video-panel><span class="glyphicon glyphicon-facetime-video"></span> Intro Video</a>
+      <li><a data-toggle=modal data-target=#seed-panel><span class="caret"></span>Review Pairings</a>
+    </ul>
+  </div>
+
+  <!-- Create  side-by-side panels -->
+  <div class=container-fluid>
+    <div class=row>
+
+      <!-- left panel for graph 1 -->
+      <div class=col-md-3>
+        <h4 id='graph1-selector-one' class='leftindent'></h4>
+        <select id='graph1-selector' class='form-control leftindent'>
+          <option selected disabled hidden value=''>Select a dataset</option>
+        </select>
+        <p id='ga-summary'></p>
+        
+        <text id="ga-nodeCount" class="leftindent">0</text>
+        <text class="leftindent">nodes loaded</text>
+        <p></p>
+        <text id="ga-linkCount" class="leftindent">0</text>
+        <text class="leftindent">links loaded</text>
+        <p></p>
+        <!--
+        <text id="ga-matchCount" class="leftindent">0</text>
+        <text class="leftindent">matched nodes</text>    
+        <p></p>
+        -->
+        <input id='ga-name' class="leftindent" disabled="disabled"> Enter an entity name</input> 
+        <p></p>
+        <a id='onehop-button' class="btn btn-default leftindent" style="margin-top: 10px">Explore local network</a>
+        <a id='graph1-homepage' class="btn btn-default leftindent" style="margin-top: 10px">Visit User Homepage</a>
+        <p></p>
+        <div class="clique">
+          <a class="enlarge">
+            <span class="glyphicon glyphicon-resize-full grow"></span>
+            <span class="glyphicon glyphicon-resize-small shrink"></span>
+          </a>
+          <svg id='graph1' oncontextmenu="return false;"></svg>
+        </div>
+        <div id='info1' class='clique-info'></div> 
+
+      </div>
+  
+      <!-- center panel for showing the ranking results -->
+      <div id='controls' class=col-md-6>
+        <div class="lineup_container">
+          <select id='lineup-selector' class='form-control leftindent' style="margin-top: 5px; margin-bottom: 20px; margin-right: 40px; display: none;"></select>
+          <div id="lugui-wrapper"></div>
+        </div>
+      </div>
+   
+      <!-- right panel for graph 2 -->
+      <div class=col-md-3>
+        <h4 id='graph2-selector-one' class='leftindent'></h4>
+        <select id='graph2-selector' class='form-control leftindent'>
+          <option selected disabled hidden value=''>Select a dataset</option>
+        </select>
+        <p id='gb-summary'></p>
+        <text id="gb-nodeCount" class="leftindent">0</text>
+        <text class="leftindent">nodes loaded</text>
+        <p></p>
+        <text id="gb-linkCount" class="leftindent">0</text>
+        <text class="leftindent">links loaded</text>
+        <p></p>
+        <!--
+        <text id="gb-matchCount" class="leftindent">0</text>
+        <text class="leftindent">matched nodes</text>
+        <p></p>
+        -->
+        <input id='gb-name' class="leftindent" readonly> Displayed Entity</input>
+        <a id='accept-button' class="btn btn-default leftindent" style="margin-top: 10px">Accept This Pairing</a>
+        <a id='graph2-homepage' class="btn btn-default leftindent" style="margin-top: 10px">Visit User Homepage</a>
+        <p></p>
+        <div class="clique">
+          <a class="enlarge">
+            <span class="glyphicon glyphicon-resize-full grow"></span>
+            <span class="glyphicon glyphicon-resize-small shrink"></span>
+          </a>
+          <svg id='graph2' oncontextmenu="return false;"></svg>
+        </div>
+        <div id='info2' class='clique-info'></div>
+      </div>
+    </div>
+  </div>
+</body>

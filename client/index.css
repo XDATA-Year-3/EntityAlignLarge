@@ -1,0 +1,211 @@
+html, body {
+  height: 100%;
+  background-color: lightgray;
+}
+
+body {
+  padding-top: 50px;
+  overflow: hidden;
+}
+
+.col-md-3,.col-md-6 {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.navbar-nav>li>a {
+  cursor: pointer;
+}
+
+#graph1-selector, #graph2-selector, #graph1-selector-one, #graph2-selector-one {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  width: calc(100% - 30px);
+}
+#graph1-selector-one, #graph2-selector-one {
+  font-size: 20px;
+  display: none;
+}
+
+.leftindent {
+  margin-left: 10px;
+}
+
+#control-panel {
+  background-color: lightgray;
+}
+
+#controls {
+  background-color: ghostwhite;
+  height: 100%;
+  padding-right: 0;
+  padding-left: 5px;
+  overflow: hidden;
+}
+
+.container-fluid {
+  height: 100%;
+}
+
+.row {
+  height: 100%;
+}
+
+select.form-control {
+  background-color: white;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+p {
+  color: gray;
+}
+
+h3 {
+  color: gray;
+}
+#map img {
+  max-width: none;
+}
+
+/* definition for scrollable list of active entities */
+nav ol {
+  height: 300px;
+  width: 200px;
+}
+nav ol {
+  overflow: hidden;
+  overflow-y: scroll;
+}
+
+.virtual-link {
+  cursor: pointer;
+}
+.full-width{
+  width: 100%;
+}
+.space-right{
+  margin-right: 5px;
+}
+
+#lugui-wrapper {
+  height: 100%;
+  top: 0;
+}
+.lineup_container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.clique-info {
+  padding-top: 5px;
+  overflow: auto;
+}
+.clique-info .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+.clique-info .col-md-1 {
+  padding: 0;
+}
+.clique-info .pagination {
+  margin: 0;
+}
+.clique-info .container {
+  padding: 0;
+}
+.clique-info .table {
+  margin: 0;
+}
+.clique-info td {
+  padding: 3px;
+}
+.clique-info>.container>.container>.row+.row {
+  display: none;
+}
+.clique-info>.container>.container>.row table td:first-child {
+  max-width: 130px;
+  overflow: hidden
+}
+
+div.lu {
+  top: 0;
+}
+div.lu-header {
+  margin-bottom: 3px;
+  line-height: 24px;
+}
+div.lu text {
+  baseline-shift: -1px;
+}
+div.lu .toolbar i.fa-pencil-square-o,div.lu .toolbar i.fa-toggle-left,div.lu .number .toolbar i.fa-filter {
+  display: none;
+}
+div.lu .header.rank .toolbar i.fa-times,
+div.lu .header.string .toolbar i.fa-times,
+div.lu .header.stack .toolbar i.fa-times {
+  display: none;
+}
+div.lu .header.rank~.header.rank .toolbar i.fa-times,
+div.lu .header.string~.header.string.toolbar i.fa-times,
+div.lu .header.stack~.header.stack .toolbar i.fa-times {
+  display: inline-block;
+}
+.profile_image {
+  max-width: 192px;
+  max-height: 192px;
+}
+.ui-autocomplete .ui-menu-item {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+.clique {
+  height: 300px; 
+  width: 100%;
+  position: relative;
+}
+.clique>svg {
+  height: 100%; 
+  width: 100%;
+}
+.clique.enlarged {
+  position: fixed;
+  background: #CCC;
+  left: 0;
+  top: 0;
+  right: 360px;
+  bottom: 0;
+  height: initial;
+  width: initial;
+  z-index: 20000;
+}
+.clique-info.enlarged {
+  position: fixed;
+  background: #CCC;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  height: initial;
+  width: 360px;
+  z-index: 20000;
+}
+.clique>.enlarge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  font-size: 16px;
+  color: #777;
+  display: none;
+}
+.clique>.enlarge>.shrink,.clique.enlarged>.enlarge>.grow {
+  display: none;
+}
+.clique.enlarged>.enlarge>.shrink {
+  display: inherit;
+  font-size: 20px;
+  padding-left: 5px;
+  padding-top: 5px;
+}
+
