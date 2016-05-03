@@ -1,4 +1,4 @@
-/* globals $, _, console, d3, log, clique, createLineup,
+/* globals $, _, console, d3, log, clique, createLineup, lineup,
    initializeLoggingFramework, logPublishPairings, logOpenTwitterWindow,
    logOpenInstagramWindow, logSetupLineUp, logSelectLineUpEntry */
 
@@ -322,7 +322,8 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
    * the selected nodes.
    */
   function contextCallback (menu, evt) {
-    var nodekey = d3.select(evt.$trigger.closest('.node')[0]).datum().key;
+    var elem = evt.$trigger.closest('.node')[0];
+    var nodekey = d3.select(elem).datum().key;
     var nodes;
     if (graph.view.selected.has(nodekey)) {
       nodes = Array.from(graph.view.selected);
@@ -333,6 +334,23 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       hide: SelectionInfo.hideNode,
       expand: function (node) {
         addNeighborhood(graph, node);
+      },
+      center: function (node) {
+        if (!node.limit) {
+          addNeighborhood(graph, node);
+        }
+        var elemBounds = $(elem)[0].getBoundingClientRect();
+        var svgBounds = $(elem).closest('svg')[0].getBoundingClientRect();
+        graph.viewOptions.transform[4] += (
+            svgBounds.right + svgBounds.left -
+            elemBounds.right - elemBounds.left) / 2;
+        graph.viewOptions.transform[5] += (
+            svgBounds.bottom + svgBounds.top -
+            elemBounds.bottom - elemBounds.top) / 2;
+        graph.view.updateTransform();
+        if (graph.centerOnEntity) {
+          graph.centerOnEntity.call(this, node);
+        }
       }
     }[menu];
     nodes.forEach(function (nodekey) {
@@ -354,7 +372,8 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       expand: {name: 'Expand', callback: contextCallback},
       toggle: {name: 'Toggle Labels', callback: function () {
         graph.view.toggleLabels();
-      }}
+      }},
+      center: {name: 'Center on Entity', callback: contextCallback}
     }
   });
 
@@ -626,7 +645,6 @@ function fillSeedList (element) {
 
 function InitializeLineUpAroundEntity (handle) {
   logSetupLineUp();
-  //InitializeLineUpJS();
   var graphA = $('#graph1-selector').val();
   var graphB = $('#graph2-selector').val();
 
@@ -658,22 +676,69 @@ function InitializeLineUpAroundEntity (handle) {
   });
 }
 
-function ExploreLocalGraphAregion () {
-  var centralHandle = document.getElementById('ga-name').value;
-  //console.log('doing one hop around',centralHandle)
-  initGraph1WithClique();
-  InitializeLineUpAroundEntity(centralHandle);
+/* After an entity is selected to be centered, set the control to that entity's
+ * name, and update the graph.
+ *
+ * @param {object} entity: the node object to center on.
+ */
+function centerOnGraph1Entity (entity) {
+  if (!entity.getData || !entity.getData('name')) {
+    return;
+  }
+  ExploreLocalGraphAregion('set', entity.getData('name'));
+}
 
+function ExploreLocalGraphAregion (action, centralHandle) {
+  if (action === 'set') {
+    $('#ga-name').val(centralHandle);
+  } else {
+    centralHandle = $('#ga-name').val();
+    // console.log('doing one hop around', centralHandle)
+    initGraph1WithClique();
+    entityAlign.graph1.centerOnEntity = centerOnGraph1Entity;
+  }
+
+  InitializeLineUpAroundEntity(centralHandle);
   // clear possible leftover state from a previous search
   document.getElementById('gb-name').value = '';
   emptyCliqueGraph(entityAlign.graph2);
 }
 
+/* After an entity is selected to be centered, set the control to that entity's
+ * name.  Select the entity in lineup if present.
+ *
+ * @param {object} entity: the node object to center on.
+ */
+function centerOnGraph2Entity (entity) {
+  if (!entity.getData || !entity.getData('name')) {
+    return;
+  }
+  var handle = entity.getData('name');
+  $('#gb-name').val(handle);
+  if (lineup && lineup.main && lineup.main.data &&
+      lineup.main.data.clearSelection && lineup.main.data.data &&
+      lineup.main.data.data.length) {
+    lineup.main.data.clearSelection();
+    var newSelection;
+    for (var i = 0; i < lineup.main.data.data.length; i += 1) {
+      if (handle === lineup.main.data.data[i].entity) {
+        newSelection = i;
+        break;
+      }
+    }
+    if (newSelection !== undefined) {
+      entityAlign.skipLineupSelection = newSelection;
+      lineup.main.data.setSelection([newSelection]);
+    }
+  }
+}
+
 function ExploreLocalGraphBregion (handle) {
   // set the UI to show who we are exploring around in graphB
   logSelectLineUpEntry();
-  document.getElementById('gb-name').value = handle;
+  $('#gb-name').val(handle);
   initGraph2WithClique();
+  entityAlign.graph2.centerOnEntity = centerOnGraph2Entity;
 }
 
 /* When a lineup row is selected, change what graph B is showing.
@@ -681,6 +746,10 @@ function ExploreLocalGraphBregion (handle) {
  * @param row: the selected lineup row.
  */
 function selectEntityFromLineup (row) {
+  if (entityAlign.skipLineupSelection !== undefined) {
+    delete entityAlign.skipLineupSelection;
+    return;
+  }
   if (!row || !row.entity) {
     return;
   }
