@@ -16,11 +16,8 @@ var entityAlign = {
   maxGraphActionTime: 10000
 };
 
-entityAlign.showMatchesEnabled = false;
-
 // there is a global array corresponding to the current matches known between the two loaded graphs.  The matches are an array of JSON objects, each with a
 // "ga" and "gb" attribute, whose corresponding values are integers that match the node IDs.
-entityAlign.currentMatches = [];
 entityAlign.pairings = [];
 
 var defaultCola = {
@@ -29,6 +26,14 @@ var defaultCola = {
   nodeRadius: 5,
   label: function (d) {
     return d.data ? (d.data.name || '') : '';
+  },
+  /* Show entities where we are certain there is no profile image with a
+   * thinner border and a different color. */
+  labelStrokeWidth: function (d) {
+    return d.data && d.data.profile_image ? '2px' : '1px';
+  },
+  fill: function (d) {
+    return d.data && d.data.profile_image ? 'blue' : 'green';
   },
   focusColor: 'yellow'
 };
@@ -575,8 +580,6 @@ function firstTimeInitialize () {
     d3.select('#graph2-selector').on('change', updateGraph2);
     d3.select('#lineup-selector')
             .on('change', handleLineUpSelectorChange);
-    d3.select('#show-pairings')
-            .on('click', showPairings);
     d3.select('#onehop-button')
             .on('click', ExploreLocalGraphAregion);
     d3.select('#accept-button')
@@ -585,12 +588,6 @@ function firstTimeInitialize () {
             .on('click', openHompageGraph1);
     d3.select('#graph2-homepage')
             .on('click', openHompageGraph2);
-    d3.select('#show-matches-toggle')
-            .attr('disabled', true)
-            .on('click', function () {
-              entityAlign.showMatchesEnabled = !entityAlign.showMatchesEnabled;
-              console.log(entityAlign.showMatchesEnabled);
-            });
 
     setGraphDatasets(defaults.graph1Datasets || ['twitter'], '#graph1-selector', '#graph1-selector-one');
     setGraphDatasets(defaults.graph2Datasets || ['instagram'], '#graph2-selector', '#graph2-selector-one');
@@ -800,8 +797,4 @@ function acceptListedPairing () {
   // update the table
   $('#pairings-table').bootstrapTable('hideLoading');
   $('#pairings-table').bootstrapTable('load', entityAlign.pairings);
-}
-
-function showPairings () {
-
 }
