@@ -35,6 +35,10 @@ var defaultCola = {
   fill: function (d) {
     return d.data && d.data.profile_image ? 'blue' : 'green';
   },
+  labelBackgroundColor: function (d) {
+    return (entityAlign.inBothGraphs && entityAlign.inBothGraphs(
+        d.key) ? '#FFF' : 'lightgray');
+  },
   focusColor: 'yellow'
 };
 var unzoomCola = {
@@ -65,6 +69,42 @@ function logSystemActivity (group, element, activityEnum, action, tags) {
   };
   log(msg);
 }
+
+/* Check if an entity is in both graphs based on its key (its mongo id).  Both
+ * graphs must be present and showing the same selected dataset.
+ *
+ * @param entityKey: the key to check.
+ * @returns {boolean} True if in both graphs.
+ */
+entityAlign.inBothGraphs = function (entityKey) {
+  if (!entityAlign.graph1 || !entityAlign.graph2 ||
+      entityAlign.graph1.selectedDataset !==
+      entityAlign.graph2.selectedDataset) {
+    return false;
+  }
+  if (!entityAlign.graph1.graph || !entityAlign.graph1.graph.nodes ||
+      !entityAlign.graph1.graph.nodes[entityKey]) {
+    return false;
+  }
+  if (!entityAlign.graph2.graph || !entityAlign.graph2.graph.nodes ||
+      !entityAlign.graph2.graph.nodes[entityKey]) {
+    return false;
+  }
+  return true;
+};
+
+/* Perform whatever update is necessary to show which nodes are in both graphs.
+ */
+entityAlign.updateInBothGraphs = function () {
+  if (entityAlign.graph1 && entityAlign.graph1.view &&
+      entityAlign.graph1.view.nodes) {
+    entityAlign.graph1.view.renderNodes(entityAlign.graph1.view.nodes);
+  }
+  if (entityAlign.graph2 && entityAlign.graph2.view &&
+      entityAlign.graph2.view.nodes) {
+    entityAlign.graph2.view.renderNodes(entityAlign.graph2.view.nodes);
+  }
+};
 
 function updateGraph1 () {
   initGraphStats('A');
@@ -220,6 +260,7 @@ function addNeighborhood (graph, center) {
     center.limit += entityAlign.nodesPerExpand;
   }
   graph.graph.addNeighborhood(center);
+  entityAlign.updateInBothGraphs();
 }
 
 /* Create a clique graph for a particular element and dataset.
@@ -397,6 +438,7 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
         window.clearTimeout(graph.actionTimeout);
       }
       graph.actionTimeout = null;
+      entityAlign.updateInBothGraphs();
     });
   }
   return graph;
