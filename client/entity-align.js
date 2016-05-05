@@ -620,6 +620,7 @@ window.onload = function () {
   firstTimeInitialize();    // Fill out the dataset selectors with graph datasets that we can choose from
   $('#ga-name').keyup(function (event) {
     if (event.which === 13) {
+      $('.ui-menu-item').closest('.ui-autocomplete').hide();
       ExploreLocalGraphAregion();
     }
   });
