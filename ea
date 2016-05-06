@@ -38,4 +38,4 @@ here=`readlink -f $0`
 here=`dirname "${here}"`
 
 # Launch the application
-"${TANGELO}" --root "${here}" --host ${hostname} --port ${port}  --config "${here}/tangelo-config.yaml"
+"${TANGELO}" --root "${here}/built" --host ${hostname} --port ${port}  --config "${here}/tangelo-config.yaml"

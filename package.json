@@ -16,7 +16,7 @@
     "bootstrap": "~3.3",
     "bootstrap-table": "~1.10",
     "candela": "git+https://github.com/Kitware/candela#31e6f0319f728f1cd2e7193f25648809492721ec",
-    "Clique": "git+https://github.com/Kitware/clique#4e156bc1b0cd7559adbe925a181e5c4bfd8376f2",
+    "Clique": "git+https://github.com/Kitware/clique#bf820f16a1274f7a4de90251e73c6ce39e430e97",
     "d3": "~3.5",
     "font-awesome": "~4.5",
     "google-fonts-offline": "~0.1",

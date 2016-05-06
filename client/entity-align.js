@@ -1,4 +1,4 @@
-/* globals $, _, console, d3, log, clique, createLineup,
+/* globals $, _, console, d3, log, clique, createLineup, lineup,
    initializeLoggingFramework, logPublishPairings, logOpenTwitterWindow,
    logOpenInstagramWindow, logSetupLineUp, logSelectLineUpEntry */
 
@@ -16,11 +16,8 @@ var entityAlign = {
   maxGraphActionTime: 10000
 };
 
-entityAlign.showMatchesEnabled = false;
-
 // there is a global array corresponding to the current matches known between the two loaded graphs.  The matches are an array of JSON objects, each with a
 // "ga" and "gb" attribute, whose corresponding values are integers that match the node IDs.
-entityAlign.currentMatches = [];
 entityAlign.pairings = [];
 
 var defaultCola = {
@@ -29,6 +26,18 @@ var defaultCola = {
   nodeRadius: 5,
   label: function (d) {
     return d.data ? (d.data.name || '') : '';
+  },
+  /* Show entities where we are certain there is no profile image with a
+   * thinner border and a different color. */
+  labelStrokeWidth: function (d) {
+    return d.data && d.data.profile_image ? '2px' : '1px';
+  },
+  fill: function (d) {
+    return d.data && d.data.profile_image ? 'blue' : 'green';
+  },
+  labelBackgroundColor: function (d) {
+    return (entityAlign.inBothGraphs && entityAlign.inBothGraphs(
+        d.key) ? '#FFF' : 'lightgray');
   },
   focusColor: 'yellow'
 };
@@ -60,6 +69,42 @@ function logSystemActivity (group, element, activityEnum, action, tags) {
   };
   log(msg);
 }
+
+/* Check if an entity is in both graphs based on its key (its mongo id).  Both
+ * graphs must be present and showing the same selected dataset.
+ *
+ * @param entityKey: the key to check.
+ * @returns {boolean} True if in both graphs.
+ */
+entityAlign.inBothGraphs = function (entityKey) {
+  if (!entityAlign.graph1 || !entityAlign.graph2 ||
+      entityAlign.graph1.selectedDataset !==
+      entityAlign.graph2.selectedDataset) {
+    return false;
+  }
+  if (!entityAlign.graph1.graph || !entityAlign.graph1.graph.nodes ||
+      !entityAlign.graph1.graph.nodes[entityKey]) {
+    return false;
+  }
+  if (!entityAlign.graph2.graph || !entityAlign.graph2.graph.nodes ||
+      !entityAlign.graph2.graph.nodes[entityKey]) {
+    return false;
+  }
+  return true;
+};
+
+/* Perform whatever update is necessary to show which nodes are in both graphs.
+ */
+entityAlign.updateInBothGraphs = function () {
+  if (entityAlign.graph1 && entityAlign.graph1.view &&
+      entityAlign.graph1.view.nodes) {
+    entityAlign.graph1.view.renderNodes(entityAlign.graph1.view.nodes);
+  }
+  if (entityAlign.graph2 && entityAlign.graph2.view &&
+      entityAlign.graph2.view.nodes) {
+    entityAlign.graph2.view.renderNodes(entityAlign.graph2.view.nodes);
+  }
+};
 
 function updateGraph1 () {
   initGraphStats('A');
@@ -215,6 +260,7 @@ function addNeighborhood (graph, center) {
     center.limit += entityAlign.nodesPerExpand;
   }
   graph.graph.addNeighborhood(center);
+  entityAlign.updateInBothGraphs();
 }
 
 /* Create a clique graph for a particular element and dataset.
@@ -322,7 +368,8 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
    * the selected nodes.
    */
   function contextCallback (menu, evt) {
-    var nodekey = d3.select(evt.$trigger.closest('.node')[0]).datum().key;
+    var elem = evt.$trigger.closest('.node')[0];
+    var nodekey = d3.select(elem).datum().key;
     var nodes;
     if (graph.view.selected.has(nodekey)) {
       nodes = Array.from(graph.view.selected);
@@ -333,6 +380,23 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       hide: SelectionInfo.hideNode,
       expand: function (node) {
         addNeighborhood(graph, node);
+      },
+      center: function (node) {
+        if (!node.limit) {
+          addNeighborhood(graph, node);
+        }
+        var elemBounds = $(elem)[0].getBoundingClientRect();
+        var svgBounds = $(elem).closest('svg')[0].getBoundingClientRect();
+        graph.viewOptions.transform[4] += (
+            svgBounds.right + svgBounds.left -
+            elemBounds.right - elemBounds.left) / 2;
+        graph.viewOptions.transform[5] += (
+            svgBounds.bottom + svgBounds.top -
+            elemBounds.bottom - elemBounds.top) / 2;
+        graph.view.updateTransform();
+        if (graph.centerOnEntity) {
+          graph.centerOnEntity.call(this, node);
+        }
       }
     }[menu];
     nodes.forEach(function (nodekey) {
@@ -354,7 +418,8 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
       expand: {name: 'Expand', callback: contextCallback},
       toggle: {name: 'Toggle Labels', callback: function () {
         graph.view.toggleLabels();
-      }}
+      }},
+      center: {name: 'Center on Entity', callback: contextCallback}
     }
   });
 
@@ -373,6 +438,7 @@ function createCliqueGraph (selectedDataset, existing, graphElement, infoElement
         window.clearTimeout(graph.actionTimeout);
       }
       graph.actionTimeout = null;
+      entityAlign.updateInBothGraphs();
     });
   }
   return graph;
@@ -556,8 +622,6 @@ function firstTimeInitialize () {
     d3.select('#graph2-selector').on('change', updateGraph2);
     d3.select('#lineup-selector')
             .on('change', handleLineUpSelectorChange);
-    d3.select('#show-pairings')
-            .on('click', showPairings);
     d3.select('#onehop-button')
             .on('click', ExploreLocalGraphAregion);
     d3.select('#accept-button')
@@ -566,12 +630,6 @@ function firstTimeInitialize () {
             .on('click', openHompageGraph1);
     d3.select('#graph2-homepage')
             .on('click', openHompageGraph2);
-    d3.select('#show-matches-toggle')
-            .attr('disabled', true)
-            .on('click', function () {
-              entityAlign.showMatchesEnabled = !entityAlign.showMatchesEnabled;
-              console.log(entityAlign.showMatchesEnabled);
-            });
 
     setGraphDatasets(defaults.graph1Datasets || ['twitter'], '#graph1-selector', '#graph1-selector-one');
     setGraphDatasets(defaults.graph2Datasets || ['instagram'], '#graph2-selector', '#graph2-selector-one');
@@ -604,6 +662,7 @@ window.onload = function () {
   firstTimeInitialize();    // Fill out the dataset selectors with graph datasets that we can choose from
   $('#ga-name').keyup(function (event) {
     if (event.which === 13) {
+      $('.ui-menu-item').closest('.ui-autocomplete').hide();
       ExploreLocalGraphAregion();
     }
   });
@@ -626,7 +685,6 @@ function fillSeedList (element) {
 
 function InitializeLineUpAroundEntity (handle) {
   logSetupLineUp();
-  //InitializeLineUpJS();
   var graphA = $('#graph1-selector').val();
   var graphB = $('#graph2-selector').val();
 
@@ -658,22 +716,69 @@ function InitializeLineUpAroundEntity (handle) {
   });
 }
 
-function ExploreLocalGraphAregion () {
-  var centralHandle = document.getElementById('ga-name').value;
-  //console.log('doing one hop around',centralHandle)
-  initGraph1WithClique();
-  InitializeLineUpAroundEntity(centralHandle);
+/* After an entity is selected to be centered, set the control to that entity's
+ * name, and update the graph.
+ *
+ * @param {object} entity: the node object to center on.
+ */
+function centerOnGraph1Entity (entity) {
+  if (!entity.getData || !entity.getData('name')) {
+    return;
+  }
+  ExploreLocalGraphAregion('set', entity.getData('name'));
+}
 
+function ExploreLocalGraphAregion (action, centralHandle) {
+  if (action === 'set') {
+    $('#ga-name').val(centralHandle);
+  } else {
+    centralHandle = $('#ga-name').val();
+    // console.log('doing one hop around', centralHandle)
+    initGraph1WithClique();
+    entityAlign.graph1.centerOnEntity = centerOnGraph1Entity;
+  }
+
+  InitializeLineUpAroundEntity(centralHandle);
   // clear possible leftover state from a previous search
   document.getElementById('gb-name').value = '';
   emptyCliqueGraph(entityAlign.graph2);
 }
 
+/* After an entity is selected to be centered, set the control to that entity's
+ * name.  Select the entity in lineup if present.
+ *
+ * @param {object} entity: the node object to center on.
+ */
+function centerOnGraph2Entity (entity) {
+  if (!entity.getData || !entity.getData('name')) {
+    return;
+  }
+  var handle = entity.getData('name');
+  $('#gb-name').val(handle);
+  if (lineup && lineup.main && lineup.main.data &&
+      lineup.main.data.clearSelection && lineup.main.data.data &&
+      lineup.main.data.data.length) {
+    lineup.main.data.clearSelection();
+    var newSelection;
+    for (var i = 0; i < lineup.main.data.data.length; i += 1) {
+      if (handle === lineup.main.data.data[i].entity) {
+        newSelection = i;
+        break;
+      }
+    }
+    if (newSelection !== undefined) {
+      entityAlign.skipLineupSelection = newSelection;
+      lineup.main.data.setSelection([newSelection]);
+    }
+  }
+}
+
 function ExploreLocalGraphBregion (handle) {
   // set the UI to show who we are exploring around in graphB
   logSelectLineUpEntry();
-  document.getElementById('gb-name').value = handle;
+  $('#gb-name').val(handle);
   initGraph2WithClique();
+  entityAlign.graph2.centerOnEntity = centerOnGraph2Entity;
 }
 
 /* When a lineup row is selected, change what graph B is showing.
@@ -681,6 +786,10 @@ function ExploreLocalGraphBregion (handle) {
  * @param row: the selected lineup row.
  */
 function selectEntityFromLineup (row) {
+  if (entityAlign.skipLineupSelection !== undefined) {
+    delete entityAlign.skipLineupSelection;
+    return;
+  }
   if (!row || !row.entity) {
     return;
   }
@@ -731,8 +840,4 @@ function acceptListedPairing () {
   // update the table
   $('#pairings-table').bootstrapTable('hideLoading');
   $('#pairings-table').bootstrapTable('load', entityAlign.pairings);
-}
-
-function showPairings () {
-
 }
