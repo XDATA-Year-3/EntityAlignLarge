@@ -463,6 +463,8 @@ function initGraph1WithClique () {
                                 '#info1');
   entityAlign.graph1 = graph;
 
+  graph.graph.adapter.clearNodeLimits();
+
   graph.graph.adapter.findNode({name: centralHandle}).then(function (center) {
     console.log('center:', center);
     if (center) {

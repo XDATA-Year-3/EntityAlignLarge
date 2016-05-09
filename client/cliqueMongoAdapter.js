@@ -167,6 +167,15 @@
       pendingRequests.requests = {};
     };
 
+    /* Clear any query limits that have been set on nodes */
+    this.clearNodeLimits = function () {
+      _.each(this.accessors, function (node, key) {
+        if ('limit' in node) {
+          delete node['limit'];
+        }
+      });
+    };
+
     return this;
   };
 }(window.clique, window.jQuery, window._, window.Backbone, window.moment));
