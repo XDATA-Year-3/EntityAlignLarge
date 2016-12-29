@@ -1,0 +1,30 @@
+{
+  "db": {
+    "entity": {
+      "dbUri": "mongodb://127.0.0.1:27017/syria",
+      "collection": "entity"
+    },
+    "link": {
+      "dbUri": "mongodb://127.0.0.1:27017/syria",
+      "collection": "link"
+    },
+    "metrics": {
+      "dbUri": "mongodb://127.0.0.1:27017/syria",
+      "collection": "metrics"
+    },
+    "msg": {
+      "dbUri": "mongodb://127.0.0.1:27017/syria",
+      "collection": "msg"
+    }
+  },
+  "topk": {
+    "k": 25,
+    "extra": 25
+  },
+  "metrics": {
+    "1hop": true,
+    "2hop": true,
+    "substring": true,
+    "levenshtein": true
+  }
+}
